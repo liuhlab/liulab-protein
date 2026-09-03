@@ -6,3 +6,22 @@ of the form `vYYYY.M.PATCH`, and the tag is where the version comes from — not
 sets one.
 
 ## [Unreleased]
+
+### Added
+
+- **`protein.xref`, which says what gene a UniProt accession names.** Swiss-Prot fills in a
+  taxon id for every entry it hands back, and nothing read it. `gene_stems_for` takes a list
+  of accessions and one taxon id, and answers with the gene ids `liulab-genome` maps them to.
+  `species_for` turns a taxon id into a species name, or `None` when no set covers it, so a
+  caller can check first rather than catch an error.
+
+  **Three species are covered — human, mouse and worm — and Swiss-Prot holds every species.**
+  Most entries therefore reach no set at all, and that is kept apart from a real miss. A taxon
+  with no set raises `TaxonNotCoveredError`, because the question cannot be asked of it. An
+  accession that was asked and matched nothing rides back in the answer's `unresolved` list,
+  so a list of accessions never comes back shorter without saying so.
+
+  **The module owns nothing.** `liulab-genome` fetches the data, stores it and records which
+  release answered, so there is no new set to prepare, no cache and no new command. One
+  direction lives here. Going from a gene to its proteins starts from a species rather than
+  from a protein, so it stays a plain `genome.xref` call.

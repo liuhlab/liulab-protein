@@ -83,6 +83,10 @@ Each block below lists only what its own module writes, so nothing here is docum
 
 ::: protein.sifts
 
+## The UniProt to gene map
+
+::: protein.xref
+
 ## Files
 
 ::: protein.io.fasta
