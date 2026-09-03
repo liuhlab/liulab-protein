@@ -1,41 +1,19 @@
 """What a **Database** is here: a directory of ffindex files, a name, and a record.
 
-A **Database** is a large local thing this package searches and does **not** manage. Two
-verbs point at one, and neither of them is a downloader we wrote:
+A **Database** is a large local thing this package searches and does **not** manage.
+:meth:`Database.adopt` writes a record for one already on disk; :meth:`Database.download`
+delegates to ``mmseqs databases`` / ``foldseek databases`` and records what they left.
+Registration is `liulab-genome`'s: a directory plus a completion record *is* the
+registration, at ``<protein_data_dir()>/db/<name>``, under a filesystem-safe slug.
 
-- :meth:`Database.adopt` takes a database already on disk and writes a record for it. That
-  is the common case on a cluster, where the gigabytes arrived by someone else's ``rsync``.
-- :meth:`Database.download` delegates to ``mmseqs databases`` / ``foldseek databases``,
-  which do this well, and writes a record afterwards.
+The ffindex prefix inside that directory is not always the name, so :func:`ffindex_prefix`
+looks it up; :attr:`Database.path` is that prefix, which is the whole of
+:class:`~protein.search.mmseqs.SearchTarget`. :func:`database_files` claims every file it
+finds rather than a list of suffixes two tools would have to be kept in step with.
 
-Registration is `liulab-genome`'s and is not reimplemented: **a directory plus a completion
-record is the registration; a name addresses a directory; nothing is persisted centrally.**
-The name is a filesystem-safe slug — ``swissprot``, never ``UniProtKB/Swiss-Prot``, which
-carries a slash — and the directory is ``<protein_data_dir()>/db/<name>``.
-
-**The ffindex prefix inside that directory is not always the name.** Measured on GPU71FM,
-``db/swissprot/`` holds ``swissprot`` and ``db/pdb/`` holds ``pdb100``, so
-:func:`ffindex_prefix` looks it up rather than assuming: the exact spelling when it is
-there, else the **shortest** stem with a ``.dbtype`` beside it. Every derived sibling is that
-stem plus a suffix — ``_h``, ``_ca``, ``_ss``, ``_clu``, ``_seq`` — so the shortest is the
-database itself. :attr:`Database.path` is that prefix, which is what makes a
-**Database** a :class:`~protein.search.mmseqs.SearchTarget`.
-
-**A record claims the whole directory, not a flat file set.** #1 described ``<name>``,
-``.index``, ``.dbtype``, ``.lookup`` and ``<name>_h``; pdb100 also has ``_ss`` (3Di), ``_ca``
-(coordinates), ``_clu`` and a ``pdb100_seq*`` split database, and structural search cannot
-run without ``_ss`` and ``_ca``. So :func:`database_files` claims every file it finds rather
-than a list this package would have to keep in step with two tools.
-
-**These databases are immutable and nothing here offers to change one.** The index holds
-byte offsets into the data file, so editing the data breaks every offset; every real
-mutation makes a *new* database (``createsubdb``, ``filterdb``, ``concatdbs``). ``adopt``,
-``download`` and ``status`` are the whole surface, and a test pins that.
-
-**A downloaded MMseqs2 database may have folded five residue codes**, because ``mmseqs
-databases`` hardcodes ``createdb --gpu 1``. That is labelled rather than hidden:
-:attr:`Database.is_gpu_encoded` reads the four ``.dbtype`` bytes and :meth:`Database.status`
-carries the consequence. ADR-0003 says why the fold is accepted and how to reverse it.
+**These databases are immutable** — the index holds byte offsets into the data file, so
+editing the data breaks every offset — which is why no mutating verb is exposed. And a
+database ``mmseqs databases`` built has folded five residue codes: see ADR-0003.
 
 Examples
 --------
@@ -84,31 +62,25 @@ __all__ = [
 
 #: This package's subdirectory of registered **Database**s, under
 #: :func:`protein.store.protein_data_dir`. Spelled **once**, here, because this lane owns the
-#: database layout — :func:`protein.search.mmseqs.database_path` asks this module rather than
-#: keeping a second copy of the string.
+#: database layout.
 DATABASE_SUBDIR = "db"
 
-#: What the **Completion marker** calls what it recorded, for every database of either kind.
-#: One value, because registration does not vary by tool: the record's ``details`` carry which
-#: tool searches it.
+#: What the **Completion marker** calls what it recorded. One value for either kind; the
+#: record's ``details`` carry which tool searches it.
 DATABASE_KIND = "database"
 
-#: The bit ``mmseqs createdb --gpu 1`` stamps into the four little-endian ``.dbtype`` bytes:
-#: ``00 00 08 00`` is GPU-extended, ``00 00 00 00`` is plain. Both tools write a ``.dbtype``,
-#: so this is a property of the format rather than of either tool — pdb100 answers ``False``
-#: and that is a real answer. Read the mechanism, never a claim about the source FASTA.
+#: The bit ``mmseqs createdb --gpu 1`` stamps into the four little-endian ``.dbtype`` bytes.
 GPU_ENCODED_BIT = 8 << 16
 
 #: What a GPU-encoded database means for the residues that come back out, in the caller's
-#: terms rather than in the format's. ADR-0003 accepts the fold and says how to reverse it.
+#: terms rather than in the format's.
 GPU_RESIDUE_FOLD = (
     "residues were encoded against a 21-letter table: B->D, Z->E, U/O->X. The standard 20 "
     "are untouched, so 575,303 of Swiss-Prot's 575,503 entries are byte-perfect and 200 are "
     "not. See ADR-0003."
 )
 
-#: What ``mmseqs view --idx-entry-type`` calls the parallel header database. ``0`` is the
-#: sequence database, which is the default and is therefore left unspelled.
+#: What ``mmseqs view --idx-entry-type`` calls the parallel header database.
 _HEADER_ENTRY_TYPE = 2
 
 
@@ -134,10 +106,9 @@ def database_data_dir() -> Path:
 def registered_names() -> list[str]:
     """Return every name that addresses a directory under :func:`database_data_dir`.
 
-    A name here has a directory; whether that directory finished registering is
-    :attr:`Database.is_registered`, which reads the record. The two are separate on purpose:
-    an interrupted download leaves the first true and the second false, and a listing that
-    hid it would hide the thing a caller has to repair.
+    A name here has a directory; whether registration finished is
+    :attr:`Database.is_registered`. An interrupted download leaves the first true and the
+    second false, which is the state a caller has to repair.
 
     Returns
     -------
@@ -160,11 +131,8 @@ def ffindex_prefix(directory: Path) -> Path:
     """Return the ffindex prefix inside ``directory`` — the path a tool is pointed at.
 
     The exact spelling when ``<directory>/<directory.name>.dbtype`` is there, else the
-    **shortest** stem with a ``.dbtype`` beside it. Measured on GPU71FM: ``db/swissprot/``
-    holds ``swissprot``, so the first rule answers; ``db/pdb/`` holds ``pdb100`` and its
-    ``_h``, ``_ca``, ``_ss``, ``_clu`` and ``_seq`` siblings, so the second does. Every
-    derived sibling is the database's own stem plus a suffix, which is why the shortest one
-    is the database.
+    **shortest** stem with a ``.dbtype`` beside it: every derived sibling is the database's
+    own stem plus a suffix, so the shortest one is the database.
 
     Parameters
     ----------
@@ -208,8 +176,7 @@ def ffindex_prefix(directory: Path) -> Path:
 def database_path(name: str) -> Path:
     """Return the ffindex prefix registered under ``name``.
 
-    The one place a name becomes a path. :func:`protein.search.mmseqs.database_path` calls
-    it, so ``p.search("swissprot")`` and ``SwissProt().path`` resolve the same way.
+    The one place a name becomes a path, for this lane and for the search lane alike.
 
     Parameters
     ----------
@@ -220,8 +187,7 @@ def database_path(name: str) -> Path:
     -------
     pathlib.Path
         The ffindex prefix. Nothing is created and no completion record is read: a search
-        against a half-finished download is a failure the tool reports, and refusing it here
-        would make every search pay for a record read.
+        against a half-finished download is a failure the tool reports.
 
     Raises
     ------
@@ -232,7 +198,7 @@ def database_path(name: str) -> Path:
     Examples
     --------
     >>> database_path("swissprot")                               # doctest: +SKIP
-    PosixPath('/scratch/zhoulab/hanliu/protein/db/swissprot/swissprot')
+    PosixPath('/data/protein/db/swissprot/swissprot')
     """
     directory = database_data_dir() / name
     if not directory.is_dir():
@@ -264,9 +230,8 @@ def is_gpu_encoded(prefix: Path) -> bool:
     """Return whether the database at ``prefix`` was built with ``createdb --gpu 1``.
 
     Read from the four ``.dbtype`` bytes and nothing else — see :data:`GPU_ENCODED_BIT`. It
-    is named for the **mechanism** rather than for fidelity: the bytes prove how the database
-    was encoded and say nothing about the FASTA behind it, so ``is_lossless`` would be a lie
-    for a database built cleanly from damaged input.
+    is named for the **mechanism**: the bytes say how the database was encoded and nothing
+    about the FASTA behind it.
 
     Parameters
     ----------
@@ -300,13 +265,8 @@ def database_files(directory: Path) -> list[Path]:
 
     Everything under it that is not hidden. Hidden entries are bookkeeping — the record
     itself and the working area — and the rest is the database, whatever shape the tool gave
-    it. That is deliberate rather than lazy: a hand-written list of suffixes would have
-    tracked ``<name>``, ``.index``, ``.dbtype``, ``.lookup`` and ``_h`` and **missed pdb100's
-    ``_ss`` and ``_ca``**, without which structural search cannot run.
-
-    Symlinks are claimed as the files they are. ``pdb100_seq.0`` is a link to ``pdb100``, and
-    recording the size it resolves to is what lets a caller copy the tree with ``rsync -a``
-    and have the record still agree.
+    it. A symlink is claimed as the file it resolves to, so a tree copied with ``rsync -a``
+    still agrees with its record.
 
     Parameters
     ----------
@@ -335,11 +295,7 @@ def database_files(directory: Path) -> list[Path]:
 
 
 def _count_lines(path: Path) -> int | None:
-    """Return how many newlines ``path`` holds, or ``None`` when it is not readable.
-
-    Read in blocks rather than whole: ``pdb100.lookup`` is 50 MB and ``pdb100_seq.index``
-    is 32 MB, and a status report is not a reason to hold either in memory.
-    """
+    """Return how many newlines ``path`` holds, or ``None`` when it is not readable."""
     try:
         with path.open("rb") as handle:
             return sum(block.count(b"\n") for block in iter(lambda: handle.read(1 << 20), b""))
@@ -369,18 +325,14 @@ class DatabaseStatus:
         What that costs the caller, spelled out, or ``None`` when nothing was folded.
     index_entries : int or None
         Rows in ``<prefix>.index`` — **the searchable set**, which is what a search can hit.
-        For pdb100 that is 324,204 representatives.
     lookup_entries : int or None
-        Rows in ``<prefix>.lookup`` — every *named* entry, which for pdb100 is 1,562,678
-        chains, five times the searchable count. Both are reported because reporting one
-        without saying which invites the wrong one to be quoted.
+        Rows in ``<prefix>.lookup`` — every *named* entry, which can be several times the
+        searchable count. Both are reported so that neither gets quoted for the other.
     files : int or None
         How many files the record claims, or how many are there when it is not registered.
     bytes : int or None
-        Their total size in bytes. **Not ``du``**: a split database's symlinks are counted
-        as the files they resolve to, so pdb100 reports 5.99 GB where the tree occupies
-        4.3 GB. That is the right number for a record, which claims each name it can be
-        asked about, and the wrong one for a disk budget.
+        Their total size in bytes. **Not ``du``**: a symlink is counted as the file it
+        resolves to, which is right for a record and wrong for a disk budget.
     completed_at : str or None
         When registration finished, ISO-8601 in UTC.
 
@@ -435,16 +387,11 @@ class DatabaseStatus:
 class Database(ABC):
     """One registered database: a name, a directory of ffindex files, and a record.
 
-    Abstract in exactly one place — the **External tool** it is searched with — because that
-    is the only thing the two halves of the hierarchy disagree about.
+    Abstract in exactly one place — the **External tool** it is searched with.
     :class:`SequenceDatabase` brings MMseqs2 and :class:`StructureDatabase` brings Foldseek.
 
-    **There is no ``__getitem__`` here.** A sequence database can hand back one entry because
-    MMseqs2 supports exactly that (``mmseqs view --id-list``), and what comes back is a
-    **Protein**. A structure database cannot: pdb100 is a search target, its entries are
-    C-alpha traces keyed by assembly and chain, and coordinates come from
-    :func:`protein.structure.fetch` instead. A shared retrieval verb would have had to return
-    two unrelated types or raise on one side, so the verb lives where the tool supports it.
+    **There is no ``__getitem__`` here.** Retrieval lives on :class:`SequenceDatabase` alone,
+    because that is the side whose tool takes a name and hands back one entry.
 
     Parameters
     ----------
@@ -530,9 +477,8 @@ class Database(ABC):
     def path(self) -> Path:
         """The ffindex prefix a tool is pointed at — see :func:`ffindex_prefix`.
 
-        This one attribute is the whole of
-        :class:`protein.search.mmseqs.SearchTarget`, so ``p.search(SwissProt())`` and
-        ``p.search("swissprot")`` are the same call.
+        This one attribute is the whole of :class:`protein.search.mmseqs.SearchTarget`, so
+        ``p.search(SwissProt())`` and ``p.search("swissprot")`` are the same call.
 
         Returns
         -------
@@ -548,7 +494,7 @@ class Database(ABC):
         --------
         >>> from protein.db import SwissProt
         >>> SwissProt().path                                     # doctest: +SKIP
-        PosixPath('/scratch/zhoulab/hanliu/protein/db/swissprot/swissprot')
+        PosixPath('/data/protein/db/swissprot/swissprot')
         """
         return database_path(self.name)
 
@@ -581,8 +527,8 @@ class Database(ABC):
     def record(self) -> CompletionRecord | None:
         """Return the **Completion marker** this database has, or ``None`` when it has none.
 
-        Read from disk on every ask rather than cached: ``adopt`` and ``download`` write it,
-        and an object that remembered the answer from before would keep saying no.
+        Read from disk on every ask rather than cached, so a record ``adopt`` or ``download``
+        wrote after this object was built is still seen.
 
         Returns
         -------
@@ -623,8 +569,7 @@ class Database(ABC):
         -------
         bool
             ``True`` when the ``.dbtype`` carries :data:`GPU_ENCODED_BIT`, and ``False``
-            when it does not or cannot be read. ``foldseek databases PDB`` answers ``False``,
-            so this is a Swiss-Prot problem rather than a **Database** problem.
+            when it does not or cannot be read.
 
         Examples
         --------
@@ -641,10 +586,8 @@ class Database(ABC):
     def status(self) -> DatabaseStatus:
         """Report what is on disk here, reading no network and no sequence.
 
-        Two entry counts are reported, not one, and each is named for the file it was
-        counted from. They differ by five times for pdb100 — 324,204 searchable
-        representatives in ``.index`` against 1,562,678 named chains in ``.lookup`` — and a
-        report giving one number without saying which invites the wrong one to be quoted.
+        Two entry counts are reported, not one, each named for the file it was counted from
+        — see :class:`DatabaseStatus`.
 
         Returns
         -------
@@ -707,15 +650,11 @@ class Database(ABC):
     ) -> Self:
         """Point at a database already on disk under ``name``, and write a record for it.
 
-        **The common case on a cluster**, where the gigabytes arrived by someone else's
-        ``rsync`` and nothing is going to be downloaded again. Nothing is copied and nothing
-        is rewritten: if ``path`` is not already ``<db>/<name>``, a symlink is made so the
-        name addresses it, and the record is written beside the real files.
-
-        ``adopt`` accepts a GPU-encoded database and a plain one alike, and records which it
-        found. Refusing the first would refuse a database that is perfectly good for search —
-        which is most of what these are for — and would close the reversal path ADR-0003
-        deliberately leaves open.
+        **The common case on a cluster**, where the files arrived by someone else's
+        ``rsync``. Nothing is copied and nothing is rewritten: if ``path`` is not already
+        ``<db>/<name>``, a symlink is made so the name addresses it, and the record is
+        written beside the real files. A GPU-encoded database and a plain one are both
+        accepted, and the record says which — see ADR-0003.
 
         Parameters
         ----------
@@ -788,13 +727,10 @@ class Database(ABC):
 
         **We do not manage the download.** ``mmseqs databases`` and ``foldseek databases``
         fetch, unpack and build; this adds the record and nothing else. ADR-0003 records what
-        that delegation costs for MMseqs2 and why it is accepted.
+        that delegation costs and why it is accepted.
 
-        The tool's temp directory is the database's own ``.work/``, which is `liulab-genome`'s
-        convention and is removed only **after** the record is written — so a download killed
-        half-way keeps what it fetched and a repeat does not pay for it twice. It is not
-        :meth:`~protein.external.MmseqsLikeTool.scratch_dir`, which removes itself however
-        the command ends and is right for a search rather than for an hour of downloading.
+        The tool's temp directory is the database's own ``.work/``, removed only **after** the
+        record is written, so a download killed half-way keeps what it fetched.
 
         Parameters
         ----------
@@ -869,9 +805,7 @@ class Database(ABC):
             files=files,
             source_url=source_url,
             # Not `tools=`, which would reach a second copy of the tool through
-            # liulab-genome and shell out past this object's own — including past the
-            # RecordingTool a test bound here. Provenance never becomes a dependency, so a
-            # tool that will not answer is recorded as having said nothing.
+            # liulab-genome and shell out past this object's own.
             details={
                 "tool": self.TOOL_NAME,
                 "tool_version": self._tool_version(),
@@ -924,8 +858,7 @@ class SequenceDatabase(Database):
     """A **Database** of amino-acid sequences, searched with MMseqs2.
 
     Adds retrieval, because MMseqs2 supports it directly: ``mmseqs view --id-list`` prints
-    one named entry, offline, with the source FASTA header byte-for-byte. See
-    :meth:`__getitem__`.
+    one entry, offline, with the source FASTA header byte-for-byte. See :meth:`__getitem__`.
 
     Examples
     --------
@@ -947,18 +880,14 @@ class SequenceDatabase(Database):
     def key_for(self, name: str) -> str:
         r"""Return the numeric key ``name`` is stored under, from the database's ``.lookup``.
 
-        **The keys are opaque numbers and have nothing to do with the name.** ``createdb``
-        shuffles the database, so ``P12345`` is key ``415743`` in the real Swiss-Prot;
-        ``.lookup`` is ``key \t name \t fileNumber`` and is the only map between them. It
-        is read here rather than through ``mmseqs view --id-mode 1`` for two reasons: the
-        header database has no ``.lookup`` of its own, so ``--idx-entry-type 2`` cannot take
-        a name and the key is needed anyway; and **a missing name is a warning on stderr and
-        exit 0**, so absence has to be detected rather than inferred from a status code.
+        **The keys are opaque and have nothing to do with the name**: ``createdb`` shuffles,
+        and ``.lookup`` (``key \t name \t fileNumber``) is the only map between the two. It is
+        read here rather than through ``mmseqs view --id-mode 1`` because **a missing name
+        there is a warning on stderr and exit 0**, so absence has to be detected rather than
+        inferred from a status code.
 
-        The file is *not* sorted by name on disk — measured on the real Swiss-Prot, whose
-        first three rows are ``P83570``, ``P0DPR3``, ``P84761``. MMseqs2 sorts it in memory
-        when it opens it. So this scans, which for Swiss-Prot's 9 MB is a few milliseconds
-        against the quarter-second the ``view`` below costs.
+        ``.lookup`` is not sorted by name on disk — MMseqs2 sorts it in memory — so this
+        scans.
 
         Parameters
         ----------
@@ -1005,8 +934,8 @@ class SequenceDatabase(Database):
 
         Two ``mmseqs view`` calls against the key :meth:`key_for` resolved: the header lives
         in the parallel ``_h`` database and the residues in the main one, and ``view`` prints
-        one of them per call. Roughly a quarter of a second each on the real Swiss-Prot,
-        almost all of it the process launch — **this is a per-entry door, not a bulk one**.
+        one of them per call. Almost all the cost is the process launch, so **this is a
+        per-entry door, not a bulk one**.
 
         Parameters
         ----------
@@ -1112,13 +1041,10 @@ class SequenceDatabase(Database):
 class StructureDatabase(Database):
     """A **Database** of structures, searched with Foldseek.
 
-    **A search target and nothing else, deliberately.** There is no ``__getitem__``: pdb100
-    holds C-alpha only, 79% of its named chains are absent from the searchable index,
-    residues are renumbered on the way out, and getting one chain back is ``createsubdb``
-    plus ``convert2pdb`` writing files. Coordinates come from
-    :func:`protein.structure.fetch` — the cache under ``<LIULAB_DATA>/protein/structures/``,
-    with an RCSB fetch on a miss — so ``Structure("1UBQ")`` needs nothing from this class,
-    and a lookup here would answer with a path out of a different tree.
+    **A search target and nothing else, deliberately.** There is no ``__getitem__``: what a
+    structure database stores is a C-alpha trace with its own numbering, and coordinates come
+    from :func:`protein.structure.fetch` instead, so ``Structure("1UBQ")`` needs nothing from
+    this class.
 
     Examples
     --------

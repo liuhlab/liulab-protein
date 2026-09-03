@@ -1,8 +1,8 @@
 """Tests for `protein db` — the four commands, their JSON, and their failures.
 
 Everything goes through the root app, which is how a caller reaches this group and which
-also proves the mount. No binary: an autouse fixture replaces
-`ExternalTool.run`, and the databases are a handful of files.
+also proves the mount. No binary: an autouse fixture replaces `ExternalTool.run`, and the
+databases are a handful of files.
 """
 
 from __future__ import annotations

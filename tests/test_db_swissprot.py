@@ -1,9 +1,7 @@
 """Tests for the Swiss-Prot database — the UniProt header grammar, and one entry out.
 
-The headers here are real UniProt ones, byte-for-byte: `createdb` copies header bytes
-through unchanged and `mmseqs view` hands them back, so what this parses is UniProt FASTA
-and nothing MMseqs2-specific. `P12345` is the accession the UniProt documentation itself
-uses for its example, and it is a real Swiss-Prot entry.
+The headers here are real UniProt ones, byte-for-byte, because that is what `mmseqs view`
+hands back: this is UniProt FASTA parsing and nothing MMseqs2-specific.
 
 No binary and no database: every `view` rides on one `monkeypatch.setattr(ExternalTool,
 "run", ...)`, and the `.lookup` file is three lines.
@@ -74,12 +72,12 @@ def test_a_full_swissprot_header_resolves_into_every_field_it_names() -> None:
 
 
 def test_a_value_holding_spaces_survives_the_split() -> None:
-    # `OS=Oryctolagus cuniculus` is two words, and only the two-letter keys are anchored.
+    # Only the two-letter keys are anchored, so a value may hold spaces.
     assert parse_uniprot_header(_FULL).fields["organism"] == "Oryctolagus cuniculus"
 
 
 def test_the_three_numeric_fields_come_back_as_numbers() -> None:
-    # `taxon_id` is what `genome.xref` would be joined on, so it is not left as text.
+    # `taxon_id` is what `genome.xref` is joined on, so it is not left as text.
     fields = parse_uniprot_header(_FULL).fields
     assert isinstance(fields["taxon_id"], int)
     assert isinstance(fields["protein_existence"], int)
@@ -92,8 +90,7 @@ def test_a_trembl_header_is_the_same_grammar_under_a_different_prefix() -> None:
 
 
 def test_a_header_that_is_not_this_grammar_is_left_whole_rather_than_sliced() -> None:
-    # A UniRef or a locally built FASTA names things differently; guessing would put the
-    # wrong text in the accession.
+    # Guessing would put the wrong text in the accession.
     header = parse_uniprot_header("UniRef50_P12345 Cluster: Aspartate aminotransferase n=2")
     assert header.accession is None
     assert header.entry_name is None
@@ -157,8 +154,8 @@ def test_an_accession_swissprot_does_not_carry_raises_rather_than_answering_empt
 def test_retrieval_does_not_warn_about_residues_it_did_not_fold(
     swissprot: Path, views: list[list[str]]
 ) -> None:
-    # ADR-0003: nothing distinguishes a folded `D` from a real one, so there is no warning
-    # here. `filterwarnings = ["error"]` makes this assertion the whole test.
+    # ADR-0003: nothing distinguishes a folded `D` from a real one, so there is no warning.
+    # `filterwarnings = ["error"]` makes this assertion the whole test.
     assert SwissProt()["P12345"].id == "P12345"
 
 

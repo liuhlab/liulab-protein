@@ -1,13 +1,11 @@
 """The ``protein db`` sub-app — say what is registered, point at one, or fetch one.
 
-Four commands, and none of them changes a database. These are immutable: the index holds
-byte offsets into the data file, so editing the data breaks every offset, and every real
-mutation makes a *new* database. ``adopt`` and ``download`` bring one into the registry,
-``list`` and ``status`` report; there is deliberately no ``remove``, no ``rebuild`` and no
-``index``.
+``adopt`` and ``download`` bring a database into the registry, ``list`` and ``status``
+report. None of the four changes a database, because **these databases are immutable**: the
+index holds byte offsets into the data file, so editing the data breaks every offset. There
+is deliberately no ``remove``, no ``rebuild`` and no ``index``.
 
-``adopt`` is the one to reach for on a cluster. The gigabytes are usually already there, and
-adopting writes a record beside them without copying a byte.
+``adopt`` is the one to reach for on a cluster, where the files are usually already there.
 
 Examples
 --------
@@ -28,12 +26,8 @@ import typer
 
 from protein import db as _db
 
-#: What these four commands catch. An unregistered name, a directory holding no ffindex
-#: database and an accession nothing carries are ``LookupError``s; a record that disagrees
-#: with the disk and a tool that failed or is missing are ``RuntimeError``s
-#: (``RegistrationError`` and ``ToolNotFoundError`` are both one); a name with no download
-#: source is a ``ValueError``; an unreadable directory, and a name whose directory is already
-#: taken, are ``OSError``s.
+#: What these four commands catch and report as ``error: ...`` with exit 1, rather than as a
+#: traceback.
 _DATABASE_ERRORS = (LookupError, OSError, RuntimeError, ValueError)
 
 #: `Annotated` rather than a `typer` call in the default, which ruff's B008 refuses for a
@@ -92,7 +86,7 @@ def list_command(
     """List every database registered here, and every one this package can fetch.
 
     A declared name with no directory is shown too: on a fresh machine that list is the
-    answer to "what can I download?", and hiding it would leave the question unanswered.
+    answer to "what can I download?".
     """
     try:
         rows = _rows()
@@ -158,9 +152,9 @@ def download_command(
     """Fetch a database with the tool's own downloader, then register what it left.
 
     **This package does not manage the download.** ``mmseqs databases`` and ``foldseek
-    databases`` do the fetching; what is added here is the record. Needs a network, so it
-    belongs on a login node — and it is gigabytes, so the tool's own progress is left
-    streaming to the terminal rather than captured.
+    databases`` do the fetching; what is added here is the record. It needs a network, so it
+    belongs on a login node, and the tool's own progress is left streaming to the terminal
+    rather than captured.
     """
     try:
         database = _db.database_class(name, kind=kind).download(name, source=source, force=force)
@@ -183,8 +177,7 @@ def status_command(
     """Say what is on disk for one database, without touching the network.
 
     Two entry counts are printed and each names the file it came from: ``index_entries`` is
-    the searchable set and ``lookup_entries`` is every named entry. For pdb100 they differ by
-    five times, so a report giving one without saying which would be quoted wrongly.
+    the searchable set and ``lookup_entries`` is every named entry.
     """
     try:
         found = _db.open_database(name, kind=kind).status()
