@@ -2,8 +2,8 @@
 
 The coordinate cache is exercised for real: the suite's data root is this test's own
 directory, so a fixture copied into `<root>/protein/structures/` is a cache hit and the
-network is never reached. What a miss does is checked by patching `rcsb.fetch`, which is the
-one call this package makes to RCSB and the one biotite already implements local-first.
+network is never reached. What a miss does is checked by patching `rcsb.fetch`, the one call
+this package makes to RCSB.
 """
 
 from __future__ import annotations
@@ -61,8 +61,8 @@ def runs(monkeypatch: pytest.MonkeyPatch) -> _Runs:
     ) -> str:
         recorded.calls.append(list(args))
         if args and args[0] == "easy-search":
-            # Read while the scratch directory is still there: it is removed when the
-            # search returns, and what was in it is the point of these tests.
+            # Read while the scratch directory is still there; it is removed when the search
+            # returns.
             recorded.queries.append(Path(args[1]).read_bytes())
         return ""
 
@@ -102,8 +102,8 @@ def test_from_file_takes_an_id_when_the_file_is_not_named_after_its_entry() -> N
 
 
 def test_from_file_refuses_a_path_that_is_not_there(tmp_path: Path) -> None:
-    # A lazy parse would otherwise report a typo'd path at whichever line first asked for
-    # an atom, which is nowhere near where it was typed.
+    # A lazy parse would otherwise report a typo'd path at whichever line first asked for an
+    # atom, nowhere near where it was typed.
     with pytest.raises(FileNotFoundError, match="is not a file"):
         Structure.from_file(tmp_path / "nothing.cif")
 
@@ -129,7 +129,7 @@ def test_a_gzipped_cache_entry_is_found_too_which_is_what_an_rsync_mirror_leaves
 
 
 def test_an_empty_cache_file_reads_as_absent(cache: Path) -> None:
-    # How an interrupted download is repaired, and biotite's own rule for the same file.
+    # How an interrupted download is repaired.
     (cache / "1ubq.cif").write_bytes(b"")
     assert cached_path("1UBQ") is None
 
@@ -217,8 +217,7 @@ def test_a_label_this_entry_does_not_carry_names_the_ones_it_does() -> None:
 
 
 def test_a_label_of_the_wrong_case_is_a_different_chain() -> None:
-    # 62,551 SIFTS rows carry a lower-case single-letter label and `10EG` has both an `A`
-    # and an `a`, so folding here would answer for the wrong chain.
+    # `10EG` carries both an `A` and an `a`, so folding here would answer for the wrong one.
     with pytest.raises(KeyError):
         _ = Structure.from_file(_BNA)["a"]
 

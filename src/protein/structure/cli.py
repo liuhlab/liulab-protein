@@ -3,11 +3,8 @@
 Two commands, and each is here because the library alone is awkward from a shell.
 
 ``fetch`` is **the one step in this lane that needs the network**, so it is the one a person
-runs on a login node before a job starts: the lab's compute nodes have none, and a
-:class:`~protein.structure.CoordinatesNotDownloadedError` raised inside a job is a job that
-died for a file somebody could have downloaded in a second. ``show`` is how you read an
-entry's chains without writing Python — what they are called, what they are, how long they
-are, and which UniProt accessions SIFTS maps them to.
+runs on a login node before a job starts: the lab's compute nodes have none. ``show`` is how
+you read an entry's chains without writing Python.
 
 Searching is not here. ``protein search struct`` is beside ``protein search seq``, in
 :mod:`protein.search.cli`, because what varies between the two is the query and not the
@@ -32,11 +29,8 @@ import typer
 from protein.structure.structure import Structure as _Structure
 from protein.structure.structure import fetch as _fetch
 
-#: What these two commands catch, and what each already names its next action: an unknown
-#: chain label is a ``LookupError`` (a ``KeyError``); a file that is not there or not
-#: readable is an ``OSError``; coordinates that could not be fetched and a SIFTS map nobody
-#: prepared are ``RuntimeError``s; a suffix naming no format, and a sequence asked of a
-#: chain that is not protein, are ``ValueError``s.
+#: What these two commands catch. Every one of them already names its own next action, so
+#: each becomes ``error: <message>`` and exit code 1 rather than a traceback.
 _STRUCTURE_ERRORS = (LookupError, OSError, RuntimeError, ValueError)
 
 app = typer.Typer(
@@ -56,7 +50,7 @@ class _Cached:
     path : pathlib.Path
         The cached file.
     bytes : int
-        Its size, so a caller can tell a real entry from a stub.
+        Its size.
     """
 
     id: str
@@ -131,8 +125,7 @@ def fetch_command(
     """Put one PDB entry's coordinates in the cache, downloading them if they are not there.
 
     Run it where there is a network. Already cached, it downloads nothing and reports the
-    file that is there — so calling it in a loop over a job's entries is cheap the second
-    time.
+    file that is there.
 
     Exits with code 1 when the entry is neither cached nor reachable.
     """
@@ -180,8 +173,7 @@ def show_command(
 def _open(structure: str) -> _Structure:
     """Return the structure ``structure`` names: an existing file, else a PDB entry id.
 
-    The path is tried first because it cannot be mistaken for anything else — a four-letter
-    id is not a file that exists, and a file that exists is not an id somebody meant.
+    The path is tried first because a file that exists is not an id somebody meant.
     """
     path = _Path(structure)
     if path.exists():

@@ -1,9 +1,8 @@
 """Tests for protein.sifts — the PDB-UniProt map, and what each direction answers with.
 
-Everything runs over `tests/data/sifts_pdb_chain_uniprot_slice.tsv`, 91 real rows cut from
-the release named in `tests/data/README.md`. The suite's network guard means the real fetch
-is never exercised, so `genome.store.fetch.fetch_url` is monkeypatched through its module —
-the discipline `prepared.py` insists on — and the pipeline runs whole against the slice.
+Everything runs over `tests/data/sifts_pdb_chain_uniprot_slice.tsv`, real rows whose release
+is named in `tests/data/README.md`. `genome.store.fetch.fetch_url` is monkeypatched through
+its module, so the pipeline runs whole against the slice and the network is never reached.
 
 The claims worth holding are that the reader keeps seven columns and records which release
 it read, that a chain answers with a tuple and an accession with a frame, that both ranges
@@ -113,8 +112,8 @@ def test_the_reader_keeps_seven_columns_and_drops_the_author_numbering(
 def test_the_reader_strips_the_carriage_returns_the_publisher_writes(
     prepared_sifts: Path,
 ) -> None:
-    # The release line ends LF and every line after it ends CRLF. Left on, the CR would
-    # ride the last column into the store and `sp_end` would not parse as an integer.
+    # Line endings are mixed in the source. Left on, a CR would ride the last column into
+    # the store and `sp_end` would not parse as an integer.
     frame = sifts.table()
     for column in ("pdb", "chain", "accession"):
         assert not frame[column].str.contains("\r").any()
@@ -214,8 +213,7 @@ def test_a_fetch_this_machine_cannot_make_names_the_login_node_and_the_command(
 def test_a_chain_answers_with_the_accession_sifts_curated_not_the_one_the_mmcif_froze(
     prepared_sifts: Path,
 ) -> None:
-    # 1UBQ chain A is P62988 in the file's own `_struct_ref_seq` and P0CG48 here. The round
-    # trip in #1's definition of done needs this one to be SIFTS's answer.
+    # 1UBQ chain A is P62988 in the file's own `_struct_ref_seq` and P0CG48 here.
     assert sifts.accessions_for("1ubq", "A") == ("P0CG48",)
 
 
@@ -226,17 +224,16 @@ def test_an_entry_id_is_folded_to_the_lower_case_sifts_stores(prepared_sifts: Pa
 def test_a_chain_label_is_not_folded_because_case_is_part_of_the_name(
     prepared_sifts: Path,
 ) -> None:
-    # 62,551 rows carry a lower-case single-letter label, and 10eg has both an A and an a.
+    # `10eg` carries both an `A` and an `a`, so case is part of the name.
     assert sifts.accessions_for("10eg", "a") == ("P0A405",)
     assert sifts.accessions_for("10lk", "Q1") == ("Q72RA0",)
     assert sifts.accessions_for("10lk", "q1") == ()
 
 
 def test_a_chain_labelled_na_is_a_chain_and_not_a_missing_value(prepared_sifts: Path) -> None:
-    # 205 rows of the release name their chain `NA`, and `9on4` labels one between its `MA`
-    # and its `OA`. Read with pandas' default missing-value list, that name becomes null and
-    # the chain is unreachable. `na_filter=False` does not fix it — the pyarrow engine
-    # ignores that spelling in silence — so the loader passes `keep_default_na=False`.
+    # `NA` is a real chain label. Read with pandas' default missing-value list it becomes
+    # null and the chain is unreachable; `na_filter=False` does not fix it, because the
+    # pyarrow engine ignores that spelling, so the loader passes `keep_default_na=False`.
     assert sifts.accessions_for("9on4", "NA") == ("P06702",)
     assert int(sifts.table()["chain"].isna().sum()) == 0
 
@@ -250,7 +247,7 @@ def test_a_chain_carrying_four_accessions_answers_with_all_four(prepared_sifts: 
 def test_several_segments_of_one_chain_answer_with_one_accession_not_several(
     prepared_sifts: Path,
 ) -> None:
-    # 102l chain A is two segments of P00720. A tuple of accessions is not a tuple of rows.
+    # A tuple of accessions is not a tuple of rows.
     assert sifts.accessions_for("102l", "A") == ("P00720",)
 
 
@@ -286,8 +283,8 @@ def test_several_segments_of_one_triple_are_several_rows(prepared_sifts: Path) -
 def test_both_ranges_come_back_verbatim_when_no_offset_is_definable(
     prepared_sifts: Path,
 ) -> None:
-    # 10ad A Q12791 maps residues 1-1113 onto 66-1236: 1113 against 1171, so no single
-    # integer shift exists. 2.2% of all segments are like this.
+    # The two ranges are different lengths, so no single integer shift exists. Some segments
+    # are always like this, which is why neither range is adjusted.
     row = sifts.structures_for("Q12791").iloc[0]
     assert (row["res_beg"], row["res_end"]) == (1, 1113)
     assert (row["sp_beg"], row["sp_end"]) == (66, 1236)
@@ -352,7 +349,7 @@ def test_status_reads_the_marker_and_names_the_release(prepared_sifts: Path) -> 
 def test_status_reads_the_marker_and_not_the_slice(
     monkeypatch: pytest.MonkeyPatch, prepared_sifts: Path
 ) -> None:
-    # Offline and cheap: nothing about a status answer needs the 4.68 MB opened.
+    # Offline and cheap: nothing about a status answer needs the table opened.
     def refuse(*args: Any, **kwargs: Any) -> None:
         raise AssertionError("status must not read the table")
 

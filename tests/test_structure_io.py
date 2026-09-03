@@ -1,6 +1,6 @@
 """mmCIF and PDB in and out: the format branch, gzip, and the three array operations.
 
-Everything runs over the three real entries in `tests/data`, whose provenance is in
+Everything runs over the real entries in `tests/data`, whose provenance is in
 `tests/data/README.md`. The claims worth holding are that both formats and both spellings
 read, that a format this package does not read says so by name, that a chain list is the
 distinct labels rather than the segment boundaries, that a chain label of more than one
@@ -42,8 +42,8 @@ def test_the_format_suffix_ignores_gzip_and_case() -> None:
 
 
 def test_an_entry_name_drops_both_suffixes_and_keeps_the_case() -> None:
-    # Case is kept because nothing here folds an identifier somebody chose -- and because
-    # this string is what Foldseek reports the query under.
+    # Nothing here folds an identifier somebody chose, and this string is what Foldseek
+    # reports the query under.
     assert io.entry_name("/data/1ubq.cif.gz") == "1ubq"
     assert io.entry_name("104L.pdb") == "104L"
 
@@ -86,8 +86,8 @@ def test_a_format_this_package_does_not_read_names_the_ones_it_does(tmp_path: Pa
 
 
 def test_binarycif_says_it_is_deferred_rather_than_unknown(tmp_path: Path) -> None:
-    # It is a format biotite reads and this package chooses not to, which is a different
-    # answer from a suffix nobody recognises.
+    # A format biotite reads and this package chooses not to is a different answer from a
+    # suffix nobody recognises.
     deferred = tmp_path / "1ubq.bcif"
     deferred.write_bytes(b"")
     with pytest.raises(ValueError, match="BinaryCIF is deferred"):
@@ -98,9 +98,8 @@ def test_binarycif_says_it_is_deferred_rather_than_unknown(tmp_path: Path) -> No
 
 
 def test_the_chain_list_is_the_distinct_labels_and_not_the_segment_boundaries() -> None:
-    # `get_chains` answers with the label at every chain segment start, so `1BNA`'s two
-    # chains come back as four -- its waters open a segment per letter. Measured, and the
-    # whole reason this package does not use it.
+    # `get_chains` answers with the label at every chain segment start -- here the waters
+    # open one per letter -- which is the whole reason this package does not use it.
     atoms = io.read_atoms(_BNA)
     assert len(struc.get_chains(atoms)) == 4
     assert io.chain_ids(atoms) == ("A", "B")
@@ -129,8 +128,8 @@ def test_a_label_nothing_carries_selects_nothing_rather_than_raising() -> None:
 def test_an_mmcif_round_trip_keeps_a_chain_label_of_more_than_one_character(
     tmp_path: Path,
 ) -> None:
-    # 12% of the archive's labels are longer than a character, and mmCIF is the format that
-    # can hold one -- which is why the coordinate cache and every written query are mmCIF.
+    # mmCIF is the format that can hold a label longer than a character, which is why the
+    # coordinate cache and every written query are mmCIF.
     atoms = _relabelled(io.read_atoms(_UBQ), "Q1")
     written = tmp_path / "relabelled.cif"
     io.write_atoms(written, atoms)
@@ -145,8 +144,8 @@ def test_a_written_file_reads_back_with_the_atoms_it_was_given(tmp_path: Path) -
 
 
 def test_the_two_fields_foldseek_needs_are_written_back_out(tmp_path: Path) -> None:
-    # Foldseek reads no mmCIF whose atom_site lacks these two -- measured, and the reason
-    # they are read at all. A round trip that dropped them would be unsearchable.
+    # Foldseek reads no mmCIF whose atom_site lacks these two, so a round trip that dropped
+    # them would be unsearchable.
     written = tmp_path / "1ubq_A.cif"
     io.write_atoms(written, io.read_atoms(_UBQ))
     text = written.read_text(encoding="utf-8")
@@ -155,8 +154,8 @@ def test_the_two_fields_foldseek_needs_are_written_back_out(tmp_path: Path) -> N
 
 
 def test_a_pdb_file_is_read_and_not_written(tmp_path: Path) -> None:
-    # Nothing in this package needs to write one, a PDB file cannot spell 12% of chain
-    # labels, and biotite's PDB writer trips numpy 2.5's chararray deprecation.
+    # Nothing in this package needs to write one, and a PDB file cannot spell every chain
+    # label the archive uses.
     assert io.read_atoms(_TRP).array_length() == 304
     with pytest.raises(ValueError, match="can write"):
         io.write_atoms(tmp_path / "out.pdb", io.read_atoms(_UBQ))

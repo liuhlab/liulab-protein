@@ -1,47 +1,28 @@
 """mmCIF and PDB, in two layers: biotite's files below, this package's atom arrays above.
 
-The **file layer** is adopted whole. ``pdbx.CIFFile`` and ``pdb.PDBFile`` parse, and
-``get_structure`` turns either into a :class:`~biotite.structure.AtomArray` — one model — or
-an :class:`~biotite.structure.AtomArrayStack` — every model an NMR entry deposited. What is
-added here is the format branch, gzip, and the three array operations
-:class:`protein.structure.Structure` and :class:`protein.structure.Chain` are built from.
+The **file layer** is adopted whole — ``pdbx.CIFFile``, ``pdb.PDBFile`` and
+``get_structure``, which gives one model as an :class:`~biotite.structure.AtomArray` or every
+model as an :class:`~biotite.structure.AtomArrayStack`. What is added here is the format
+branch, gzip, and the three array operations :class:`protein.structure.Structure` and
+:class:`protein.structure.Chain` are built from.
 
-**Two formats are read and one is written.** mmCIF is what RCSB serves and what a cached
-coordinate file is; PDB is what ``foldseek convert2pdb`` emits and what people have locally.
-BinaryCIF is read by biotite and is not read here — nothing in v1 produces one, and a format
-nobody asked for is a format nobody tests — so ``.bcif`` says *deferred* rather than falling
-through to *unknown suffix*.
+**Two formats are read and one is written.** mmCIF and PDB both read; only mmCIF is written,
+because nothing in this package needs a PDB file and a PDB file cannot spell every chain
+label the archive uses. BinaryCIF is read by biotite and deliberately not here, so ``.bcif``
+says *deferred* rather than falling through to *unknown suffix*. gzip is one branch rather
+than a second set of functions, because RCSB's bulk tree serves ``.cif.gz`` and biotite reads
+and writes any text handle.
 
-Only mmCIF is **written**, and each of the three reasons is measured. Nothing in this package
-needs a PDB file: the one thing that writes at all is
-:meth:`protein.structure.Chain.search`, and Foldseek 10-941cd33 reads the mmCIF below. A PDB
-file cannot spell 12% of the archive's chain labels, and biotite refuses rather than
-truncating them. And biotite 1.4.0's PDB writer reaches for ``np.char.array``, which numpy
-2.5 deprecates — a warning this repo would have to tolerate by name, for a writer nothing
-calls.
+**``b_factor`` and ``occupancy`` are read on every file**, which would otherwise look
+arbitrary: Foldseek will not read an mmCIF whose ``atom_site`` category lacks them.
 
-**``b_factor`` and ``occupancy`` are read, and that is load-bearing.** Foldseek will not read
-an mmCIF whose ``atom_site`` category lacks them: measured on 10-941cd33, a chain written
-without the two dies with ``No structures found in given input``, and the same chain written
-with them searches. So they are read here rather than at the one call site that needs them,
-and a caller gets the B-factors for free.
-
-**gzip, because the bulk mirror is gzipped.** RCSB's rsync tree serves ``.cif.gz``, so an
-operator who fills the coordinate cache from it leaves gzipped files there, and
-:func:`protein.structure.fetch` looks for both spellings. biotite reads and writes any text
-handle, so this is one branch rather than a second set of functions — the same shape
-:mod:`protein.io.fasta` uses.
-
-**``get_chains`` is not the chain list a caller means.** It is
-``chain_id[get_chain_starts(array)]`` — the label at every *segment* boundary — so ``4HHB``,
-which has four chains, answers with twelve: its protein, heme and water records each open a
-new segment per letter, and a residue numbering that restarts opens one more.
+**``get_chains`` is not the chain list a caller means.** It is the label at every chain
+*segment* boundary, so an entry's protein, ligand and water records each inflate the count.
 :func:`chain_ids` is the order-preserving unique instead, and :func:`chain_atoms` is the
 selection ``get_chains`` gets reached for by mistake.
 
 **Nothing here turns a residue into a letter.** That is
-:attr:`protein.structure.Chain.sequence`'s job; read that module for which of biotite's
-converters may do it and why the obvious one may not.
+:attr:`protein.structure.Chain.sequence`'s job.
 
 Examples
 --------
@@ -79,20 +60,19 @@ __all__ = [
     "write_atoms",
 ]
 
-#: What is read as mmCIF. All three name one format; ``rcsb.fetch`` writes ``.cif`` and the
-#: other two are what people also call it.
+#: What is read as mmCIF. All three name one format.
 CIF_SUFFIXES: tuple[str, ...] = (".cif", ".mmcif", ".pdbx")
 
 #: What is read as a PDB file. ``.ent`` is the PDB archive's own spelling of it.
 PDB_SUFFIXES: tuple[str, ...] = (".pdb", ".ent")
 
 #: Read by biotite, deliberately not read here — so the refusal says *deferred* rather than
-#: *unknown*. BinaryCIF is the only one, and nothing in v1 writes or is handed one.
+#: *unknown*.
 DEFERRED_SUFFIXES: tuple[str, ...] = (".bcif",)
 
 #: The annotations read beyond biotite's defaults. Not a convenience: **Foldseek will not
 #: read an mmCIF that carries neither**, so a file this module writes would be unsearchable
-#: without them. Absent from the source, biotite warns and fills ``nan`` and ``1.0``.
+#: without them.
 EXTRA_FIELDS: tuple[str, ...] = ("b_factor", "occupancy")
 
 #: The one compression this package unpacks, which is the one RCSB's bulk tree uses.
@@ -129,11 +109,8 @@ def format_suffix(path: str | Path) -> str:
 def entry_name(path: str | Path) -> str:
     """Return what ``path`` calls its entry: the file name with its suffixes taken off.
 
-    This is also **the name Foldseek reports a query under**. Measured on 10-941cd33: a
-    one-chain query file is reported by its own stem and nothing else — ``zzz_Q1.pdb``
-    holding a chain labelled ``A`` comes back as query ``zzz_Q1`` — while a multi-chain file
-    is fanned out into ``<stem>_<chain>``. A file's name is what the hit table says, which
-    is why :meth:`protein.structure.Chain.search` writes its query under the chain's own key.
+    This is also **the name Foldseek reports a one-chain query under**, which is why
+    :meth:`protein.structure.Chain.search` writes its query under the chain's own key.
 
     Parameters
     ----------
@@ -167,8 +144,7 @@ def read_atoms(path: str | Path, *, model: int = 1) -> AtomArray:
     path : str or pathlib.Path
         An mmCIF or PDB file, optionally gzipped.
     model : int, default 1
-        Which model to read, **one-based**, as biotite numbers them. The first is what an
-        X-ray entry has one of, and what Foldseek reads whatever else is in the file.
+        Which model to read, **one-based**, as biotite numbers them.
 
     Returns
     -------
@@ -196,8 +172,8 @@ def read_atoms(path: str | Path, *, model: int = 1) -> AtomArray:
 def read_models(path: str | Path) -> AtomArrayStack:
     """Read every model of the structure at ``path``.
 
-    What an NMR entry deposits more than one of. An entry carrying a single model comes back
-    as a stack of depth one rather than as a special case.
+    An entry carrying a single model comes back as a stack of depth one rather than as a
+    special case.
 
     Parameters
     ----------
@@ -229,9 +205,9 @@ def read_models(path: str | Path) -> AtomArrayStack:
 def write_atoms(path: str | Path, atoms: AtomArray) -> None:
     """Write ``atoms`` to the mmCIF file at ``path``.
 
-    **mmCIF and nothing else** — this module's docstring has the three measurements behind
-    that. The data block is named after the file, though what Foldseek reports a query under
-    is the file's own name rather than the block's.
+    **mmCIF and nothing else** — see this module's docstring. The data block is named after
+    the file, though what Foldseek reports a query under is the file's own name rather than
+    the block's.
 
     Parameters
     ----------
@@ -264,7 +240,7 @@ def chain_ids(atoms: AtomArray) -> tuple[str, ...]:
     """Return each chain label in ``atoms`` once, in the order the file lists them.
 
     Not ``get_chains``, which answers with the label at every chain **segment** boundary and
-    so reports ``4HHB``'s four chains as twelve — see this module's docstring.
+    so over-reports — see this module's docstring.
 
     Parameters
     ----------
@@ -274,17 +250,16 @@ def chain_ids(atoms: AtomArray) -> tuple[str, ...]:
     Returns
     -------
     tuple of str
-        The labels as the file spells them. **Not all of them are one character**: 12% of
-        the archive's chain labels are longer, so nothing downstream may assume one or write
-        such a label into a PDB file unchanged.
+        The labels as the file spells them. **Not all of them are one character**, so nothing
+        downstream may assume one or write such a label into a PDB file unchanged.
 
     Examples
     --------
     >>> chain_ids(atoms)                                      # doctest: +SKIP
     ('A', 'B')
     """
-    # Cast because biotite types every annotation as optional: an `AtomArray` without a
-    # `chain_id` is not a thing a parser produces, and every reader in this module is one.
+    # Cast because biotite types every annotation as optional; a parser never produces an
+    # `AtomArray` without a `chain_id`.
     labels = cast("Iterable[str]", atoms.chain_id)
     return tuple(dict.fromkeys(str(label) for label in labels))
 
@@ -319,8 +294,8 @@ def chain_atoms(atoms: AtomArray, chain_id: str) -> AtomArray:
 def _get_structure(path: Path, handle: TextIO, *, model: int | None) -> object:
     """Parse an open structure file, dispatching on ``path``'s format suffix.
 
-    ``model=None`` asks biotite for every model and gives an ``AtomArrayStack``; an integer
-    asks for one and gives an ``AtomArray``. The two public readers name which they got.
+    ``model=None`` gives an ``AtomArrayStack`` and an integer an ``AtomArray``; the two
+    public readers name which they got.
     """
     suffix = format_suffix(path)
     fields = list(EXTRA_FIELDS)
