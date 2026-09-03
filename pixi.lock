@@ -25,6 +25,7 @@ environments:
       linux-64:
       - conda: https://conda.anaconda.org/bioconda/linux-64/foldseek-10.941cd33-h5021889_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mmseqs2-18.8cc5c-hd6d6fdc_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/linux-64/moods-1.9.4.2-py313h0bdc4b4_4.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/gffutils-0.14-pyh106432d_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyfaidx-0.9.0.4-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyvcf3-1.0.3-pyhdfd78af_0.tar.bz2
@@ -192,6 +193,7 @@ environments:
       p1:
       - conda: https://conda.anaconda.org/bioconda/linux-64/foldseek-10.941cd33-h5021889_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mmseqs2-18.8cc5c-hd6d6fdc_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/linux-64/moods-1.9.4.2-py313h0bdc4b4_4.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/gffutils-0.14-pyh106432d_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyfaidx-0.9.0.4-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyvcf3-1.0.3-pyhdfd78af_0.tar.bz2
@@ -367,6 +369,7 @@ environments:
       linux-64:
       - conda: https://conda.anaconda.org/bioconda/linux-64/foldseek-10.941cd33-h5021889_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mmseqs2-18.8cc5c-hd6d6fdc_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/linux-64/moods-1.9.4.2-py313h0bdc4b4_4.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/gffutils-0.14-pyh106432d_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyfaidx-0.9.0.4-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyvcf3-1.0.3-pyhdfd78af_0.tar.bz2
@@ -552,6 +555,7 @@ environments:
       p1:
       - conda: https://conda.anaconda.org/bioconda/linux-64/foldseek-10.941cd33-h5021889_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mmseqs2-18.8cc5c-hd6d6fdc_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/linux-64/moods-1.9.4.2-py313h0bdc4b4_4.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/gffutils-0.14-pyh106432d_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyfaidx-0.9.0.4-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyvcf3-1.0.3-pyhdfd78af_0.tar.bz2
@@ -745,6 +749,7 @@ environments:
       linux-64:
       - conda: https://conda.anaconda.org/bioconda/linux-64/foldseek-10.941cd33-h5021889_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mmseqs2-18.8cc5c-hd6d6fdc_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/linux-64/moods-1.9.4.2-py313h0bdc4b4_4.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/gffutils-0.14-pyh106432d_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyfaidx-0.9.0.4-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyvcf3-1.0.3-pyhdfd78af_0.tar.bz2
@@ -998,6 +1003,7 @@ environments:
       p1:
       - conda: https://conda.anaconda.org/bioconda/linux-64/foldseek-10.941cd33-h5021889_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mmseqs2-18.8cc5c-hd6d6fdc_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/linux-64/moods-1.9.4.2-py313h0bdc4b4_4.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/gffutils-0.14-pyh106432d_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyfaidx-0.9.0.4-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyvcf3-1.0.3-pyhdfd78af_0.tar.bz2
@@ -1286,6 +1292,7 @@ environments:
       linux-64:
       - conda: https://conda.anaconda.org/bioconda/linux-64/foldseek-10.941cd33-h5021889_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mmseqs2-18.8cc5c-hd6d6fdc_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/linux-64/moods-1.9.4.2-py313h0bdc4b4_4.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/gffutils-0.14-pyh106432d_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyfaidx-0.9.0.4-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyvcf3-1.0.3-pyhdfd78af_0.tar.bz2
@@ -1453,6 +1460,7 @@ environments:
       p1:
       - conda: https://conda.anaconda.org/bioconda/linux-64/foldseek-10.941cd33-h5021889_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mmseqs2-18.8cc5c-hd6d6fdc_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/linux-64/moods-1.9.4.2-py313h0bdc4b4_4.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/gffutils-0.14-pyh106432d_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyfaidx-0.9.0.4-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/pyvcf3-1.0.3-pyhdfd78af_0.tar.bz2
@@ -1660,6 +1668,24 @@ packages:
     - mmseqs2 >=18.8cc.5.c
   size: 133026020
   timestamp: 1753615341810
+- conda: https://conda.anaconda.org/bioconda/linux-64/moods-1.9.4.2-py313h0bdc4b4_4.conda
+  sha256: e4189f91fc7b1bec955754e9a6221707749b0a0eca06bdbe9d5339e1f3bec120
+  md5: 73b9179146ae173e1aafa95b30b821cb
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=14
+  - libstdcxx >=14
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  license: GPL-3.0-or-later
+  license_family: GPL3
+  purls:
+  - pkg:pypi/mira-moods?source=hash-mapping
+  run_exports:
+    weak:
+    - moods >=1.9.4.2,<2.0a0
+  size: 477044
+  timestamp: 1785981337142
 - conda: https://conda.anaconda.org/bioconda/noarch/gffutils-0.14-pyh106432d_0.conda
   sha256: 20da3b97ab5f911165b6bf75e000242ca93eda8ec7179a0c4b37970095dca033
   md5: 3db71e9215083c11e953c9231a227570

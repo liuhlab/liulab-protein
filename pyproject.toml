@@ -69,8 +69,11 @@ pandas = ">=2.1,<3"
 pyarrow = ">=17"
 biotite = ">=1"
 # liulab-genome declares these conda-side only, so pip resolution cannot supply them.
-# Without gffutils, `import genome` fails.
+# Without either one, `import genome` fails — and it fails on the FIRST line, because
+# `genome/__init__.py` reaches the motif lane, so `from genome.store import data_dir` is
+# just as dead as `import genome`. That import is what `store.py` is built on.
 gffutils = ">=0.13"
+moods = ">=1.9.4,<2"
 # The external tools. Nothing outside src/protein/external.py may call them.
 mmseqs2 = "18.8cc5c.*"
 foldseek = "10.941cd33.*"
