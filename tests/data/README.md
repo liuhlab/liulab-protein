@@ -62,3 +62,41 @@ as a percentage, so an identical hit reads `100.000`; Foldseek reports `fident` 
 fraction, so its best hit reads `0.973`. And Foldseek's last two columns are `alntmscore`
 and `lddt`, with no `q3di` anywhere: that column does not exist in Foldseek 10-941cd33, and
 asking for it fails the whole search.
+
+## SIFTS
+
+Fetched on GPU71FM, 2026-09-03, from the EBI's flat-file tree, which publishes one current
+release and overwrites it weekly in place:
+
+```bash
+curl -sS -O https://ftp.ebi.ac.uk/pub/databases/msd/sifts/flatfiles/tsv/pdb_chain_uniprot.tsv.gz
+```
+
+The download was 6,211,584 bytes, `md5:f92297379aa659822b69abe3db5c1984`, and its own first
+line says `# 2026/08/30 - 13:24 | PDB: 35.26 | UniProt: 2026.03`. That release is gone from
+the server as soon as the next one lands, so the digest records what was cut rather than
+pinning what can be fetched again.
+
+| File | What it is | Departs from the source |
+| --- | --- | --- |
+| `sifts_pdb_chain_uniprot_slice.tsv` | 91 of 1,033,045 rows, for ten entries | gunzipped; only the rows for those ten entries kept |
+
+Both header lines are kept verbatim, and so are the line endings: **the release line ends
+`LF` and every line after it ends `CRLF`**, which the reader has to strip and a
+re-normalised fixture would stop testing.
+
+The ten entries are each in it for a reason, and together they cover every shape the
+reader and the two verbs have to answer for:
+
+| Entry | Why |
+| --- | --- |
+| `101m` | one row, one chain, one accession — the ordinary case |
+| `102l` | two segments for one `(pdb, chain, accession)` triple |
+| `10ad` | `res_end - res_beg != sp_end - sp_beg`, so no offset is definable |
+| `10eg` | chain labels `A` and `a` in one entry, so case is part of the name |
+| `10lk` | multi-character chain labels (`Q1`, `S3`), which 17% of rows carry |
+| `11sy` | four chains of one entry mapped to `P0CG48` |
+| `1cmx` | a second entry for `P0CG48`, so the reverse direction spans entries |
+| `1ubq` | chain A is `P0CG48` here and `P62988` in the mmCIF — the round trip |
+| `8uqe` | chain B carries four accessions, the most any chain does |
+| `9on4` | has a chain **labelled `NA`**, between chains `MA` and `OA` |

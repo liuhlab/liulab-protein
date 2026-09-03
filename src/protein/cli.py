@@ -19,6 +19,7 @@ import json as _json
 import typer
 
 from protein import __version__ as _package_version
+from protein import sifts as _sifts_cli
 from protein.embed import cli as _esm_cli
 from protein.external import ToolNotFoundError as _ToolNotFoundError
 from protein.external import doctor as _doctor
@@ -67,12 +68,14 @@ def doctor(
 # own pair when it lands. Uncomment yours:
 #
 #     from protein.db import cli as _db_cli
-#     from protein.sifts import cli as _sifts_cli
+#
+# `sifts` is the one lane that is a module rather than a package, so its own `app` is
+# `protein.sifts.app` and its import reads `from protein import sifts as _sifts_cli`.
 #
 # app.add_typer(_db_cli.app, name="db")
 app.add_typer(_esm_cli.app, name="esm")
 app.add_typer(_search_cli.app, name="search")
-# app.add_typer(_sifts_cli.app, name="sifts")
+app.add_typer(_sifts_cli.app, name="sifts")
 #
 # What a lane's own `cli.py` owes, all of it demonstrated above:
 #

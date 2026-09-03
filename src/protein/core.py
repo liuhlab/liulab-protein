@@ -54,6 +54,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from pathlib import Path
 
+    import pandas as pd
     from biotite.sequence import ProteinSequence
 
 __all__ = ["Protein"]
@@ -217,6 +218,49 @@ class Protein(SearchMixin):
         if path is not None:
             fasta.write_records(path, [record], line_width=line_width)
         return text
+
+    @property
+    def structures(self) -> pd.DataFrame:
+        """Every PDB chain segment SIFTS maps this protein's accession to.
+
+        The reverse direction of ``Chain.uniprot``, over the same table, and it reads SIFTS
+        alone — never a structure file's own ``_struct_ref_seq``, which disagrees (``1UBQ``
+        chain A is ``P62988`` in the file and ``P0CG48`` in SIFTS). Mixing them would break
+        the round trip.
+
+        A frame rather than ids: ``P0DTD1`` reaches 6,181 chains across 3,668 entries, and
+        an entry id alone does not say which chain to fetch coordinates for.
+
+        Returns
+        -------
+        pandas.DataFrame
+            :data:`protein.sifts.COLUMNS`, one row per mapped segment, empty when SIFTS
+            carries nothing for this accession. ``res_beg``/``res_end`` and
+            ``sp_beg``/``sp_end`` are both verbatim: 2.2% of segments have unequal range
+            lengths, so no offset is computed.
+
+        Raises
+        ------
+        ValueError
+            If this protein has no :attr:`id`. An accession is what SIFTS is keyed on, so
+            there is nothing to look up.
+        protein.sifts.SiftsNotDownloadedError
+            If the map is not prepared on this machine. Distinct from an empty frame, which
+            means SIFTS genuinely maps this accession to nothing.
+
+        Examples
+        --------
+        >>> Protein("MQIFVKTLTG", id="P0CG48").structures.iloc[0]["pdb"]  # doctest: +SKIP
+        '11sy'
+        """
+        from protein import sifts
+
+        if self.id is None:
+            raise ValueError(
+                "this Protein has no id, and SIFTS is keyed on a UniProt accession, so "
+                "there is nothing to look up. Construct it with `Protein(..., id=...)`."
+            )
+        return sifts.structures_for(self.id)
 
     @property
     def length(self) -> int:
