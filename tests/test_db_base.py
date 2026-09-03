@@ -3,13 +3,9 @@
 No binary and no gigabytes. Every database here is a handful of files with the shapes the
 real ones have — including pdb100's `_ss`, `_ca`, `_clu` and split `_seq` siblings, and the
 symlink among them. Every tool call rides on one autouse
-`monkeypatch.setattr(ExternalTool, "run", ...)`, which is the property `run_to` was written
-for: it catches both adapters and both tools, so `adopt`, `download`, `status` and one-entry
-retrieval are all observable without mmseqs. The version probe is patched beside it, because
-that one reaches the binary through `_execute` rather than through `run`.
-
-The two file listings pinned here came off GPU71FM (#6): `db/swissprot/` holds `swissprot`
-and `db/pdb/` holds `pdb100`, which is why the ffindex prefix is looked up and not assumed.
+`monkeypatch.setattr(ExternalTool, "run", ...)`, which catches both adapters and both tools;
+the version probe is patched beside it, because that one reaches the binary through
+`_execute` rather than through `run`.
 """
 
 from __future__ import annotations
@@ -37,8 +33,8 @@ from protein.db.base import (
 from protein.external import ExternalTool, Foldseek, InstalledTool, ToolCall
 from protein.search import mmseqs as search_mmseqs
 
-#: The real `db/pdb/` listing, cut to the stems that matter: the flat database, the three
-#: siblings a search needs, the cluster database, and the split full tier.
+#: A `db/pdb/` listing: the flat database, the siblings a search needs, the cluster
+#: database, and the split full tier.
 _PDB_STEMS = (
     "pdb100",
     "pdb100_h",
@@ -89,8 +85,7 @@ def runs(monkeypatch: pytest.MonkeyPatch) -> _Runs:
         return recorded.answer(call)
 
     monkeypatch.setattr(ExternalTool, "run", record)
-    # `version` reaches `_execute` rather than `run`, and a record notes it. Patched here so
-    # a registration in this file never shells out for its own provenance.
+    # `version` reaches `_execute` rather than `run`, and a record notes it.
     monkeypatch.setattr(InstalledTool, "_detect_version", lambda self: "18.8cc5c")
     return recorded
 
@@ -160,8 +155,7 @@ def test_a_directory_named_after_its_database_resolves_to_the_exact_spelling(
 def test_a_directory_whose_database_is_spelled_differently_resolves_to_the_shortest_stem(
     db_root: Path,
 ) -> None:
-    # Measured on GPU71FM: `db/pdb/` holds `pdb100`, so the name and the prefix differ, and
-    # every other stem here is `pdb100` plus a suffix.
+    # Every other stem here is `pdb100` plus a suffix, so the shortest one is the database.
     directory = db_root / "pdb"
     directory.mkdir(parents=True)
     for stem in _PDB_STEMS:
@@ -234,8 +228,7 @@ def test_a_record_does_not_claim_the_bookkeeping_beside_the_database(db_root: Pa
 
 
 def test_a_symlinked_split_file_is_claimed_as_the_file_it_resolves_to(db_root: Path) -> None:
-    # `pdb100_seq.0` is a symlink to `pdb100`. Recorded at the size it resolves to, a tree
-    # copied with `rsync -a` still agrees with its record.
+    # Recorded at the size it resolves to, a tree copied with `rsync -a` still agrees.
     directory = db_root / "pdb"
     _write_database(directory, "pdb100")
     (directory / "pdb100_seq.0").symlink_to(directory / "pdb100")
@@ -424,9 +417,8 @@ def test_status_of_a_name_that_is_not_here_says_so_without_raising() -> None:
 def test_status_reports_both_entry_counts_and_names_each_file_it_counted(
     db_root: Path,
 ) -> None:
-    # pdb100 measured on GPU71FM: 324,204 searchable representatives in `.index` against
-    # 1,562,678 named chains in `.lookup`. Reporting one without saying which is how the
-    # wrong number gets quoted.
+    # A structure database names far more chains than it makes searchable, and reporting one
+    # count without saying which is how the wrong number gets quoted.
     directory = db_root / "pdb"
     prefix = _write_database(
         directory, "pdb100", entries=(("0", "1ubq-assembly1_A"), ("1", "201l-assembly1_A"))
@@ -493,8 +485,7 @@ def views(runs: _Runs) -> _Runs:
 def test_an_accession_resolves_to_the_opaque_numeric_key_the_lookup_carries(
     db_root: Path,
 ) -> None:
-    # `createdb` shuffles, so the key has no relation to the accession: P12345 is 415743 in
-    # the real Swiss-Prot.
+    # `createdb` shuffles, so the key has no relation to the accession.
     _write_database(
         db_root / "swissprot", "swissprot", entries=(("7", "P0A031"), ("415743", "P12345"))
     )
@@ -547,8 +538,7 @@ def _surface(cls: type) -> set[str]:
 
 def test_a_database_offers_no_verb_that_would_change_one() -> None:
     # These are immutable: the index holds byte offsets into the data file, so editing the
-    # data breaks every offset and every real mutation makes a new database. The surface is
-    # pinned rather than grepped, so adding a verb is a decision somebody has to make here.
+    # data breaks every offset. The surface is pinned, so adding a verb is a decision.
     assert _surface(Database) == {
         "NAME",
         "SOURCE",
@@ -565,8 +555,7 @@ def test_a_database_offers_no_verb_that_would_change_one() -> None:
 
 
 def test_a_structure_database_adds_its_tool_and_nothing_else() -> None:
-    # No `__getitem__`: pdb100 is a search target, and `Structure("1UBQ")` gets its
-    # coordinates from `protein.structure.fetch` rather than from any database.
+    # No `__getitem__`: coordinates come from `protein.structure.fetch`, not from here.
     assert _surface(StructureDatabase) - _surface(Database) == {"KIND", "TOOL_NAME"}
     assert not hasattr(StructureDatabase, "__getitem__")
 

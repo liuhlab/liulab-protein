@@ -1,20 +1,12 @@
 """The **Database** lane: what is registered, what this package knows how to fetch.
 
-Three things live here and nothing else does: the lane's public names, the small
-**declaration table** of databases this package can download by itself, and
-:func:`open_database`, which turns a name into the right class.
+The lane's public names, the **declaration table** of databases this package can download by
+itself, and :func:`open_database`, which turns a name into the right class.
 
-**A declaration, not a subclass.** ``liulab-genome``'s rule holds: anything whose only
-distinguishing facts are a name and a source is a row in a table. ``pdb`` is such a row —
-once ``pdb["1UBQ"]`` moved to :func:`protein.structure.fetch`, nothing was left for a ``PDB``
-class to do that :class:`~protein.db.base.StructureDatabase` does not. ``swissprot`` is not:
-:class:`~protein.db.swissprot.SwissProt` reads UniProt headers, so it is a class, and the
-table names it as that row's factory.
-
-**Registration is not centralised and this table is not a registry.** A name is registered
-when its directory holds a **Completion marker**; :func:`~protein.db.base.registered_names`
-reads the disk. This table only says which names ``protein db download`` knows a source for.
-A name that is not in it is adopted, or downloaded with an explicit ``source``.
+**The table is not a registry.** A name is registered when its directory holds a **Completion
+marker**, which :func:`~protein.db.base.registered_names` reads off the disk; the table only
+says which names ``protein db download`` knows a source for. A name that is not in it is
+adopted, or downloaded with an explicit ``source``.
 
 Examples
 --------
@@ -91,9 +83,8 @@ class Declaration:
     name : str
         The registered name — a filesystem-safe slug, which is what a caller types.
     source : str
-        The **tool's** own spelling, which is what ``mmseqs databases`` or ``foldseek
-        databases`` is handed. It is not the name because it cannot be: ``UniProtKB/Swiss-
-        Prot`` carries a slash.
+        The **tool's** own spelling, handed to ``mmseqs databases`` or ``foldseek
+        databases``. It cannot double as the name: ``UniProtKB/Swiss-Prot`` carries a slash.
     factory : type
         The :class:`~protein.db.base.Database` subclass to build. A row whose class adds
         nothing points at the base class for its kind.
@@ -112,13 +103,7 @@ class Declaration:
     description: str
 
 
-#: The two databases v1 can fetch, with the sizes they really land at rather than the ones
-#: the publishers bill: Swiss-Prot 1.1G, pdb100 4.3G. The 824 MB of ``swissprot_taxonomy``
-#: `mmseqs databases` also writes is one of the eleven files **inside** that 1.1G, not a sum
-#: on top of it — ``du -sb`` on the real directory is 1,149,140,927 bytes.
-#: The registry must eventually carry names at UniRef50 and AlphaFold DB scale — 8.8 GB and a
-#: measured 491 GB of source — so nothing here assumes a database is small, and neither is
-#: declared, because neither has been measured on this cluster.
+#: The databases ``protein db download`` knows a source for.
 DECLARED: Mapping[str, Declaration] = MappingProxyType(
     {
         "swissprot": Declaration(
@@ -136,9 +121,8 @@ DECLARED: Mapping[str, Declaration] = MappingProxyType(
     }
 )
 
-#: What ``--kind`` accepts, for a name this package has no declaration for. Written down
-#: because a database adopted from disk records its kind, and reopening it has to read that
-#: word back.
+#: What ``--kind`` accepts, and the word a record writes down so an adopted name can be
+#: reopened as the right class.
 KINDS: Mapping[str, type[Database]] = MappingProxyType(
     {"sequence": SequenceDatabase, "structure": StructureDatabase}
 )
@@ -148,8 +132,7 @@ def database_class(name: str, *, kind: str | None = None) -> type[Database]:
     """Return the :class:`~protein.db.base.Database` subclass ``name`` should be opened as.
 
     Three sources, in order: an explicit ``kind``, then :data:`DECLARED`, then the
-    **Completion marker** an ``adopt`` already wrote. The last is what makes an undeclared
-    name reopenable — ``adopt`` records which tool searches it, so the answer is on disk.
+    **Completion marker** an ``adopt`` already wrote.
 
     Parameters
     ----------
