@@ -787,6 +787,108 @@ class MmseqsLikeTool(InstalledTool):
             overwrite=overwrite,
         )
 
+    def databases(
+        self, source: str, database: Path, work: Path, *, extra: Sequence[str] = ()
+    ) -> Path:
+        """Fetch a published database by the tool's own name for it, and unpack it.
+
+        ``mmseqs databases UniProtKB/Swiss-Prot`` and ``foldseek databases PDB`` — the two
+        tools spell this the same way, and **this package does not manage the download**.
+        What it costs for MMseqs2 is ADR-0003: the recipe hardcodes ``createdb --gpu 1``,
+        which encodes residues against a 21-letter table.
+
+        Unlike every other verb here, the output is **not captured**: this runs for an hour
+        and moves gigabytes, and the tool's own progress belongs on the terminal rather than
+        in a string nobody reads until it fails.
+
+        ``work`` is passed in rather than taken from :meth:`scratch_dir`, which removes
+        itself however the command ends. A download's temp directory holds the archive it
+        already fetched, so an interrupted run has to be able to keep it —
+        :func:`genome.store.completion.work_dir` beside the outputs is what the caller
+        should hand over, and clearing it once the record is written is that caller's job.
+
+        Parameters
+        ----------
+        source : str
+            The tool's own spelling, which is not the registered name: ``UniProtKB/Swiss-
+            Prot`` carries a slash.
+        database : pathlib.Path
+            The ffindex prefix to write. Its siblings land beside it.
+        work : pathlib.Path
+            The tool's temp directory. It must exist and it is not removed here.
+        extra : sequence of str, optional
+            Further arguments, passed through unread.
+
+        Returns
+        -------
+        pathlib.Path
+            ``database``.
+
+        Examples
+        --------
+        >>> from pathlib import Path
+        >>> Mmseqs().databases(                                     # doctest: +SKIP
+        ...     "UniProtKB/Swiss-Prot", Path("db/swissprot/swissprot"), Path("db/swissprot/.work")
+        ... )
+        PosixPath('db/swissprot/swissprot')
+        """
+        self.run(
+            ["databases", source, str(database), str(work), *extra],
+            capture=False,
+        )
+        return database
+
+    def view(
+        self,
+        database: Path,
+        ids: Sequence[str],
+        *,
+        entry_type: int | None = None,
+        id_mode: int | None = None,
+        extra: Sequence[str] = (),
+    ) -> str:
+        """Print named entries of ``database`` to stdout, and return what it printed.
+
+        The retrieval verb, and the reason ``swissprot["P12345"]`` needs no network and no
+        index build. **A name it cannot find is a warning on stderr and exit 0**, so an empty
+        answer is how absence arrives here — the caller checks, and
+        :meth:`protein.db.base.SequenceDatabase.key_for` resolves the key from ``.lookup``
+        first so that it never has to.
+
+        Parameters
+        ----------
+        database : pathlib.Path
+            The ffindex prefix.
+        ids : sequence of str
+            What to print, joined into one ``--id-list``: numeric keys by default, or the
+            names in ``.lookup`` with ``id_mode=1``.
+        entry_type : int, optional
+            ``--idx-entry-type``. ``2`` is the parallel header database; the default is the
+            sequence one. **It does not accept ``id_mode=1``** — the header database has no
+            ``.lookup`` of its own — so a header is asked for by numeric key.
+        id_mode : int, optional
+            ``--id-mode``. ``1`` resolves each id through the database's ``.lookup``.
+        extra : sequence of str, optional
+            Further arguments, passed through unread.
+
+        Returns
+        -------
+        str
+            The tool's stdout, one entry after another.
+
+        Examples
+        --------
+        >>> from pathlib import Path
+        >>> Mmseqs().view(Path("swissprot"), ["415743"], entry_type=2)   # doctest: +SKIP
+        'sp|P12345|AATM_RABIT Aspartate aminotransferase, mitochondrial ...'
+        """
+        args = ["view", str(database), "--id-list", ",".join(ids)]
+        if entry_type is not None:
+            args += ["--idx-entry-type", str(entry_type)]
+        if id_mode is not None:
+            args += ["--id-mode", str(id_mode)]
+        return self.run([*args, *extra])
+
     def createindex(
         self, database: Path, *, extra: Sequence[str] = (), overwrite: bool = False
     ) -> Path:

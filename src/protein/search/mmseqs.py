@@ -18,10 +18,10 @@ and Foldseek reports ``fident``, a fraction. Both are in :data:`COLUMN_DTYPES` u
 own names, and nothing here renames one to the other — a frame says which number it carries
 by which column it has.
 
-**Resolving a bare name is provisional.** ``search("swissprot")`` has to turn a name into a
-path today, and the class that will own that — ``Database`` in ``protein.db`` — is not built
-yet. :func:`database_path` is the one place the layout is spelled, so replacing it later is
-one edit; see its docstring for the rule and what a ``Database`` must offer instead.
+**Resolving a bare name is not this lane's business.** ``search("swissprot")`` turns a name
+into a path by asking :mod:`protein.db`, which owns the database layout and spells it once.
+:func:`database_path` here is the one line that reaches over, and what it needs of a
+**Database** is :class:`SearchTarget` — one read-only attribute wide.
 
 Examples
 --------
@@ -51,7 +51,6 @@ if TYPE_CHECKING:
 
 __all__ = [
     "COLUMN_DTYPES",
-    "DATABASE_SUBDIR",
     "DEFAULT_QUERY_NAME",
     "SearchTarget",
     "database_path",
@@ -88,12 +87,6 @@ COLUMN_DTYPES: Mapping[str, str] = MappingProxyType(
         "lddt": "float64",
     }
 )
-
-#: This package's subdirectory of registered **Database**s, under
-#: :func:`protein.store.protein_data_dir`. Spelled beside the code that reads it, which is
-#: :func:`database_path` — and which ``protein.db`` takes over, since the layout is that
-#: lane's to define once it exists.
-DATABASE_SUBDIR = "db"
 
 #: What the ``query`` column says when the searched **Protein** has no accession. A FASTA
 #: record needs a header and MMseqs2 reports its first token, so the alternative is an empty
@@ -275,19 +268,13 @@ def database_path(database: SearchTarget | str) -> Path:
     """Return the ffindex prefix to search against, from a **Database** or a registered name.
 
     A :class:`SearchTarget` answers with its own :attr:`~SearchTarget.path`. A ``str`` is a
-    registered name, and the layout is
-    ``<protein_data_dir()>/<DATABASE_SUBDIR>/<name>/<ffindex prefix>``.
+    registered name, and :func:`protein.db.database_path` resolves it — including the rule
+    that **the prefix inside the directory is not always the name**: measured on GPU71FM,
+    ``db/swissprot/`` holds ``swissprot`` and ``db/pdb/`` holds ``pdb100``.
 
-    **The prefix inside the directory is not always the name**, which is why it is looked up
-    rather than assumed: measured on GPU71FM, ``db/swissprot/`` holds ``swissprot`` and
-    ``db/pdb/`` holds ``pdb100``. The rule is the exact spelling when it is there, else the
-    **shortest** stem with a ``.dbtype`` beside it — every derived ffindex sibling is that
-    stem plus a suffix (``_h``, ``_ca``, ``_ss``, ``_clu``, ``_seq``), so the shortest is the
-    database itself.
-
-    **Provisional.** ``protein.db`` owns registration, and once it exists a name is resolved
-    by asking it for a ``Database`` rather than by reading the layout here. Keeping the rule
-    in one function is what makes that one edit.
+    The layout is spelled in :mod:`protein.db` and only there. This function is the one line
+    that reaches over, so a search and a **Database** can never disagree about where a name
+    points.
 
     Parameters
     ----------
@@ -318,29 +305,12 @@ def database_path(database: SearchTarget | str) -> Path:
     if not isinstance(database, str):
         return Path(database.path)
 
-    # Deferred, and the module rather than the function: `protein.store` reaches
-    # liulab-genome, and a test re-points the data root by patching that module.
-    from protein import store
+    # Deferred: `protein.db` reaches liulab-genome and this package's own `Protein`, and a
+    # search that was handed a path should pay for neither. The module rather than the
+    # function, so a test that re-points the layout is seen here.
+    from protein import db
 
-    root = store.protein_data_dir() / DATABASE_SUBDIR
-    directory = root / database
-    if not directory.is_dir():
-        raise LookupError(f"{database!r} is not a registered database. {_registered(root)}")
-
-    exact = directory / f"{database}.dbtype"
-    if exact.is_file():
-        return directory / database
-
-    stems = sorted(
-        (marker.with_suffix("") for marker in directory.glob("*.dbtype")),
-        key=lambda stem: (len(stem.name), stem.name),
-    )
-    if not stems:
-        raise LookupError(
-            f"{directory} holds no ffindex database: nothing in it has a .dbtype file beside "
-            f"it. {_registered(root)}"
-        )
-    return stems[0]
+    return db.database_path(database)
 
 
 def search(
@@ -417,13 +387,3 @@ def search(
         output = work / "hits.tsv"
         tool.easy_search(query, target, output, extra=flags)
         return read_hits(output, tool)
-
-
-def _registered(root: Path) -> str:
-    """Name the registered databases under ``root``, for the end of a :class:`LookupError`."""
-    names = (
-        sorted(entry.name for entry in root.iterdir() if entry.is_dir()) if root.is_dir() else []
-    )
-    if not names:
-        return f"Nothing is registered under {root}."
-    return f"Registered under {root}: {', '.join(names)}."

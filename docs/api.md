@@ -30,6 +30,14 @@ Two things about that marker are easy to get backwards:
 
 ::: protein.io.fasta
 
+## Databases
+
+::: protein.db
+
+::: protein.db.base
+
+::: protein.db.swissprot
+
 ## The command line
 
 The whole module, because typer makes every verb a plain function with a docstring, and
