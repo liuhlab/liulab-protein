@@ -84,7 +84,7 @@ supplies the data root, the completion records and the prepared-set pipeline. Re
 `check.sh` runs every step and reports **all** failures, not just the first, so read to the
 bottom before fixing anything.
 
-Four traps in the gate:
+Five traps in the gate:
 
 - **`--doctest-modules` runs every `Examples` block in `src/` as a test.** Anything that
   loads a model, touches a database or shells out needs `# doctest: +SKIP`, and the marker
@@ -95,6 +95,9 @@ Four traps in the gate:
   method bodies: `import protein` must never import torch.
 - **The markers are a boolean partition.** `-m 'not model'` is the gate; `-m model` is the
   ESM lane and runs nowhere else.
+- **A substring of `--help` output is not a substring of the help.** Rich styles the first
+  dash of an option on its own, so `--json` is two spans and colour is off under `ssh` and
+  on in CI. Assert through `tests.plain_text`; reproduce CI with `FORCE_COLOR=1`.
 
 ## Writing rules
 
