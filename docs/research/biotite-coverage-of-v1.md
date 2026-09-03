@@ -506,7 +506,7 @@ Measured on `4HHB` (four protein chains, four hemes, waters), `1GP1` (selenoprot
 ### `.kind` — adopt
 
 ```python
-struc.filter_amino_acids(atoms)   # ndarray[bool] over atoms
+struc.filter_amino_acids(atoms)  # ndarray[bool] over atoms
 struc.filter_nucleotides(atoms)
 ```
 
@@ -536,7 +536,7 @@ ids. 4HHB's protein, heme and water records each open a new segment per chain le
 The one-liner that is:
 
 ```python
-ids   = list(dict.fromkeys(struc.get_chains(atoms)))   # order-preserving unique
+ids = list(dict.fromkeys(struc.get_chains(atoms)))  # order-preserving unique
 chain = atoms[atoms.chain_id == cid]
 ```
 
