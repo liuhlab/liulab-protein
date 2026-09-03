@@ -1,11 +1,11 @@
-"""The placeholder package. Rename this directory first; `init-repo` does it for you."""
+"""liulab-protein: handling protein sequences, structures and the databases they live in."""
 
 from importlib.metadata import version
 
-from protein.core import greet
+from protein.external import ToolNotFoundError
 
 #: Read from the installed distribution's metadata, which hatch-vcs fills from the newest
 #: git tag. No version string is written by hand anywhere in this repo.
 __version__ = version("liulab-protein")
 
-__all__ = ["__version__", "greet"]
+__all__ = ["ToolNotFoundError", "__version__"]
