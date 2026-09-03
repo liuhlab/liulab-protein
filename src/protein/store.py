@@ -10,6 +10,7 @@ added is one subdirectory name and the layout beneath it::
     │   └── .completion.json
     ├── sifts/              the PDB<->UniProt map, a prepared set
     │   └── .completion.json
+    ├── structures/<id>.cif one entry's coordinates, cached on first use
     ├── embed/<model>/      later
     └── .work/              the temp directories the external tools do not clean
 

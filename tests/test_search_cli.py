@@ -29,7 +29,8 @@ def _run(*args: str):
     """Invoke the lane the way a caller does — through the root app, as `protein search`.
 
     Not `invoke(app, ...)`: a Typer app holding exactly one command collapses into that
-    command, so `seq` would be read as the sequence argument until #15 adds `struct`.
+    command, so `seq` was read as the sequence argument until #15 added `struct`. It parses
+    either way now, and going through the root app is still how a caller reaches it.
     """
     return CliRunner().invoke(protein.cli.app, ["search", *args])
 
@@ -48,7 +49,7 @@ def searches(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
 
 
 def test_the_sub_app_registers_its_commands_under_the_names_it_gave_them() -> None:
-    assert [command.name for command in app.registered_commands] == ["seq"]
+    assert [command.name for command in app.registered_commands] == ["seq", "struct"]
 
 
 def test_every_command_takes_json() -> None:

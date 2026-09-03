@@ -24,6 +24,7 @@ from protein.embed import cli as _esm_cli
 from protein.external import ToolNotFoundError as _ToolNotFoundError
 from protein.external import doctor as _doctor
 from protein.search import cli as _search_cli
+from protein.structure import cli as _structure_cli
 
 app = typer.Typer(help="Tools for handling protein sequences and structures.", no_args_is_help=True)
 
@@ -76,6 +77,7 @@ def doctor(
 app.add_typer(_esm_cli.app, name="esm")
 app.add_typer(_search_cli.app, name="search")
 app.add_typer(_sifts_cli.app, name="sifts")
+app.add_typer(_structure_cli.app, name="structure")
 #
 # What a lane's own `cli.py` owes, all of it demonstrated above:
 #

@@ -63,6 +63,46 @@ fraction, so its best hit reads `0.973`. And Foldseek's last two columns are `al
 and `lddt`, with no `q3di` anywhere: that column does not exist in Foldseek 10-941cd33, and
 asking for it fails the whole search.
 
+## Structures
+
+Downloaded on GPU71FM, 2026-09-03, from the RCSB file server, which serves one deposited
+entry per id:
+
+```bash
+curl -sS -O https://files.rcsb.org/download/<id>.cif      # or .pdb
+```
+
+All three are stored gzipped, which is also how RCSB's bulk rsync tree serves them, so the
+reader's gzip branch is exercised by the files a real mirror would leave. A test writes a
+decompressed copy into its own directory where a plain file is wanted.
+
+| File | What it is | Departs from the source |
+| --- | --- | --- |
+| `1ubq.cif.gz` | `1UBQ`, ubiquitin — one protein chain `A`, 76 residues, plus 58 waters | gzipped |
+| `1bna.cif.gz` | `1BNA`, the Dickerson dodecamer — two DNA chains `A` and `B`, plus waters | gzipped |
+| `1l2y_2models.pdb.gz` | `1L2Y`, Trp-cage — one 20-residue chain, NMR | gzipped; models 3-38 and the `MASTER` record dropped, `END` re-added |
+
+The three entries are each in it for a reason:
+
+| Entry | Why |
+| --- | --- |
+| `1UBQ` | chain A is `P0CG48` in SIFTS and `P62988` in this very file, which is the join the package gets right |
+| `1UBQ` | its waters carry chain label `A` too, so a sequence that did not filter would read 58 residues too long |
+| `1BNA` | a chain that is not a protein, so `.kind` has something to answer `nucleic` for and `.uniprot` something to answer `()` for |
+| `1BNA` | two chains, so `structure["A"]` has a wrong answer available to it |
+| `1L2Y` | the PDB format, and more than one model — an X-ray entry cannot test `.models` |
+
+The `1L2Y` cut keeps the publisher's own bytes for every line it keeps:
+
+```bash
+awk 'BEGIN{m=0} /^MODEL /{m++} {if (m<=2) print} /^ENDMDL/{if(m>=2){print "END"; exit}}' \
+  1l2y.pdb > 1l2y_2models.pdb
+```
+
+The download was 959,202 bytes, `md5:c19b6b883f76be35a1e8ef4765245197`, 11,842 lines; the cut
+is 789 lines and holds models 1 and 2 whole. Uncut it is 138 kB gzipped, which is more than a
+fixture should weigh to prove that a stack has a depth.
+
 ## SIFTS
 
 Fetched on GPU71FM, 2026-09-03, from the EBI's flat-file tree, which publishes one current

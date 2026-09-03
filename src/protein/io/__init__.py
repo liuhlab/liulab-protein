@@ -1,8 +1,8 @@
 """Reading and writing this package's file formats, one module per format.
 
-A directory and never a flat ``io.py``, because a second format is already coming: FASTA is
-here, and mmCIF and PDB arrive as ``structure.py`` beside it when **Structure** lands. Adding
-one is adding a file, and nothing here moves.
+A directory and never a flat ``io.py``, because a second format was already coming: FASTA is
+here, and mmCIF and PDB arrived as ``structure.py`` beside it with **Structure**. Adding one
+was adding a file, and nothing here moved.
 
 The submodules are what this package exports, not their functions — ``fasta.read_records``
 says which format it reads, where a bare ``read_records`` would not, and two formats both
@@ -19,6 +19,6 @@ directory shadows nothing.
 
 from __future__ import annotations
 
-from protein.io import fasta
+from protein.io import fasta, structure
 
-__all__ = ["fasta"]
+__all__ = ["fasta", "structure"]

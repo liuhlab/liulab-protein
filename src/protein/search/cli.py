@@ -1,14 +1,15 @@
-"""The ``protein search`` sub-app — one sequence against one **Database**, from a shell.
+"""The ``protein search`` sub-app — one query against one **Database**, from a shell.
 
-A thin Typer wrapper over the lane: it builds a :class:`~protein.core.Protein` from what was
-typed, makes one :meth:`~protein.search.mixin.SearchMixin.search` call and renders the frame.
-Building a ``Protein`` rather than passing the string on is deliberate — the alphabet is
-checked before an **External tool** is started, so a stray ``*`` fails here rather than
-inside mmseqs.
+Two commands over one lane, and what differs between them is only what a query is. ``seq``
+builds a :class:`~protein.core.Protein` from what was typed and searches with MMseqs2 —
+building a ``Protein`` rather than passing the string on is deliberate, since the alphabet
+is then checked before an **External tool** is started and a stray ``*`` fails here rather
+than inside mmseqs. ``struct`` takes coordinates and searches with Foldseek, through the
+:class:`~protein.structure.Structure` or :class:`~protein.structure.Chain` that holds them.
 
-``struct``, the Foldseek half, is not here yet: it searches with coordinates, which
-``Structure`` and ``Chain`` hold and this command has none of. It is one command added
-beside ``seq``, against :data:`_SEARCH_ERRORS` and :class:`_Hits` as they stand.
+**A whole structure is one invocation, not a loop.** Foldseek fans a multi-chain query out
+itself and reports each chain in the ``query`` column, so ``struct`` without ``--chain``
+searches every chain at once.
 
 **The rows go to stdout, tab-separated, and the header to stderr**, so the output pipes:
 ``protein search seq ... | cut -f2`` is the list of targets. ``--json`` carries the same
@@ -18,13 +19,14 @@ Examples
 --------
 >>> from protein.search.cli import app
 >>> [command.name for command in app.registered_commands]
-['seq']
+['seq', 'struct']
 """
 
 from __future__ import annotations
 
 import json as _json
 from dataclasses import dataclass as _dataclass
+from pathlib import Path as _Path
 from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Any as _Any
 
@@ -32,15 +34,17 @@ import typer
 
 from protein import Protein as _Protein
 from protein.search.mmseqs import DEFAULT_QUERY_NAME as _DEFAULT_QUERY_NAME
+from protein.structure import Structure as _Structure
 
 if _TYPE_CHECKING:
     import pandas as pd
 
 #: What a search failure raises, and each already names its next action: a database name
-#: nothing is registered under is a ``LookupError``; a sequence outside the alphabet is a
-#: ``ValueError`` (``protein.seq.InvalidResidueError``); a missing binary and a tool that
-#: exited non-zero are ``RuntimeError``s (``protein.external.ToolNotFoundError`` is one); and
-#: a scratch directory that could not be written is an ``OSError``.
+#: nothing is registered under, and a chain label the structure does not carry, are
+#: ``LookupError``s; a sequence outside the alphabet and a file suffix naming no format are
+#: ``ValueError``s; a missing binary, a tool that exited non-zero and coordinates that could
+#: not be fetched are ``RuntimeError``s (``protein.external.ToolNotFoundError`` is one); and
+#: a file or scratch directory that could not be read or written is an ``OSError``.
 _SEARCH_ERRORS = (LookupError, OSError, RuntimeError, ValueError)
 
 app = typer.Typer(
@@ -164,7 +168,7 @@ def search_seq(
             threads=threads,
         )
     except _SEARCH_ERRORS as err:
-        typer.echo(f"error: {err}", err=True)
+        typer.echo(f"error: {_message(err)}", err=True)
         raise typer.Exit(code=1) from err
 
     hits = _Hits.of(frame, query=identifier or _DEFAULT_QUERY_NAME, database=database)
@@ -172,6 +176,98 @@ def search_seq(
         typer.echo(_json.dumps(hits.as_json()))
         return
     _report(hits)
+
+
+@app.command("struct")
+def search_struct(
+    structure: str = typer.Argument(
+        ...,
+        help="A coordinate file — mmCIF or PDB, optionally gzipped — or a PDB entry id, "
+        "which is read from the coordinate cache and fetched from RCSB on a miss.",
+    ),
+    database: str = typer.Argument(
+        ...,
+        help="The name of a registered structure database, e.g. 'pdb'. A name nothing is "
+        "registered under names the ones that are.",
+    ),
+    chain: str | None = typer.Option(
+        None,
+        "--chain",
+        metavar="LABEL",
+        help="Search one chain instead of the whole structure. The label exactly as the "
+        "file spells it: case is part of it, and 12% of them are longer than a character.",
+    ),
+    sensitivity: float | None = typer.Option(
+        None, "--sensitivity", "-s", help="foldseek -s. Lower is faster and finds less."
+    ),
+    evalue: float | None = typer.Option(
+        None, "--evalue", "-e", help="foldseek -e. Hits above it are not reported."
+    ),
+    max_seqs: int | None = typer.Option(
+        None, "--max-seqs", help="foldseek --max-seqs, which caps the hits per query."
+    ),
+    threads: int | None = typer.Option(
+        None,
+        "--threads",
+        help="foldseek --threads. Worth naming on a shared machine: the default is every core.",
+    ),
+    json: bool = typer.Option(False, "--json", help="Emit JSON instead of plain text."),
+) -> None:
+    """Search a structure, or one of its chains, against a registered database with Foldseek.
+
+    Without `--chain` this is **one** Foldseek invocation over every chain at once, and the
+    `query` column says which chain each hit belongs to, as `<entry>_<chain>`.
+
+    Identity is `fident`, a **fraction**, where MMseqs2's `pident` is a percentage; the two
+    are never renamed into each other. `alntmscore` and `lddt` are the two columns a
+    sequence search has no answer for.
+
+    Exits with code 1 when nothing is registered under the database name, when the
+    coordinates cannot be read or fetched, when `--chain` names no chain of this structure,
+    and when foldseek is not installed or the search itself fails.
+    """
+    try:
+        query = _open(structure)
+        target = query[chain] if chain is not None else query
+        frame = target.search(
+            database,
+            sensitivity=sensitivity,
+            evalue=evalue,
+            max_seqs=max_seqs,
+            threads=threads,
+        )
+    except _SEARCH_ERRORS as err:
+        typer.echo(f"error: {_message(err)}", err=True)
+        raise typer.Exit(code=1) from err
+
+    hits = _Hits.of(frame, query=target.id, database=database)
+    if json:
+        typer.echo(_json.dumps(hits.as_json()))
+        return
+    _report(hits)
+
+
+def _open(structure: str) -> _Structure:
+    """Return the structure ``structure`` names: an existing file, else a PDB entry id.
+
+    The path is tried first because it cannot be mistaken for anything else — a four-letter
+    entry id is not a file that exists, and a file that exists is not an id somebody meant.
+    """
+    path = _Path(structure)
+    if path.exists():
+        return _Structure.from_file(path)
+    return _Structure(structure)
+
+
+def _message(error: Exception) -> str:
+    """Return what to print after ``error:``.
+
+    ``str(KeyError("no chain 'Z'"))`` is the *repr* of the message, quotes and all, which is
+    right for a traceback and wrong at the end of a sentence a person reads.
+    """
+    if isinstance(error, KeyError) and error.args:
+        return str(error.args[0])
+    return str(error)
 
 
 def _report(hits: _Hits) -> None:
