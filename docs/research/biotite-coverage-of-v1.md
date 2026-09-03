@@ -109,10 +109,36 @@ Do not propose it for any module. **VERIFIED** against the anaconda.org file lis
 `foldseek` from bioconda — but neither has a conda-forge feedstock, so neither gets that channel's
 rebuild guarantees.
 
-**We are three minor versions behind on biotite.** 1.4.0 was released 2025-07-07; 1.7.1 on
-2026-06-21. Upgrading is cheap and unrelated to this note's findings — **the alphabet is
-identical in 1.7.1** (**VERIFIED** by reading `seqtypes.py` at tag `v1.7.1`), so no upgrade
-rescues `U`, `O` or `J`.
+**We run biotite 1.4.0 and the newest is 1.7.1 — and that is not drift.** See
+[Why the lock holds biotite at 1.4.0](#why-the-lock-holds-biotite-at-140): a conda-forge numpy
+cap forces it. Either way **the alphabet is identical in 1.7.1** (**VERIFIED** by reading
+`seqtypes.py` at tag `v1.7.1`), so no upgrade rescues `U`, `O` or `J`.
+
+### Why the lock holds biotite at 1.4.0
+
+Not a pin and not an oversight. `pyproject.toml` asks for `biotite = ">=1"` and `numpy = ">=2"`,
+both open. The conflict is downstream:
+
+| | numpy constraint in the conda package | Built |
+| --- | --- | --- |
+| biotite 1.4.0 | `numpy >=1.23,<3` | 2025-09-22 |
+| biotite 1.5.0 – **1.7.1** | **`numpy >=1.26,<2.4`** | 2026-01-03 – 2026-06-24 |
+
+**VERIFIED** against the anaconda.org file listing. numpy 2.4 reached conda-forge 2026-05-16 and
+2.5.0 on 2026-06-22; biotite 1.7.1 was built two days later against the 2026-06-19 conda-forge
+pinning, which still pinned numpy 2.3 — so its run export caps at `<2.4`. No biotite has been
+rebuilt since, and the feedstock has **no open pull request**. With `numpy = ">=2"` the solver
+takes numpy 2.5.2, and 1.4.0 is then the newest biotite that fits.
+
+The cap is **conda-forge's, not biotite's**: upstream declares only `numpy>=1.25`, in 1.4.0 and
+1.7.1 alike — **VERIFIED** against the PyPI metadata for both.
+
+The upgrade does solve, at a price. Re-locking the real manifest with `biotite = ">=1.7"` in a
+throwaway worktree on GPU71FM gives biotite **1.7.1** and **numpy 2.3.5** — **VERIFIED**. Nothing
+else moves: pandas 2.3.3, pyarrow 25.0.0, scipy 1.18.0, `mmseqs2` and `foldseek` are unchanged.
+
+So it is a straight trade — newest biotite **or** newest numpy, not both — and nothing in this
+note needs either. Worth revisiting when the feedstock rebuilds; not worth forcing now.
 
 ---
 
@@ -656,8 +682,10 @@ catch.
 - **Whether `J` stays in `ALPHABET`.** Zero occurrences in Swiss-Prot, `<unk>` at ESM-C, `L` after
   a `mmseqs databases` build. It survives only on the IUPAC argument and on making `ALPHABET`
   every ASCII letter.
-- **Upgrading biotite 1.4.0 → 1.7.1.** Unrelated to every finding here — the alphabet is
-  identical — but three minor versions is drift worth closing before v1's lock is frozen.
+- **Upgrading biotite 1.4.0 → 1.7.1 costs numpy 2.5.2 → 2.3.5**, because every biotite build
+  since 1.5.0 carries conda-forge's `numpy <2.4` cap and none has been rebuilt. Nothing here
+  needs either side of that trade — the alphabet is identical — so the question is whether v1
+  would rather wait for the feedstock or cap numpy itself.
 - **`filterwarnings = ["error"]` and biotite.** The `U` conversion in `fasta.convert` raises a
   `UserWarning` that will become a test error. That is the desired behaviour, but it needs a
   targeted entry with a comment rather than the blanket ignore #1 forbids — and it does **not**
