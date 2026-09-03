@@ -1,10 +1,9 @@
 """Tests for the structural half of the search lane.
 
 Nothing on `Protein` reaches this module — a protein has no coordinates — so what is under
-test is what `Structure` and `Chain` will call when #15 builds them: the query goes through
-as the file it already is, and the frame comes back through the same parser the sequence
-half uses. `tests/data/foldseek_hits_1ubq.tsv` is real Foldseek output against pdb100; its
-provenance is in `tests/data/README.md`.
+test is what `Structure` and `Chain` call: the query goes through as the file it already is,
+and the frame comes back through the same parser the sequence half uses.
+`tests/data/foldseek_hits_1ubq.tsv` is real Foldseek output; see `tests/data/README.md`.
 """
 
 from __future__ import annotations
@@ -19,7 +18,7 @@ from protein.external import ExternalTool, Foldseek
 from protein.search import foldseek
 from protein.search.mmseqs import empty_hits, read_hits
 
-#: A real pdb100 search, run by hand on GPU71FM — see `tests/data/README.md`.
+#: A real pdb100 search — see `tests/data/README.md`.
 _FOLDSEEK_HITS = Path(__file__).resolve().parent / "data" / "foldseek_hits_1ubq.tsv"
 
 
@@ -64,8 +63,7 @@ def test_foldseek_reports_the_two_structural_columns_mmseqs_cannot() -> None:
 
 
 def test_foldseek_is_never_asked_for_q3di() -> None:
-    # Measured on 10-941cd33: the code is in no `--format-output` list, and asking for it
-    # fails the whole search with `Format code q3di does not exist.`
+    # It reads like the obvious third structural column, and Foldseek has no such format code.
     assert "q3di" not in Foldseek().format_columns
 
 
@@ -116,8 +114,7 @@ def test_a_structural_search_passes_the_query_file_through_unchanged(
 def test_a_structural_search_writes_nothing_beside_the_query(
     pdb: Path, query: Path, runs: _Runs
 ) -> None:
-    # A sequence query is written into the scratch directory; a structural one is already a
-    # file, so this half of the lane creates nothing at all.
+    # A structural query is already a file, so this half of the lane creates nothing.
     foldseek.search(query, "pdb")
     assert [entry.name for entry in query.parent.iterdir()] == ["1ubq.cif"]
 

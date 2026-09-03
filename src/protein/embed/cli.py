@@ -1,15 +1,11 @@
 """The ``protein esm`` sub-app — one FASTA record in, one embedding out.
 
 A thin Typer wrapper over :class:`protein.embed.ESMC`: it reads the record, constructs the
-model, makes one call and renders. It ships from this package so that what the command
-prints and what :class:`~protein.embed.Embedding` holds change in one place.
+model, makes one call and renders.
 
 The input is a FASTA file holding **exactly one** record, because
-:meth:`protein.core.Protein.from_fasta` refuses a file holding more — which is also how the
+:meth:`protein.core.Protein.from_fasta` refuses a file holding more — which is how the
 one-at-a-time rule reaches the command line without a flag saying so.
-
-Nothing here imports torch either: :mod:`protein.embed.esm` keeps that inside method bodies,
-so mounting this sub-app costs ``protein --help`` nothing.
 
 Examples
 --------
@@ -31,21 +27,16 @@ from protein.core import Protein as _Protein
 from protein.embed.esm import CHECKPOINTS as _CHECKPOINTS
 from protein.embed.esm import ESMC as _ESMC
 
-#: What this sub-app catches. A checkpoint slug that is not in the table, a ``layer``
-#: outside the model's range, a FASTA holding no record or more than one, and a residue
-#: outside the alphabet are all ``ValueError``s, each already carrying its next action. A
-#: FASTA that is not there and an ``--out`` that cannot be written are ``OSError``s. What
-#: the hub raises for a checkpoint it cannot serve is neither shape reliably, so nothing
-#: here translates it: it reaches the caller as itself.
+#: What this sub-app catches. Each already carries its next action, so the command prints the
+#: message and exits 1. What the hub raises for a checkpoint it cannot serve is neither shape
+#: reliably, so nothing here translates it: it reaches the caller as itself.
 _EMBED_ERRORS = (ValueError, OSError)
 
 app = typer.Typer(help="Embed a protein sequence with ESM-C.", no_args_is_help=True)
 
 
 # `Annotated` rather than the call-in-the-default spelling the root app uses: ruff's B008
-# passes a `str`- or `bool`-annotated default and fails a `Path`-annotated one, and a command
-# taking two paths written in two styles reads worse than one written in the newer style
-# throughout.
+# fails a `Path`-annotated default, and one style throughout reads better than two.
 @app.command("embed")
 def embed(
     fasta: _Annotated[_Path, typer.Argument(help="A FASTA file holding exactly one record.")],
@@ -69,8 +60,7 @@ def embed(
 ) -> None:
     """Embed the one record in FASTA and report what came back.
 
-    Prints the provenance and never the numbers: an embedding is megabytes of float32 and a
-    terminal is not where those go. ``--out`` is how you keep them.
+    Prints the provenance and never the numbers; ``--out`` is how you keep them.
 
     Exits with code 1 if the checkpoint slug is unknown, the layer is out of range, or the
     FASTA cannot be read as exactly one protein.

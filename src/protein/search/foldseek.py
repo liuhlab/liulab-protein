@@ -1,21 +1,13 @@
 """Structural search with Foldseek — the same lane, over coordinates instead of residues.
 
-Thin on purpose. Foldseek vendors MMseqs2, so everything except *what a query is* is already
-:mod:`protein.search.mmseqs`': the database is resolved by
-:func:`~protein.search.mmseqs.database_path`, the flags by
-:func:`~protein.search.mmseqs.search_flags`, and the hits are read by
-:func:`~protein.search.mmseqs.read_hits`. Writing a second parser here is how the two lanes
-would come to disagree about a column.
+Thin on purpose. Foldseek vendors MMseqs2, so everything except *what a query is* comes from
+:mod:`protein.search.mmseqs` — the database, the flags and the hit parsing — rather than from
+a second copy that could come to disagree about a column.
 
-**A query is a structure file that already exists**, so nothing is written into the scratch
-directory — a ``Protein`` has no coordinates, which is why there is no ``foldseek_search()``
-on it and why this module's caller is ``Structure`` and ``Chain`` rather than the search
-mixin. The frame's identity column is ``fident``, a **fraction**, where MMseqs2's ``pident``
-is a percentage, and Foldseek adds ``alntmscore`` and ``lddt``.
-
-``q3di`` is not among them. It reads like the obvious third structural column and it does not
-exist: it appears in no ``--format-output`` list on Foldseek 10-941cd33, and asking for it
-fails the whole search with ``Format code q3di does not exist``.
+**A query is a structure file that already exists**, so this half of the lane writes nothing,
+and its caller is ``Structure`` or ``Chain`` rather than the search mixin. The frame's
+identity column is ``fident``, a **fraction**, where MMseqs2's ``pident`` is a percentage,
+and Foldseek adds ``alntmscore`` and ``lddt``.
 
 Examples
 --------
@@ -59,14 +51,12 @@ def search(
     """Search one structure file against ``database`` and return the hits.
 
     One ``foldseek easy-search``. **A multi-chain query is one invocation, not a loop**:
-    Foldseek fans a structure out per chain itself and reports each in the ``query`` column,
-    so a caller that has a whole structure passes the whole structure.
+    Foldseek fans a structure out per chain itself and reports each in the ``query`` column.
 
     Parameters
     ----------
     structure : str or pathlib.Path
-        The query coordinates — mmCIF or PDB. It must already be on disk; Foldseek reads a
-        file, and this lane writes none.
+        The query coordinates — mmCIF or PDB. It must already be on disk.
     database : protein.search.mmseqs.SearchTarget or str
         What to search against: a **Database**, or the name of a registered one.
     tool : protein.external.MmseqsLikeTool, optional

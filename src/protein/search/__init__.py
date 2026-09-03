@@ -2,15 +2,11 @@
 
 Two queries, one grammar. :mod:`protein.search.mmseqs` searches with a sequence and owns the
 hit table both tools answer with; :mod:`protein.search.foldseek` searches with coordinates
-and reads its results with the same parser, because Foldseek vendors MMseqs2 and a second
-parser is how two lanes come to disagree about a column.
+and reads its results with the same parser.
 
 :class:`~protein.search.mixin.SearchMixin` puts the sequence half on
-:class:`~protein.core.Protein`, whose sequence mmseqs takes directly. The structural half has
-no mixin: it belongs to ``Structure`` and ``Chain``, which call
-:func:`protein.search.foldseek.search` themselves.
-
-:mod:`protein.search.cli` is what :mod:`protein.cli` mounts as ``protein search``.
+:class:`~protein.core.Protein`. The structural half has no mixin: it belongs to ``Structure``
+and ``Chain``, which call :func:`protein.search.foldseek.search` themselves.
 
 Examples
 --------
