@@ -24,8 +24,7 @@ from protein.seq import (
 
 
 def test_the_accepted_alphabet_is_every_ascii_letter() -> None:
-    # The claim the module docstring rests on: the six ambiguity codes fill exactly the six
-    # gaps the twenty leave, so no letter is left for the check to reject.
+    # The claim the module docstring rests on: no letter is left for the check to reject.
     assert len(STANDARD) == 20
     assert len(AMBIGUOUS) == 6
     assert frozenset(string.ascii_uppercase) == ALPHABET
@@ -73,8 +72,8 @@ def test_check_alphabet_passes_a_sequence_of_letters_and_says_nothing() -> None:
 
 
 def test_check_alphabet_rejects_the_stop_symbol_biotite_would_accept() -> None:
-    # Not a difference of opinion about `*` but the point of the check: biotite stores it,
-    # and a stop reaching a tokenizer fails far from its cause.
+    # The point of the check: biotite stores `*`, and a stop reaching a tokenizer fails far
+    # from its cause.
     assert str(ProteinSequence("MK*")) == "MK*"
     with pytest.raises(InvalidResidueError):
         check_alphabet("MK*")
@@ -129,8 +128,7 @@ def test_a_sequence_carrying_a_stop_symbol_raises_rather_than_coercing() -> None
 
 
 def test_the_codes_biotite_can_store_reach_it_unfolded() -> None:
-    # B and Z survive: only what biotite cannot hold is folded. A downloaded Swiss-Prot
-    # resolves those two to D and E, and that divergence is the database's, not ours.
+    # B and Z survive: only what biotite cannot hold is folded.
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         assert str(to_protein_sequence("MKTBZX")) == "MKTBZX"

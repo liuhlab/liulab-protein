@@ -2,24 +2,16 @@
 
 Pure: no I/O, no subprocess, no network.
 
-:class:`biotite.sequence.ProteinSequence` stores the twenty residues plus ``B``, ``Z``, ``X``
-and ``*``, and nothing else. Three of the codes UniProt publishes are missing from it — ``U``
-selenocysteine, ``O`` pyrrolysine, ``J`` leucine-or-isoleucine — while ``*`` is present though
-no protein carries one. This module is the two-sided guard that mismatch needs:
+:class:`biotite.sequence.ProteinSequence` cannot store ``U``, ``O`` or ``J``, and does store
+``*``, which no protein carries. This module is the two-sided guard that mismatch needs:
 :func:`check_alphabet` rejects what neither alphabet should hold, and
-:func:`to_protein_sequence` folds ``U``, ``O`` and ``J`` to ``X``, loudly, before biotite ever
-sees the string.
+:func:`to_protein_sequence` folds the three to ``X``, loudly, rather than letting biotite's
+own converters write a different residue in silence (ADR-0002).
 
-**Never fold by way of biotite.** ``fasta.get_sequence`` and ``structure.to_sequence`` map
-``U`` to ``C`` and ``O`` to ``K`` — a different residue, claimed with no signal (``O`` with
-none at all). ``X`` means unknown, which is true, and it is what ``mmseqs databases`` already
-writes for those two codes. That rule is ADR-0002; this module is how it is kept.
-
-**Know what the check is worth.** The six ambiguity codes fill exactly the six gaps the twenty
-leave, so :data:`ALPHABET` is every ASCII letter. The check therefore catches gaps, stops,
-digits, whitespace and punctuation — a stray ``*`` or ``-`` reaching a tokenizer fails far from
-its cause, which is the whole point — and it **cannot** catch a misspelled residue. There is no
-letter left for it to reject.
+**Know what the check is worth.** :data:`ALPHABET` is every ASCII letter, because the six
+ambiguity codes fill exactly the six gaps the twenty leave. So the check catches gaps, stops,
+digits, whitespace and punctuation — a stray ``*`` reaching a tokenizer fails far from its
+cause — and it **cannot** catch a misspelled residue.
 
 Examples
 --------
@@ -60,42 +52,40 @@ STANDARD: frozenset[str] = frozenset("ACDEFGHIKLMNPQRSTVWY")
 
 #: The six codes that name something other than one of the twenty: ``X`` any residue, ``B``
 #: aspartate-or-asparagine, ``Z`` glutamate-or-glutamine, ``J`` leucine-or-isoleucine, ``U``
-#: selenocysteine, ``O`` pyrrolysine. UniProt publishes all six.
+#: selenocysteine, ``O`` pyrrolysine.
 AMBIGUOUS: frozenset[str] = frozenset("XBZJUO")
 
-#: **What this package accepts as input** — every ASCII letter, since the six above fill the
-#: six gaps the twenty leave. Wider than what biotite stores, which is what :data:`COERCED`
-#: exists to bridge.
+#: **What this package accepts as input** — every ASCII letter. Wider than what biotite
+#: stores, which is what :data:`COERCED` exists to bridge.
 ALPHABET: frozenset[str] = STANDARD | AMBIGUOUS
 
 
 def _biotite_symbols() -> frozenset[str]:
     """Return every symbol biotite's protein alphabet holds, the stop symbol included.
 
-    The cast is biotite's shape, not a doubt about it: ``ProteinSequence.alphabet`` is a class
-    attribute shadowing a property of the same name on the base class, so it answers correctly
-    at runtime while every static reading of it — the class attribute and the return of
-    ``get_alphabet`` alike — is ``property``.
+    The cast is biotite's shape, not a doubt about it: ``ProteinSequence.alphabet`` shadows a
+    property of the same name on the base class, so it answers correctly at runtime while
+    every static reading of it is ``property``.
     """
     alphabet = cast("Alphabet", ProteinSequence.alphabet)
     return frozenset(str(symbol) for symbol in alphabet.get_symbols())
 
 
 #: **What biotite stores**, read from biotite rather than written out here, so an upgrade
-#: cannot silently disagree with us. ``*`` is dropped: biotite carries a stop symbol and a
-#: protein sequence reaching this package must not.
+#: cannot silently disagree with us. ``*`` is dropped: a protein sequence reaching this
+#: package must not carry a stop symbol.
 STORED: frozenset[str] = _biotite_symbols() - {"*"}
 
 #: Accepted here, unstorable there: the codes :func:`to_protein_sequence` folds to ``X``.
 #: Derived rather than listed, so whatever biotite gains, this loses.
 COERCED: frozenset[str] = ALPHABET - STORED
 
-#: What an unstorable code becomes. "Unknown" is true of a residue biotite cannot name; ``C``
-#: and ``K``, which biotite's own converters would write, are not.
+#: What an unstorable code becomes. "Unknown" is true of a residue biotite cannot name; the
+#: ``C`` and ``K`` its own converters would write are not.
 UNKNOWN = "X"
 
-#: Positions the message lists before it gives up and counts the rest. A caller repairing
-#: input reads :attr:`InvalidResidueError.offenders`, which is not capped.
+#: Positions the message lists before it counts the rest.
+#: :attr:`InvalidResidueError.offenders` is not capped.
 _MAX_LISTED = 5
 
 _COERCION = str.maketrans(dict.fromkeys(COERCED, UNKNOWN))
@@ -104,9 +94,8 @@ _COERCION = str.maketrans(dict.fromkeys(COERCED, UNKNOWN))
 class ResidueCoercionWarning(UserWarning):
     """Warns that codes biotite cannot store were replaced by ``X``.
 
-    Its own category because the gate turns every warning into an error: a category of its own
-    is what lets one targeted ``filterwarnings`` entry tolerate this warning, raised on
-    purpose, without tolerating any other.
+    Its own category so one targeted ``filterwarnings`` entry can tolerate this warning,
+    raised on purpose, without tolerating any other.
     """
 
 
@@ -119,8 +108,8 @@ class InvalidResidueError(ValueError):
     Attributes
     ----------
     offenders : list of tuple of (int, str)
-        Every offending ``(index, character)``, zero-based and in order of appearance — what
-        :func:`offending_positions` returned. Uncapped, where the message lists five.
+        Every offending ``(index, character)``, zero-based and in order of appearance.
+        Uncapped, where the message lists five.
     name : str or None
         The accession or identifier the caller named the sequence by, if any.
     """
@@ -135,19 +124,19 @@ class InvalidResidueError(ValueError):
 def outside_alphabet(sequence: str) -> list[str]:
     """Return the distinct characters of ``sequence`` that :data:`ALPHABET` excludes.
 
-    Case is not an offence. biotite uppercases what it stores, so lowercase input is accepted
-    here and comes back uppercase from :func:`to_protein_sequence`.
+    Case is not an offence: lowercase input is accepted here and comes back uppercase from
+    :func:`to_protein_sequence`.
 
     Parameters
     ----------
     sequence : str
-        Text to weigh against the alphabet, before any ``ProteinSequence`` exists.
+        Text to weigh against the alphabet.
 
     Returns
     -------
     list of str
         The offending characters, distinct and sorted, in the case they arrived in. Empty when
-        nothing offends, which is the whole of what a caller must test.
+        nothing offends.
 
     Examples
     --------
@@ -164,8 +153,8 @@ def outside_alphabet(sequence: str) -> list[str]:
 def offending_positions(sequence: str) -> list[tuple[int, str]]:
     """Return every ``(index, character)`` of ``sequence`` that :data:`ALPHABET` excludes.
 
-    One entry per occurrence, in order, so a caller can point at the input rather than search
-    it. Indices count from zero and are offsets into ``sequence``, not residue numbers.
+    One entry per occurrence, in order. Indices count from zero and are offsets into
+    ``sequence``, not residue numbers.
 
     Parameters
     ----------
@@ -195,16 +184,14 @@ def check_alphabet(sequence: str, *, name: str | None = None) -> None:
     """Raise :class:`InvalidResidueError` if ``sequence`` holds anything outside the alphabet.
 
     Stricter than biotite in one place and one only: ``*`` is in biotite's alphabet and is
-    rejected here, because catching a stray stop or gap before it reaches a tokenizer is what
-    this check is for.
+    rejected here.
 
     Parameters
     ----------
     sequence : str
         Text to weigh against :data:`ALPHABET`.
     name : str, optional
-        The accession or identifier this sequence belongs to, named in the error so a reader
-        knows which protein went wrong.
+        The accession or identifier this sequence belongs to, named in the error.
 
     Raises
     ------
@@ -229,9 +216,7 @@ def to_protein_sequence(sequence: str, *, name: str | None = None) -> ProteinSeq
     """Check ``sequence``, fold what biotite cannot store, and return biotite's type.
 
     The one door from a :class:`str` to a :class:`~biotite.sequence.ProteinSequence` in this
-    package. Reaching around it means reaching for ``fasta.get_sequence`` or
-    ``structure.to_sequence``, which fold ``U`` to ``C`` and ``O`` to ``K`` silently — see
-    ADR-0002. The check runs first, so a ``*`` raises rather than being folded.
+    package (ADR-0002). The check runs first, so a ``*`` raises rather than being folded.
 
     Parameters
     ----------
@@ -239,7 +224,7 @@ def to_protein_sequence(sequence: str, *, name: str | None = None) -> ProteinSeq
         The residues, in either case.
     name : str, optional
         The accession or identifier this sequence belongs to, named in both the warning and
-        the error so a caller reading either knows which protein it was.
+        the error.
 
     Returns
     -------
@@ -249,8 +234,7 @@ def to_protein_sequence(sequence: str, *, name: str | None = None) -> ProteinSeq
     Warns
     -----
     ResidueCoercionWarning
-        When anything was folded. Measured in Swiss-Prot: 256 of 575,503 entries carry ``U``
-        and 29 carry ``O``; none carries ``J``.
+        When anything was folded.
 
     Raises
     ------

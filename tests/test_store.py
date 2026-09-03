@@ -1,9 +1,8 @@
 """Tests for protein.store — one data root, borrowed rather than declared a second time.
 
-The claims worth holding are that this package files under liulab-genome's `LIULAB_DATA`
-and not a root of its own, that the module-not-the-function import discipline is real
-enough to monkeypatch through, and that registration is genome's `completion` module and
-not a second copy of it.
+Three claims: this package files under liulab-genome's `LIULAB_DATA`, the
+module-not-the-function import discipline is real enough to monkeypatch through, and
+registration is genome's `completion` module rather than a second copy of it.
 """
 
 from __future__ import annotations
@@ -48,9 +47,7 @@ def test_asking_where_something_goes_creates_nothing(
 def test_the_root_comes_from_genomes_module_so_a_patch_on_it_is_seen(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    # The discipline liulab-genome's store spells out: the module is imported, never the
-    # function, so this patch reaches the call. Binding the function into this namespace
-    # would leave a second reference no monkeypatch could find.
+    # The module is imported, never the function, so this patch reaches the call.
     monkeypatch.setattr(
         data_dir, "prepared_data_dir", lambda subdir: tmp_path / "elsewhere" / subdir
     )
@@ -70,8 +67,8 @@ def test_a_registration_is_a_directory_plus_a_completion_record(tmp_path: Path) 
     built = directory / "swissprot"
     built.write_text("ffindex", encoding="utf-8")
 
-    # No `tools=`: asking one for its version is a subprocess, and what is under test here
-    # is the record, not the provenance a database build will fill in.
+    # No `tools=`: asking one for its version is a subprocess, and the record is what is
+    # under test.
     record = completion.build_record(directory, kind="database", name="swissprot", files=[built])
     completion.write_record(directory, record)
 
@@ -92,16 +89,15 @@ def test_a_directory_holding_files_but_no_record_is_an_unfinished_registration(
 def test_the_unfinished_state_is_catchable_as_the_error_this_package_re_exports(
     tmp_path: Path,
 ) -> None:
-    # The one exemption to importing modules rather than names: nothing patches an
-    # exception class, and a caller has to be able to name what it catches.
+    # The one exemption to importing modules rather than names: a caller has to be able to
+    # name what it catches.
     assert issubclass(UnfinishedRegistrationError, RegistrationError)
     assert RegistrationError is completion.RegistrationError
 
 
 def test_nothing_callable_is_re_exported_from_this_module() -> None:
-    # Every name in __all__ is either a constant, one of this module's own two functions,
-    # or an exception class. A callable borrowed from genome and bound here would be the
-    # second reference the module-import rule exists to prevent.
+    # A callable borrowed from genome and bound here would be the second reference the
+    # module-import rule exists to prevent.
     borrowed = {
         name
         for name in store.__all__
