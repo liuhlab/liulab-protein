@@ -633,8 +633,8 @@ def _as_int(value: str, *, column: str, number: int, origin: str) -> int:
     except ValueError as error:
         raise SiftsFormatError(
             f"{origin} line {number} holds {value!r} in {column}, and the four residue "
-            f"bounds are integers in every one of SIFTS's 1,033,045 rows. Only the two "
-            f"author-numbering columns are ever blank, and those are dropped."
+            f"bounds are always integers. Only the two author-numbering columns are ever "
+            f"blank, and those are dropped."
         ) from error
 
 
