@@ -28,3 +28,8 @@ config:
   # repeating its own section, which is the duplicate that is a real mistake.
   MD024:
     siblings_only: true
+  # Scoped to prose. A hard tab in prose is an accident; inside a fenced block it is the
+  # content — `docs/research/` quotes real TSV and ffindex `.lookup` lines verbatim, and
+  # a rule that rewrites them turns evidence into a claim about evidence.
+  MD010:
+    code_blocks: false

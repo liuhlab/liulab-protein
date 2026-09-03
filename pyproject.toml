@@ -69,8 +69,11 @@ pandas = ">=2.1,<3"
 pyarrow = ">=17"
 biotite = ">=1"
 # liulab-genome declares these conda-side only, so pip resolution cannot supply them.
-# Without gffutils, `import genome` fails.
+# Without either one, `import genome` fails — and it fails on the FIRST line, because
+# `genome/__init__.py` reaches the motif lane, so `from genome.store import data_dir` is
+# just as dead as `import genome`. That import is what `store.py` is built on.
 gffutils = ">=0.13"
+moods = ">=1.9.4,<2"
 # The external tools. Nothing outside src/protein/external.py may call them.
 mmseqs2 = "18.8cc5c.*"
 foldseek = "10.941cd33.*"
@@ -106,10 +109,23 @@ docs-build = "zensical build --clean --strict"
 [tool.pixi.feature.esm.pypi-dependencies]
 esm = ">=3.4,<4"
 
-# torch 2.11 requires setuptools <82; the conda solve otherwise pins 84 and the pypi solve
-# then has no torch to pick. Measured, not guessed -- see the commit.
+# torch comes from conda-forge and not from PyPI, and that one line is what makes this
+# environment usable (#19). PyPI's default torch 2.11 wheel is the cu130 variant: it refuses
+# to initialise CUDA against this cluster's 12.6 driver, and it loads the SYSTEM libstdc++,
+# whose CXXABI is older than the one conda-forge scipy needs -- so `import torch` then
+# `import esm` died as well, and both defects had the one cause. conda-forge builds torch
+# against the same libstdc++ as everything else here, and the build the solver picks follows
+# the platform: cuda129 under the `cuda = "12"` variant, cpu on a machine with no GPU.
+# Measured on an H100: `torch.cuda.is_available()` is True with LD_LIBRARY_PATH unset, so
+# nothing here ships a load-path workaround.
+#
+# The bound repeats `esm`'s own `torch >=2.11,<2.12` because the conda solve runs first:
+# without it the solver takes 2.13 and the PyPI solve then has no torch to pick. A
+# `setuptools = "<82"` ceiling used to sit beside it for the same reason. It is gone -- the
+# conda-forge package declares `setuptools <82` itself, and re-solving without the copy
+# leaves the lock at 81.0.0 unchanged.
 [tool.pixi.feature.esm.dependencies]
-setuptools = "<82"
+pytorch = ">=2.11,<2.12"
 
 # `default` takes `test` so pyright can resolve pytest, and not `docs`, which exists so that
 # exactly one CI job installs it.
@@ -118,7 +134,8 @@ default = { features = ["test"], solve-group = "default" }
 test = { features = ["test"], solve-group = "default" }
 docs = { features = ["docs"], solve-group = "default" }
 # Not a CI job: no runner has a GPU, and the weights are gigabytes. Its own solve group, so
-# the setuptools ceiling torch needs stays off the environments that run the gate.
+# torch, the CUDA runtime it drags in and the setuptools ceiling it declares all stay off the
+# environments that run the gate.
 esm = { features = ["test", "esm"] }
 
 [tool.pixi.tasks]
@@ -212,9 +229,26 @@ addopts = [
     "--strict-config",
     "--doctest-modules",
     "--continue-on-collection-errors",
+    # The gate lane. The two markers are a boolean partition, so the deselection has to live
+    # somewhere or a `model` test added later runs in CI and tries to download 1.33 GB of
+    # weights. It cannot live on the `test` task: conformance rule 12 makes every CI step
+    # `pixi run <task>`, and the task is what CI calls. addopts is prepended, so the ESM lane
+    # is still `pytest -m model` — a command-line `-m` wins over this one.
+    "-m",
+    "not model",
 ]
 xfail_strict = true
-filterwarnings = ["error"]
+markers = [
+    "model: needs the ESM-C weights, so it runs by hand on GPU71FM and never in the gate",
+]
+filterwarnings = [
+    "error",
+    # `protein.seq` warns on purpose when it folds U, O or J to X, and its docstring examples
+    # show that fold. Errored, each of those examples would be a failure. Targeted at the one
+    # category raised for this reason; the warning itself is asserted with `pytest.warns` in
+    # tests/test_seq.py, so tolerating it here does not stop testing it.
+    "default::protein.seq.ResidueCoercionWarning",
+]
 
 # ============================== liulab ==============================
 # Read by `scripts/conformance.py`; its docstring has the rules.
