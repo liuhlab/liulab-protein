@@ -18,8 +18,16 @@ _SOURCE_ROOT = Path(__file__).resolve().parents[1] / "src" / "protein"
 _INSULIN_HEADER = "sp|P01308|INS_HUMAN Insulin OS=Homo sapiens OX=9606 GN=INS PE=1 SV=1"
 _INSULIN_LENGTH = 110
 
-#: What ADR-0002 bans. Each rewrites ``U`` to ``C`` and ``O`` to ``K`` without a word.
-_BANNED_CONVERTERS = frozenset({"get_sequence", "get_sequences", "to_sequence"})
+#: What ADR-0002 bans. Each substitutes a different residue without a word.
+#:
+#: The first three rewrite ``U`` to ``C`` and ``O`` to ``K``. ``convert_letter_3to1`` was
+#: found by #15 and has the same defect from the other direction: it answers ``'C'`` for
+#: ``"SEC"`` where ``biotite.structure.info.one_letter_code`` answers ``'U'``, and it
+#: ``KeyError``s on every modified residue rather than saying so. ``Chain.sequence`` uses
+#: ``one_letter_code`` and :func:`protein.seq.to_protein_sequence` instead.
+_BANNED_CONVERTERS = frozenset(
+    {"get_sequence", "get_sequences", "to_sequence", "convert_letter_3to1"}
+)
 
 
 # --- the record layer --------------------------------------------------------
@@ -148,8 +156,8 @@ def test_no_module_in_this_package_reaches_for_biotites_converters() -> None:
         for name, line in _converter_references(module)
     ]
     assert offenders == [], (
-        f"{offenders} name a biotite converter. get_sequence, get_sequences and to_sequence "
-        f"rewrite U to C and O to K silently (ADR-0002); the one string-to-sequence step in "
+        f"{offenders} name a biotite converter. Every name in {sorted(_BANNED_CONVERTERS)} "
+        f"substitutes a residue silently (ADR-0002); the one string-to-sequence step in "
         f"this package is protein.seq.to_protein_sequence."
     )
 
