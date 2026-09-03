@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from genome import xref as genome_xref
 from genome.store import fetch
 from genome.xref import ResolvedStems, xref_table
 from genome.xref import metadata as xref_metadata
@@ -63,6 +64,7 @@ def served(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     digest = f"md5:{hashlib.md5(payload).hexdigest()}"
     pinned = tuple(replace(row, source_checksum=digest) for row in xref_table())
     monkeypatch.setattr(xref_metadata, "xref_table", lambda: pinned)
+    monkeypatch.setattr(genome_xref, "xref_table", lambda: pinned)
 
     def fake_fetch(url: str, dest_dir: Path, **kwargs: Any) -> Path:
         dest_dir.mkdir(parents=True, exist_ok=True)
@@ -90,9 +92,15 @@ def test_an_uncovered_taxon_answers_none_so_a_caller_may_ask_before_it_leaps() -
     assert xref.species_for(_UNCOVERED) is None
 
 
-def test_the_lookup_reaches_no_set_and_so_needs_nothing_prepared() -> None:
+def test_the_lookup_reaches_no_set_and_so_needs_nothing_prepared(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # Swiss-Prot is all of UniProt, so most taxa reach no set at all. Asking must therefore
-    # be cheap and offline, which the shipped curated table makes it.
+    # cost no fetch, which the shipped curated table makes it.
+    def refuse(*args: Any, **kwargs: Any) -> Path:
+        raise AssertionError("the lookup fetched")
+
+    monkeypatch.setattr(fetch, "fetch_url", refuse)
     assert xref.species_for(9606) == "Homo sapiens"
 
 

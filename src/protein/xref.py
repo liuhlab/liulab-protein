@@ -37,7 +37,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from genome.xref import UNIPROT, ResolvedStems, XrefSet, xref_table
+# The module, never the function: a name bound here is a second reference no
+# `monkeypatch.setattr` on it would reach. `ResolvedStems` is the exemption, bound so a
+# caller can annotate what this module hands back.
+from genome import xref as genome_xref
+from genome.xref import ResolvedStems
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -54,7 +58,7 @@ class TaxonNotCoveredError(LookupError):
     """No **Xref set** covers this taxon, so the question cannot be asked of it at all.
 
     Distinct from an accession that was asked and named nothing, which comes back in
-    ``unresolved``. Swiss-Prot is the whole of UniProt and the curated table covers three
+    ``unresolved``. Swiss-Prot is the whole of UniProt and the curated table covers a few
     species, so this is the ordinary outcome rather than an edge case — :func:`species_for`
     answers the same question without raising.
 
@@ -89,7 +93,7 @@ def species_for(taxon_id: int) -> str | None:
     >>> species_for(7227) is None
     True
     """
-    for row in xref_table():
+    for row in genome_xref.xref_table():
         if row.ncbi_taxid == taxon_id:
             return row.species
     return None
@@ -132,10 +136,10 @@ def gene_stems_for(accessions: Iterable[str], taxon_id: int) -> ResolvedStems:
             f"no xref set covers taxon {taxon_id}, so nothing here names a gene for its "
             f"accessions. Covered: {_covered()}."
         )
-    return XrefSet(species).to_stems(accessions, UNIPROT)
+    return genome_xref.XrefSet(species).to_stems(accessions, genome_xref.UNIPROT)
 
 
 def _covered() -> str:
     """Spell the taxa the curated table carries, for a refusal to name."""
-    species = {row.ncbi_taxid: row.species for row in xref_table()}
+    species = {row.ncbi_taxid: row.species for row in genome_xref.xref_table()}
     return ", ".join(f"{taxon} ({species[taxon]})" for taxon in sorted(species))
