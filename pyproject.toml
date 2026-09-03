@@ -212,9 +212,26 @@ addopts = [
     "--strict-config",
     "--doctest-modules",
     "--continue-on-collection-errors",
+    # The gate lane. The two markers are a boolean partition, so the deselection has to live
+    # somewhere or a `model` test added later runs in CI and tries to download 1.33 GB of
+    # weights. It cannot live on the `test` task: conformance rule 12 makes every CI step
+    # `pixi run <task>`, and the task is what CI calls. addopts is prepended, so the ESM lane
+    # is still `pytest -m model` — a command-line `-m` wins over this one.
+    "-m",
+    "not model",
 ]
 xfail_strict = true
-filterwarnings = ["error"]
+markers = [
+    "model: needs the ESM-C weights, so it runs by hand on GPU71FM and never in the gate",
+]
+filterwarnings = [
+    "error",
+    # `protein.seq` warns on purpose when it folds U, O or J to X, and its docstring examples
+    # show that fold. Errored, each of those examples would be a failure. Targeted at the one
+    # category raised for this reason; the warning itself is asserted with `pytest.warns` in
+    # tests/test_seq.py, so tolerating it here does not stop testing it.
+    "default::protein.seq.ResidueCoercionWarning",
+]
 
 # ============================== liulab ==============================
 # Read by `scripts/conformance.py`; its docstring has the rules.
