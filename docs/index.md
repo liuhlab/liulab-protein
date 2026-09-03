@@ -17,15 +17,16 @@ same versions the tests ran on.
 ## Use it
 
 ```python
-from protein import greet
+from protein import Protein
 
-print(greet("lab"))
+insulin = Protein("MALWMRLLPLLALLALWGPDPAAA", id="P01308")
+print(insulin.length)
 ```
 
-The same thing from a shell:
+From a shell, ask it whether the tools it drives are installed:
 
 ```bash
-pixi run protein greet lab
+pixi run protein doctor
 ```
 
 The [API reference](api.md) has the full list, built from the docstrings in `src/`.

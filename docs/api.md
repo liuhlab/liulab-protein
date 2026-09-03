@@ -22,9 +22,13 @@ Two things about that marker are easy to get backwards:
 - A trailing comment written as plain prose looks just like a marker and is not one. Only
   the `# doctest:` form is read as one.
 
-## protein
+## The protein
 
-::: protein.core.greet
+::: protein.core.Protein
+
+## Files
+
+::: protein.io.fasta
 
 ## The command line
 
