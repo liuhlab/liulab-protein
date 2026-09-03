@@ -76,8 +76,7 @@ GPU_ENCODED_BIT = 8 << 16
 #: terms rather than in the format's.
 GPU_RESIDUE_FOLD = (
     "residues were encoded against a 21-letter table: B->D, Z->E, U/O->X. The standard 20 "
-    "are untouched, so 575,303 of Swiss-Prot's 575,503 entries are byte-perfect and 200 are "
-    "not. See ADR-0003."
+    "are untouched. See ADR-0003."
 )
 
 #: What ``mmseqs view --idx-entry-type`` calls the parallel header database.
@@ -850,7 +849,7 @@ def _adopted_directory(path: Path) -> Path:
     raise LookupError(
         f"{path} is neither a directory holding an ffindex database nor an ffindex prefix "
         f"with a .dbtype beside it. Point `adopt` at the directory `mmseqs databases` or "
-        f"`foldseek databases` wrote, e.g. /scratch/zhoulab/hanliu/protein/db/swissprot."
+        f"`foldseek databases` wrote."
     )
 
 

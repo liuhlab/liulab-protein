@@ -183,7 +183,7 @@ def search_struct(
         "--chain",
         metavar="LABEL",
         help="Search one chain instead of the whole structure. The label exactly as the "
-        "file spells it: case is part of it, and 12% of them are longer than a character.",
+        "file spells it: case is part of it, and not all of them are one character.",
     ),
     sensitivity: float | None = typer.Option(
         None, "--sensitivity", "-s", help="foldseek -s. Lower is faster and finds less."

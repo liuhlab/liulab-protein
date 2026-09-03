@@ -39,7 +39,7 @@ N_LAYERS = 30
 
 
 _RECIPE = (
-    "    export HF_HOME=/scratch/zhoulab/hanliu/protein/hf\n"
+    "    export HF_HOME=/path/to/hf-cache\n"
     "    pixi run -e esm pytest -m model\n\n"
     "Refusing to skip. A skipped model lane is a green run that embedded nothing, which is "
     "the failure this check exists to end."
@@ -63,7 +63,8 @@ def _require_the_esm_environment() -> None:
     if not isinstance(try_to_load_from_cache(CHECKPOINTS["300m"][0], "config.json"), str):
         pytest.fail(
             f"model lane: {CHECKPOINTS['300m'][0]} is not in the Hugging Face cache "
-            f"this process can see. It is 1.3 GB and it is already on GPU71FM.\n\n{_RECIPE}"
+            f"this process can see. Point HF_HOME at a cache holding it, or fetch it "
+            f"there once: this lane itself never downloads.\n\n{_RECIPE}"
         )
 
 

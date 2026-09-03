@@ -215,7 +215,7 @@ addopts = [
 ]
 xfail_strict = true
 markers = [
-    "model: needs the ESM-C weights, so it runs by hand on GPU71FM and never in the gate",
+    "model: needs the ESM-C weights, so it runs by hand and never in the gate",
 ]
 filterwarnings = [
     "error",
