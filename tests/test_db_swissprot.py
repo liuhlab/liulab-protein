@@ -77,7 +77,7 @@ def test_a_value_holding_spaces_survives_the_split() -> None:
 
 
 def test_the_three_numeric_fields_come_back_as_numbers() -> None:
-    # `taxon_id` is what `genome.xref` is joined on, so it is not left as text.
+    # `taxon_id` is what `protein.xref` joins on, so it is not left as text.
     fields = parse_uniprot_header(_FULL).fields
     assert isinstance(fields["taxon_id"], int)
     assert isinstance(fields["protein_existence"], int)

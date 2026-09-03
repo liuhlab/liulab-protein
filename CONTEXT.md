@@ -97,3 +97,23 @@ A peer of **Protein**, never a part of one. The two are many-to-many in both dir
 protein at all. The asymmetric unit is forced, because SIFTS keys on its author chains.
 Coordinates come from the local cache, filled from RCSB on a miss — never from `pdb100`,
 which is C-alpha only and renumbers residues.
+
+### Xref
+
+The map between a UniProt accession and the **Gene id stem**s naming the same gene: a join
+reaching out of this package rather than between its two namespaces, and one it does not own. `liulab-genome` holds the sets, their
+releases and both directions; `protein.xref` adds the single step genome cannot take from a
+**Protein**, since a set is built for a species and a Swiss-Prot header carries a taxon id.
+
+Only the accession direction lives here. The other starts from a species and a stem, takes
+no **Protein**, and is `genome.xref` written plainly.
+
+The accession is the key and `GN=` is not. A symbol goes through another verb against a
+source that is not the identifier default, and it matches previous and alias spellings, so
+it carries ambiguity the accession does not.
+
+Two misses stay apart. A taxon no set covers cannot be asked at all and raises; an accession
+that was asked and named nothing comes back in the answer's `unresolved`. Swiss-Prot is the
+whole of UniProt and three species are covered, so the first is the ordinary outcome.
+
+Not a **Prepared set** and not a **Database**: it owns no bytes. See `protein.xref`.

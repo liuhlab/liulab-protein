@@ -45,6 +45,7 @@ src/protein/
 ├── external.py  THE subprocess boundary — nothing else imports subprocess
 ├── store.py     <LIULAB_DATA>/protein/, reusing liulab-genome's data root
 ├── sifts.py     the PDB-to-UniProt map, a prepared set, and the one join
+├── xref.py      the UniProt-to-gene hop, asked of liulab-genome's xref sets
 ├── io/          fasta.py, structure.py — one module per format
 ├── db/          Database, SequenceDatabase, StructureDatabase, SwissProt
 ├── embed/       ESMC holds the weights; Embedding is what one call returns

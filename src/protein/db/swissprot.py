@@ -189,8 +189,8 @@ class SwissProt(SequenceDatabase):
     out is resolved by :func:`parse_uniprot_header` into ``id``, ``name``, ``description``
     and :attr:`~protein.core.Protein.metadata`.
 
-    The `liulab-genome` link lands here — ``metadata["taxon_id"]`` and ``metadata["gene"]``
-    are what ``genome.xref`` joins on — and is still open as issue #26.
+    ``metadata["taxon_id"]`` is what :func:`protein.xref.gene_stems_for` joins on. The link
+    itself lives there rather than here, because it is asked of a list and not of one entry.
 
     Examples
     --------
