@@ -105,6 +105,31 @@ Three rules, all enforced by `vale`: be concise; agent-facing documents have wor
 human-facing prose avoids jargon and stays readable. Read `docs/agents/writing.md` before
 writing either kind — the caps are lower than you expect, and this file is subject to one.
 
+### Comments and docstrings are short
+
+A docstring says what a thing does and what it promises. A comment says why a line is
+surprising. Neither is a notebook.
+
+**Do not record:**
+
+- **Measurements.** Sizes, row counts, timings, percentages, entry totals. They were true
+  once, on one machine, against one release. A number in a comment is wrong by the next
+  release and nothing checks it.
+- **The environment.** Hostnames, absolute paths, package versions, which host something ran
+  on, what a tool printed that day.
+- **Implementation detail a reader can see.** Restating the code below in prose, or
+  narrating how the current version happens to work inside.
+- **History.** What a previous version did, what was tried, which ticket decided it, what the
+  alternative was.
+
+Where a fact genuinely has to survive, it has a home that is checked: a **test** pins
+behaviour, an **ADR** carries a decision and its trade-off, `CONTEXT.md` carries vocabulary,
+and an **issue** carries what is still open. A comment is the one place that holds none of
+them accountable, which is why it is the wrong place.
+
+Keep a docstring to its contract — arguments, return, what it raises, one example if the
+example earns its keep. Say the surprising thing in one sentence and stop.
+
 ## Read next
 
 | When | Read |
