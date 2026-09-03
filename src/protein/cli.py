@@ -9,8 +9,8 @@ from typing import Annotated
 
 import typer
 
-from newpkg import __version__ as _package_version
-from newpkg.core import greet as _greet
+from protein import __version__ as _package_version
+from protein.core import greet as _greet
 
 #: What `[project.scripts]` registers. Typer builds the parser from the signatures below, so
 #: a verb is a function and its help is the docstring.

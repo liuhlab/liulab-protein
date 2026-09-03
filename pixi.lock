@@ -2148,7 +2148,7 @@ packages:
   size: 433687
   timestamp: 1786599629846
 - pypi: ./
-  name: liulab-newpkg
+  name: liulab-protein
   requires_dist:
   - typer>=0.12
   requires_python: '>=3.13'

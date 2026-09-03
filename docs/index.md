@@ -1,12 +1,6 @@
-# liulab-newpkg
+# liulab-protein
 
-<!-- init-repo:begin template-docs -->
-This is the Liu Lab repo template with its placeholder package still in place. The package
-is called `liulab-newpkg` and imports as `newpkg`. What the template ships, and how to make a
-repo from it, is on [The template](template/index.md).
-<!-- init-repo:end template-docs -->
-
-One line: what this repo is for. `init-repo` rewrites this page.
+Handling protein sequence related tasks.
 
 ## Install it
 
@@ -23,7 +17,7 @@ same versions the tests ran on.
 ## Use it
 
 ```python
-from newpkg import greet
+from protein import greet
 
 print(greet("lab"))
 ```
@@ -31,7 +25,7 @@ print(greet("lab"))
 The same thing from a shell:
 
 ```bash
-pixi run newpkg greet lab
+pixi run protein greet lab
 ```
 
 The [API reference](api.md) has the full list, built from the docstrings in `src/`.
@@ -57,7 +51,7 @@ pixi run docs-build
 
 | Path | What it holds |
 | --- | --- |
-| `src/newpkg/` | the package |
+| `src/protein/` | the package |
 | `tests/` | the tests |
 | `docs/` | this site |
 | `scripts/check.sh` | the gate every commit has to pass |
