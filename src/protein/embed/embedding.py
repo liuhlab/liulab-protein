@@ -1,20 +1,16 @@
 """The :class:`Embedding` value object — an array, and what it came from.
 
-**numpy only.** Nothing here imports torch, so ``from protein import Embedding`` costs a
-numpy import and no more; :mod:`protein.embed.esm` is where the weights live.
+**numpy only.** Nothing here imports torch; :mod:`protein.embed.esm` is where the weights
+live.
 
-An embedding is a value object rather than a bare array because a ``(33, 960)`` float32
-array found in a notebook an hour later cannot say whether it came from ESMC-300M or
-ESMC-600M, or from layer 30 or layer 12 — and those arrays are not comparable. So the array
-travels with the three facts that make it one: which sequence, which checkpoint, which
-layer. :meth:`Embedding.__array__` keeps it numpy-native, so ``np.asarray(e)`` is the array
-and every numpy function takes it directly.
+An embedding is a value object rather than a bare array because an array found in a notebook
+an hour later cannot say which checkpoint or which layer it came from, and arrays from
+different ones are not comparable. So it travels with the three facts that make it one: which
+sequence, which checkpoint, which layer. :meth:`Embedding.__array__` keeps it numpy-native,
+so ``np.asarray(e)`` is the array and every numpy function takes it directly.
 
-The array is **per residue**: ``(L, d_model)``, with BOS and EOS already stripped, so its
-first axis equals ``len(protein)`` and not ``len(protein) + 2``. The per-sequence vector is
-:meth:`Embedding.mean`, which is one line — the mask a pooled embedding usually needs exists
-for *padded batches*, and with BOS and EOS gone and one un-padded sequence there is nothing
-to mask.
+The array is **per residue**, ``(L, d_model)``, with BOS and EOS already stripped, so its
+first axis is the sequence length. :meth:`Embedding.mean` is the per-sequence vector.
 
 Examples
 --------
@@ -48,9 +44,8 @@ __all__ = ["Embedding"]
 class Embedding:
     """One sequence's per-residue embedding, and the three facts that identify it.
 
-    Frozen and slotted: it is a measurement, and a measurement that can be edited in place
-    is one nobody can trust. Built by :meth:`protein.embed.ESMC.embed` and not by hand,
-    though the constructor is plain and a test may call it.
+    Frozen and slotted: a measurement that can be edited in place is one nobody can trust.
+    Built by :meth:`protein.embed.ESMC.embed` rather than by hand.
 
     Parameters
     ----------
@@ -58,16 +53,15 @@ class Embedding:
         ``(L, d_model)``, float32, on the CPU, **BOS and EOS stripped** — so ``L`` is the
         residue count of the sequence that went in.
     source : str or None
-        The UniProt accession or chain key it came from. ``None`` when the ``Protein`` had
-        no id: an embedding of an anonymous sequence is still an embedding.
+        The UniProt accession or chain key it came from, or ``None`` when the ``Protein`` had
+        no id.
     checkpoint : str
         The slug, e.g. ``"300m"`` — a key of :data:`protein.embed.esm.CHECKPOINTS`, never an
         HF id.
     layer : int
         Which hidden state, as a **non-negative** index into the model's ``hidden_states``:
         ``0`` is the embedding-layer output and ``n_layers`` is the last hidden state.
-        :meth:`protein.embed.ESMC.embed` normalises a negative ``layer=`` before it gets
-        here, so ``-1`` never survives into someone's notes.
+        :meth:`protein.embed.ESMC.embed` normalises a negative ``layer=`` before it gets here.
 
     Examples
     --------
@@ -92,8 +86,7 @@ class Embedding:
         dtype : numpy.typing.DTypeLike, optional
             What numpy asked to be given. Omitted, the stored float32 comes back unconverted.
         copy : bool, optional
-            numpy 2's copy protocol: ``True`` always copies, ``False`` refuses to, and
-            ``None`` copies only if the conversion needs it.
+            numpy 2's copy protocol.
 
         Returns
         -------
@@ -125,8 +118,7 @@ class Embedding:
     def __repr__(self) -> str:
         """Return e.g. ``Embedding('P12345', 33 x 960, 300m layer 30)``.
 
-        The dataclass default would print the whole array, which in a notebook is a page of
-        numbers hiding the four facts worth reading.
+        The dataclass default would print the whole array.
 
         Examples
         --------
@@ -155,9 +147,7 @@ class Embedding:
     def mean(self) -> np.ndarray:
         """Return the per-sequence vector, ``(d_model,)``: the mean over residues.
 
-        One line, and deliberately not a pooling framework. Pooling normally needs a mask so
-        padding does not enter the average — but a padded position only exists in a batch,
-        and this array is one sequence with BOS and EOS already stripped. Every row is a
+        No mask, because a padded position only exists in a batch and every row here is a
         residue, so the plain mean is exact.
 
         Returns
@@ -177,9 +167,8 @@ class Embedding:
     def as_json(self) -> dict[str, Any]:
         """Return the provenance as JSON-ready values — everything but the numbers.
 
-        What ``protein esm embed --json`` prints. The array is not in it: an embedding is
-        megabytes of float32 and JSON is not where those go, which is what ``--out`` and a
-        ``.npy`` file are for.
+        What ``protein esm embed --json`` prints. The array is not in it; ``--out`` and a
+        ``.npy`` file are for that.
 
         Returns
         -------

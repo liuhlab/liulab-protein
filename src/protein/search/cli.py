@@ -1,15 +1,10 @@
 """The ``protein search`` sub-app — one query against one **Database**, from a shell.
 
-Two commands over one lane, and what differs between them is only what a query is. ``seq``
-builds a :class:`~protein.core.Protein` from what was typed and searches with MMseqs2 —
-building a ``Protein`` rather than passing the string on is deliberate, since the alphabet
-is then checked before an **External tool** is started and a stray ``*`` fails here rather
-than inside mmseqs. ``struct`` takes coordinates and searches with Foldseek, through the
-:class:`~protein.structure.Structure` or :class:`~protein.structure.Chain` that holds them.
-
-**A whole structure is one invocation, not a loop.** Foldseek fans a multi-chain query out
-itself and reports each chain in the ``query`` column, so ``struct`` without ``--chain``
-searches every chain at once.
+Two commands over one lane, differing only in what a query is. ``seq`` builds a
+:class:`~protein.core.Protein` from what was typed, so the alphabet is checked before an
+**External tool** is started; ``struct`` takes coordinates and searches with Foldseek,
+through the :class:`~protein.structure.Structure` or :class:`~protein.structure.Chain` that
+holds them.
 
 **The rows go to stdout, tab-separated, and the header to stderr**, so the output pipes:
 ``protein search seq ... | cut -f2`` is the list of targets. ``--json`` carries the same
@@ -39,12 +34,8 @@ from protein.structure import Structure as _Structure
 if _TYPE_CHECKING:
     import pandas as pd
 
-#: What a search failure raises, and each already names its next action: a database name
-#: nothing is registered under, and a chain label the structure does not carry, are
-#: ``LookupError``s; a sequence outside the alphabet and a file suffix naming no format are
-#: ``ValueError``s; a missing binary, a tool that exited non-zero and coordinates that could
-#: not be fetched are ``RuntimeError``s (``protein.external.ToolNotFoundError`` is one); and
-#: a file or scratch directory that could not be read or written is an ``OSError``.
+#: What a search failure raises. Each already names its next action, so a command prints the
+#: message and exits 1 rather than translating it.
 _SEARCH_ERRORS = (LookupError, OSError, RuntimeError, ValueError)
 
 app = typer.Typer(
@@ -100,9 +91,8 @@ class _Hits:
 def _plain(value: _Any) -> _Any:
     """Return ``value`` as a plain Python object, so :mod:`json` can write it.
 
-    A frame's cells are numpy scalars, which ``json.dumps`` refuses. ``.item()`` is what
-    numpy offers for exactly this, and a ``str`` — which the identifier columns hold — has no
-    such method and needs none.
+    A frame's cells are numpy scalars, which ``json.dumps`` refuses. A ``str`` has no
+    ``.item()`` and needs none.
     """
     item = getattr(value, "item", None)
     return item() if callable(item) else value
@@ -145,18 +135,16 @@ def search_seq(
 ) -> None:
     """Search one amino-acid sequence against a registered database with MMseqs2.
 
-    The everyday way to ask what a sequence looks like, without writing Python. The hits go
-    to stdout tab-separated so the output pipes, and the column names to stderr so the
-    header does not land in what you piped. `--json` carries the same answer, with each hit
-    keyed by column name.
+    The hits go to stdout tab-separated so the output pipes, and the column names to stderr
+    so the header does not land in what you piped. `--json` carries the same answer, keyed
+    by column name.
 
-    Identity is `pident`, a **percentage**. Foldseek's `fident` is the same quantity as a
-    fraction, and the two are never renamed into each other — the column you have says which
-    number you are reading.
+    Identity is `pident`, a **percentage**; Foldseek's `fident` is the same quantity as a
+    fraction, and the two are never renamed into each other.
 
-    Exits with code 1 when nothing is registered under the database name, when the sequence
-    holds something outside the amino-acid alphabet, when mmseqs is not installed, and when
-    the search itself fails.
+    Exits with code 1 when the database name is not registered, when the sequence holds
+    something outside the amino-acid alphabet, when mmseqs is not installed, and when the
+    search itself fails.
     """
     try:
         query = _Protein(sequence, id=identifier)
@@ -222,9 +210,9 @@ def search_struct(
     are never renamed into each other. `alntmscore` and `lddt` are the two columns a
     sequence search has no answer for.
 
-    Exits with code 1 when nothing is registered under the database name, when the
-    coordinates cannot be read or fetched, when `--chain` names no chain of this structure,
-    and when foldseek is not installed or the search itself fails.
+    Exits with code 1 when the database name is not registered, when the coordinates cannot
+    be read or fetched, when `--chain` names no chain of this structure, and when foldseek
+    is not installed or the search itself fails.
     """
     try:
         query = _open(structure)
@@ -250,8 +238,7 @@ def search_struct(
 def _open(structure: str) -> _Structure:
     """Return the structure ``structure`` names: an existing file, else a PDB entry id.
 
-    The path is tried first because it cannot be mistaken for anything else — a four-letter
-    entry id is not a file that exists, and a file that exists is not an id somebody meant.
+    The path is tried first because a file that exists is not an id somebody meant.
     """
     path = _Path(structure)
     if path.exists():
@@ -262,8 +249,8 @@ def _open(structure: str) -> _Structure:
 def _message(error: Exception) -> str:
     """Return what to print after ``error:``.
 
-    ``str(KeyError("no chain 'Z'"))`` is the *repr* of the message, quotes and all, which is
-    right for a traceback and wrong at the end of a sentence a person reads.
+    ``str(KeyError(...))`` is the *repr* of the message, quotes and all, which is right for a
+    traceback and wrong in a sentence a person reads.
     """
     if isinstance(error, KeyError) and error.args:
         return str(error.args[0])
