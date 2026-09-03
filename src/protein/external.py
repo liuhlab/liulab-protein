@@ -1,23 +1,15 @@
 """The one place this package shells out to a native binary.
 
 An **External tool** is a binary the package drives rather than reimplements: ``mmseqs``
-searches sequences, ``foldseek`` searches structures. :class:`ExternalTool` is the whole of
-what a caller needs from one — where it is, what version it is, how to run it, and how to
-run it only when what it would build is out of date — and two adapters implement it.
-:class:`InstalledTool` resolves on ``PATH`` and shells out; :class:`RecordingTool` records
-the calls and runs nothing, which is what a test binds a search to instead of a binary it
-does not have.
+searches sequences, ``foldseek`` searches structures. :class:`ExternalTool` says where one
+is, what version it is, and how to run it — including only when what it would build is
+stale. :class:`InstalledTool` shells out for real; :class:`RecordingTool` records the calls
+and runs nothing, which is what a test binds a search to.
 
-A tool that cannot be located raises :class:`ToolNotFoundError` whose message *is* its
-install instructions, so no caller has to know which conda package carries which binary —
-``mmseqs`` comes from ``mmseqs2`` and nothing but this module needs to know it.
+**Foldseek vendors MMseqs2**, so :class:`MmseqsLikeTool` owns the command grammar the two
+share and the concrete tools name only what differs.
 
-**Foldseek vendors MMseqs2**, so the two share a command grammar, a database format and the
-``--format-output`` mechanism. :class:`MmseqsLikeTool` sits between the adapter and the two
-concrete tools and owns that grammar once; :class:`Mmseqs` and :class:`Foldseek` name only
-the two things that genuinely differ.
-
-Side effects live here: nothing outside this module calls :mod:`subprocess`.
+Nothing outside this module imports :mod:`subprocess`.
 
 Examples
 --------
@@ -45,31 +37,22 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
 
-#: What a binary is asked for its version when nothing else is known about it. Most tools
-#: answer this; the two this package drives do not — see :data:`_INSTALLATIONS`.
+#: How a binary is asked for its version unless :data:`_INSTALLATIONS` says otherwise.
 DEFAULT_VERSION_ARGS: tuple[str, ...] = ("--version",)
 
 
 @dataclass(frozen=True)
 class _Installation:
-    """How one binary is installed, where its own documentation lives, and how it is asked."""
+    """How one binary is installed, and how it is asked for its version."""
 
     package: str
     homepage: str | None = None
     version_args: tuple[str, ...] = DEFAULT_VERSION_ARGS
 
 
-#: Every binary this package drives, mapped to what installs it. A name absent from here
-#: installs as ``pixi add <lowercased name>`` and is asked ``--version``, which is right for
-#: most; the entries are the ones where it is not, plus the homepages worth quoting at
-#: someone who has to go install something. Nothing outside this module spells a conda
-#: package name.
-#:
-#: **Both entries override the version flag, measured rather than assumed.** ``mmseqs
-#: --version`` and ``foldseek --version`` print a usage dump and exit 1 — ``Invalid Command:
-#: --version`` — so the default would report both tools as installed-but-silent. ``mmseqs
-#: version`` answers ``18.8cc5c`` and ``foldseek version`` answers ``10.941cd33``, one line
-#: each, on the pinned bioconda builds.
+#: Where a binary differs from the default of ``pixi add <lowercased name>`` asked
+#: ``--version``. Neither tool here accepts ``--version``; both answer ``version``. Nothing
+#: outside this module spells a conda package name.
 _INSTALLATIONS: dict[str, _Installation] = {
     "mmseqs": _Installation("mmseqs2", "https://github.com/soedinglab/MMseqs2", ("version",)),
     "foldseek": _Installation(
@@ -77,19 +60,14 @@ _INSTALLATIONS: dict[str, _Installation] = {
     ),
 }
 
-#: The **External tool**s every run of this package needs. ``protein doctor`` checks exactly
-#: these two: one searches sequences and one searches structures, and v1 has no third.
+#: The **External tool**s :func:`doctor` checks.
 REQUIRED_TOOLS: tuple[str, ...] = ("mmseqs", "foldseek")
 
-#: What :func:`doctor` reports for a tool that runs but will not identify itself. Neither
-#: tool here is such a tool, and the state is still reachable: a binary shadowing one of
-#: them on ``PATH`` is what ``doctor`` exists to make visible, and presence is the question
-#: it answers.
+#: What :func:`doctor` reports for a tool that runs but will not identify itself.
 NO_VERSION_REPORTED = "installed; reports no version"
 
-#: The BLAST-tab columns both tools emit by default, with the identity column left out.
-#: Positions 0-1 and 3-11 of every result this package parses, so a lane reads a column by
-#: name and neither tool's order leaks into a caller.
+#: The BLAST-tab columns both tools report, without the identity column each spells its
+#: own way.
 _SHARED_COLUMNS: tuple[str, ...] = (
     "query",
     "target",
@@ -108,8 +86,8 @@ _SHARED_COLUMNS: tuple[str, ...] = (
 class ToolNotFoundError(RuntimeError):
     """Raised when an **External tool** cannot be located on ``PATH``.
 
-    The message is the tool's :meth:`ExternalTool.install_instructions`, so the next
-    action is in the exception rather than somewhere the caller has to go and look.
+    The message is the tool's :meth:`ExternalTool.install_instructions`, so the next action
+    travels with the failure.
 
     Examples
     --------
@@ -149,9 +127,8 @@ class ToolCall:
 def is_fresh(output: Path, inputs: Sequence[Path]) -> bool:
     """Return whether ``output`` is fresh against ``inputs`` — the **Freshness** rule.
 
-    Fresh means ``output`` exists, is non-empty, and is at least as new as every
-    input — the same staleness rule ``make`` uses. Missing inputs are ignored;
-    the caller validates that required inputs exist.
+    Fresh means ``output`` exists, is non-empty, and is at least as new as every input — the
+    same staleness rule ``make`` uses. Missing inputs are ignored.
 
     Parameters
     ----------
@@ -180,16 +157,15 @@ def is_fresh(output: Path, inputs: Sequence[Path]) -> bool:
 class ExternalTool(ABC):
     """One binary the package drives instead of reimplementing it.
 
-    Four questions and nothing else: where the binary is (:attr:`path`), what version it
-    is (:attr:`version`), how to run it (:meth:`run`), and how to run it only when what
-    it would build is stale (:meth:`run_to`). All are answered lazily and remembered, so
-    holding a tool costs nothing and a caller that never runs it never needs it installed.
+    Four questions and nothing else: where the binary is (:attr:`path`), what version it is
+    (:attr:`version`), how to run it (:meth:`run`), and how to run it only when what it
+    would build is stale (:meth:`run_to`). All are answered lazily, so a caller that never
+    runs a tool never needs it installed.
 
-    Subclass it to add an adapter — :class:`InstalledTool` shells out for real and
-    :class:`RecordingTool` records instead, and between them they are the seam — or to add
-    a command grammar, which is what :class:`MmseqsLikeTool` does. Everything a caller
-    relies on — the freshness rule, the failure message, the install instructions — lives
-    here, once, so the adapters cannot drift.
+    Subclass it for an adapter — :class:`InstalledTool` or :class:`RecordingTool`, which
+    between them are the seam — or for a command grammar, as :class:`MmseqsLikeTool` does.
+    The freshness rule, the failure message and the install instructions live here so the
+    adapters cannot drift.
 
     Parameters
     ----------
@@ -208,9 +184,9 @@ class ExternalTool(ABC):
     package : str
         The conda package that installs it.
     homepage : str or None
-        The tool's own documentation, when there is one worth quoting.
+        The tool's own documentation, when there is one.
     version_args : tuple of str
-        What the binary is asked for its version, from :data:`_INSTALLATIONS`.
+        What the binary is asked for its version.
 
     Examples
     --------
@@ -246,8 +222,7 @@ class ExternalTool(ABC):
         Raises
         ------
         ToolNotFoundError
-            If the binary cannot be located. The message is
-            :meth:`install_instructions`.
+            If the binary cannot be located. The message is :meth:`install_instructions`.
 
         Examples
         --------
@@ -262,19 +237,15 @@ class ExternalTool(ABC):
     def version(self) -> str:
         """The tool's version line, or ``""`` when it will not identify itself.
 
-        Asked on first use and remembered on the object — so recording the version of a
-        tool that just ran costs nothing, and constructing something that holds a tool
-        runs no subprocess at all. :class:`InstalledTool` remembers per binary as well,
-        which is what makes a fresh tool per step free rather than a subprocess.
-
-        An empty string means *the tool ran and declined*. That is a different answer from
-        a tool that is not there, which raises.
+        Asked on first use and remembered, so holding a tool runs no subprocess. ``""``
+        means *the tool ran and declined*, a different answer from a tool that is not
+        there — that raises.
 
         Returns
         -------
         str
-            The first non-empty line of the tool's version output (stdout preferred,
-            falling back to stderr — different tools choose differently), or ``""``.
+            The first non-empty line of the version output, stdout preferred over stderr,
+            or ``""``.
 
         Raises
         ------
@@ -293,15 +264,13 @@ class ExternalTool(ABC):
     def install_instructions(self) -> str:
         """Return the text to put in front of someone whose binary is missing.
 
-        Names the exact command, because an error a caller cannot act on is a bug rather
-        than an error message. This is also the message :class:`ToolNotFoundError`
-        carries, so the instructions travel with the failure.
+        This is the message :class:`ToolNotFoundError` carries.
 
         Returns
         -------
         str
-            Several lines: what is missing, what installs it, and what to check if it
-            is installed already.
+            Several lines: what is missing, what installs it, and what to check if it is
+            installed already.
 
         Examples
         --------
@@ -328,14 +297,12 @@ class ExternalTool(ABC):
         args : sequence of str
             The arguments after the executable.
         cwd : pathlib.Path, optional
-            The directory to run in. Defaults to the caller's own — pass one when the
-            tool drops files in its working directory and they belong beside its output.
+            The directory to run in. Defaults to the caller's own — pass one when the tool
+            drops files in its working directory and they belong beside its output.
         capture : bool, default True
-            Whether to capture the tool's output or let it inherit this process's stdout
-            and stderr. The two are for different runs and both are wanted: capturing
-            puts the tool's own diagnostics into the error raised on failure, which is
-            what a search that finishes in a second wants; inheriting streams progress
-            live, which is what a database build that runs for an hour wants.
+            Whether to capture the tool's output or let it inherit this process's streams.
+            Capturing puts the tool's own diagnostics into the error raised on failure;
+            inheriting streams progress live, which is what a run of an hour wants.
 
         Returns
         -------
@@ -347,8 +314,8 @@ class ExternalTool(ABC):
         ToolNotFoundError
             If the binary cannot be located.
         RuntimeError
-            If the tool exits non-zero. The message names the tool, its exit code and
-            the arguments, and carries the tool's own output when it was captured.
+            If the tool exits non-zero. The message names the tool, its exit code and the
+            arguments, and carries the tool's own output when it was captured.
 
         Examples
         --------
@@ -374,17 +341,12 @@ class ExternalTool(ABC):
     ) -> Path:
         """Run the tool to build ``output``, skipping the call when ``output`` is fresh.
 
-        The cached command-running primitive every step is built from. When ``output`` is
-        fresh relative to ``inputs`` the tool is not invoked at all and ``output`` is
-        returned as it stands, so re-running a pipeline costs a handful of ``stat`` calls
-        rather than a second pass over a database.
+        The cached primitive every step is built from: a fresh ``output`` costs a handful
+        of ``stat`` calls rather than a second pass over a database.
 
-        The **Freshness** rule lives here rather than in the callers: it is one rule, and
-        a caller that had to apply it would restate the branch at every step and could
-        drift from what ``overwrite`` means. Running goes back out through :meth:`run`
-        rather than around it to :meth:`_execute`, so a single
-        ``monkeypatch.setattr(ExternalTool, "run", ...)`` catches every invocation this
-        package makes, by either adapter and by either tool.
+        Running goes back out through :meth:`run` rather than around it to
+        :meth:`_execute`, so one ``monkeypatch.setattr(ExternalTool, "run", ...)`` catches
+        every invocation this package makes.
 
         Parameters
         ----------
@@ -394,7 +356,7 @@ class ExternalTool(ABC):
             What this call builds, and what its freshness is judged by.
         inputs : sequence of pathlib.Path
             What ``output`` is built from. ``output`` is stale once any of them is newer.
-            Inputs that do not exist are ignored; the caller validates the ones it needs.
+            Inputs that do not exist are ignored.
         overwrite : bool, default False
             Run regardless of freshness.
 
@@ -406,8 +368,8 @@ class ExternalTool(ABC):
         Raises
         ------
         ToolNotFoundError
-            If the binary cannot be located — and only when the tool is actually run, so
-            a fresh output is served without the tool being installed at all.
+            If the binary cannot be located — and only when the tool is actually run, so a
+            fresh output is served without the tool being installed at all.
         RuntimeError
             If the tool exits non-zero.
 
@@ -450,29 +412,17 @@ class ExternalTool(ABC):
         return text.splitlines()[0] if text else ""
 
 
-#: Every version line a binary has given in this process, keyed by the path it was
-#: located at. A binary's version cannot change under a running process, and a step
-#: constructs a fresh tool, so a pipeline used to ask each of its binaries the same
-#: question once per step — for provenance nothing else reads.
-#:
-#: The key is the **located** path rather than the tool name: a name is only as stable as
-#: ``PATH``, and two directories can each hold an ``mmseqs``. It is not resolved through
-#: symlinks either — a link is a legitimate binary, and what one does can depend on the
-#: name it was invoked under.
-#:
-#: Only an answer a binary gave is in here. A tool that cannot be located raises before
-#: this is reached, so *missing* is never remembered and a tool installed midway through
-#: a process is found.
+#: Every version line a binary has given in this process, keyed by the **located** path
+#: rather than the tool name: two directories can each hold an ``mmseqs``. Only an answer a
+#: binary gave lands here, so a tool installed midway through a process is still found.
 _VERSIONS: dict[str, str] = {}
 
 
 def clear_version_cache() -> None:
     """Forget every version learned so far, so the next ask reaches the binary again.
 
-    :data:`_VERSIONS` is keyed on a binary's path and lives as long as the process, which
-    is right for a pipeline and wrong for a test suite: a test that puts a stub tool on
-    ``PATH`` must never be answered from what an earlier test learned. Anything that swaps
-    a binary out under a long-lived process clears it too.
+    :data:`_VERSIONS` lives as long as the process, which is right for a pipeline and wrong
+    for a test suite or anything that swaps a binary out underneath itself.
 
     Examples
     --------
@@ -484,14 +434,11 @@ def clear_version_cache() -> None:
 class InstalledTool(ExternalTool):
     """The **External tool** as it is installed on this machine.
 
-    Resolution is ``shutil.which``, then the ``bin/`` directory of the running
-    interpreter: in a conda/pixi environment the native tools are installed alongside
-    ``python``, so the second lookup still finds them when a script is run with the
-    environment's interpreter by absolute path and ``PATH`` therefore lacks its ``bin/``.
+    Resolution is ``shutil.which``, then the ``bin/`` directory of the running interpreter:
+    in a conda/pixi environment the native tools sit beside ``python``, so the second lookup
+    still finds them when ``PATH`` lacks that directory.
 
-    Locating is remembered per object; the version is remembered per *binary*, for the
-    life of the process — see :data:`_VERSIONS` for why the two differ, and
-    :func:`clear_version_cache` for how to forget the second.
+    The version is remembered per *binary* rather than per object — see :data:`_VERSIONS`.
 
     Examples
     --------
@@ -514,8 +461,7 @@ class InstalledTool(ExternalTool):
     def _detect_version(self) -> str:
         """Ask the binary at :attr:`path`, once per process — see :data:`_VERSIONS`.
 
-        Presence, not truthiness: ``""`` is an answer, and reading it as *not asked yet*
-        would re-probe exactly the tools a pipeline runs.
+        Membership, not truthiness: ``""`` is an answer, not *not asked yet*.
         """
         path = self.path
         if path not in _VERSIONS:
@@ -538,11 +484,9 @@ class InstalledTool(ExternalTool):
 class RecordingTool(ExternalTool):
     """An **External tool** that records what it was asked to do and runs nothing.
 
-    The stand-in a test binds where a real binary would go, so a search is exercised end
-    to end on a machine that has neither tool installed. It is a full
-    :class:`ExternalTool`, not a patched-out method: the freshness rule, the failure
-    message and the version cache are the same code the real one runs, and only the
-    execution is replaced.
+    The stand-in a test binds where a real binary would go, so a search runs end to end on
+    a machine that has neither tool installed. It is a full :class:`ExternalTool`, not a
+    patched-out method: only the execution is replaced.
 
     Parameters
     ----------
@@ -566,9 +510,8 @@ class RecordingTool(ExternalTool):
     calls : list of ToolCall
         Every call made, in order.
     exit_code : int
-        What the next run reports. Set it non-zero to make :meth:`~ExternalTool.run`
-        fail exactly as a real tool failing would, which is how a test reaches the
-        failure path without a binary that can fail.
+        What the next run reports. Set it non-zero to make :meth:`~ExternalTool.run` fail
+        as a real tool failing would.
     stdout : str
         What each captured run returns.
     on_run : callable or None
@@ -629,22 +572,13 @@ class RecordingTool(ExternalTool):
 class MmseqsLikeTool(InstalledTool):
     """The command grammar MMseqs2 and Foldseek share, owned once.
 
-    Foldseek vendors MMseqs2, so the two spell the same verbs — ``createdb``,
-    ``createindex``, ``easy-search``, ``convertalis``, ``cluster`` — over the same ffindex
-    database layout, and both choose their result columns with ``--format-output``. That
-    symmetry is the largest reuse in this package, so it lives here and the concrete tools
-    name only what differs.
+    Foldseek vendors MMseqs2, so the two spell the same verbs over the same ffindex
+    database layout and both choose their result columns with ``--format-output``. What
+    genuinely differs is declared per tool: :attr:`IDENTITY_COLUMN` — Foldseek's is a
+    fraction, MMseqs2's a percentage — and :attr:`EXTRA_COLUMNS`.
 
-    **Two things genuinely differ and are not flattened.** Which identity column a tool
-    reports is its own convention — MMseqs2's ``pident`` against Foldseek's ``fident``,
-    which is a fraction rather than a percentage — and Foldseek adds structural columns
-    MMseqs2 has no answer for. Both are :attr:`IDENTITY_COLUMN` and :attr:`EXTRA_COLUMNS`
-    below, declared per tool.
-
-    **Every ``easy-*`` verb takes a temp directory and neither tool removes it.** That is
-    :meth:`scratch_dir`, here rather than at each call site: measured in #6, one download
-    left 2.7 GB behind, and a rule applied per call site is a rule that gets forgotten at
-    one of them.
+    Every ``easy-*`` verb takes a temp directory and neither tool removes it, so
+    :meth:`scratch_dir` owns that here rather than at each call site.
 
     Constructed with no arguments — a concrete tool knows its own binary name.
 
@@ -663,9 +597,8 @@ class MmseqsLikeTool(InstalledTool):
     ('alntmscore', 'lddt')
     """
 
-    #: Declared, never defaulted: a shared default here would be one of the two tools'
-    #: conventions quietly imposed on the other, which is the flattening this class exists
-    #: to avoid. A subclass names its own.
+    #: Declared, never defaulted: a default here would impose one tool's convention on the
+    #: other.
     IDENTITY_COLUMN: ClassVar[str]
 
     #: What this tool reports that the other cannot. Empty for a tool that adds nothing.
@@ -678,8 +611,8 @@ class MmseqsLikeTool(InstalledTool):
         Returns
         -------
         tuple of str
-            The identity column in position 2 of the shared BLAST-tab set, and this
-            tool's own columns after it.
+            The identity column in position 2 of the shared BLAST-tab set, and this tool's
+            own columns after it.
 
         Examples
         --------
@@ -709,11 +642,10 @@ class MmseqsLikeTool(InstalledTool):
     def scratch_dir(self, purpose: str = "run") -> Iterator[Path]:
         """Yield a temp directory for one command, and remove it however the command ends.
 
-        Every ``easy-*`` verb, ``createindex`` and ``cluster`` take a working directory as
-        a positional argument, and **neither tool removes it** — a single database download
-        left 2.7 GB of them behind. It lands under the package's own data root rather than
-        ``/tmp`` because these are the same gigabytes the outputs are, and a cluster node's
-        ``/tmp`` is neither large enough nor on the same filesystem.
+        Every ``easy-*`` verb, ``createindex`` and ``cluster`` take a working directory as a
+        positional argument, and **neither tool removes it**. It lands under the package's
+        own data root rather than ``/tmp``: these are the same gigabytes the outputs are,
+        and a cluster node's ``/tmp`` is neither large enough nor on the same filesystem.
 
         Parameters
         ----------
@@ -732,9 +664,8 @@ class MmseqsLikeTool(InstalledTool):
         ...     work.is_dir()
         True
         """
-        # Deferred: `protein.store` reaches liulab-genome, and `import protein` should not
-        # pay for that. The module is imported rather than the function so a test can
-        # monkeypatch `protein.store.work_dir` and have this call see it.
+        # Deferred so `import protein` does not pay for liulab-genome, and the module
+        # rather than the function so a monkeypatch of `store.work_dir` is seen here.
         from protein import store
 
         root = store.work_dir()
@@ -762,8 +693,8 @@ class MmseqsLikeTool(InstalledTool):
         inputs : sequence of pathlib.Path
             The files or directories to read.
         database : pathlib.Path
-            The database to write. Its siblings (``.index``, ``.dbtype``, ``.lookup``,
-            ``_h``) land beside it and are the tool's business, not this call's.
+            The database to write. Its siblings land beside it and are the tool's
+            business, not this call's.
         extra : sequence of str, optional
             Further arguments, passed through unread.
         overwrite : bool, default False
@@ -792,20 +723,15 @@ class MmseqsLikeTool(InstalledTool):
     ) -> Path:
         """Fetch a published database by the tool's own name for it, and unpack it.
 
-        ``mmseqs databases UniProtKB/Swiss-Prot`` and ``foldseek databases PDB`` — the two
-        tools spell this the same way, and **this package does not manage the download**.
-        What it costs for MMseqs2 is ADR-0003: the recipe hardcodes ``createdb --gpu 1``,
-        which encodes residues against a 21-letter table.
+        ``mmseqs databases UniProtKB/Swiss-Prot``, ``foldseek databases PDB`` — **this
+        package does not manage the download**. What that costs is ADR-0003.
 
-        Unlike every other verb here, the output is **not captured**: this runs for an hour
-        and moves gigabytes, and the tool's own progress belongs on the terminal rather than
-        in a string nobody reads until it fails.
+        Unlike every other verb here, the output is **not captured**: this moves gigabytes,
+        and the tool's own progress belongs on the terminal.
 
         ``work`` is passed in rather than taken from :meth:`scratch_dir`, which removes
-        itself however the command ends. A download's temp directory holds the archive it
-        already fetched, so an interrupted run has to be able to keep it —
-        :func:`genome.store.completion.work_dir` beside the outputs is what the caller
-        should hand over, and clearing it once the record is written is that caller's job.
+        itself: an interrupted download has to be able to keep the archive it already
+        fetched, so clearing ``work`` is the caller's job.
 
         Parameters
         ----------
@@ -850,10 +776,8 @@ class MmseqsLikeTool(InstalledTool):
         """Print named entries of ``database`` to stdout, and return what it printed.
 
         The retrieval verb, and the reason ``swissprot["P12345"]`` needs no network and no
-        index build. **A name it cannot find is a warning on stderr and exit 0**, so an empty
-        answer is how absence arrives here — the caller checks, and
-        :meth:`protein.db.base.SequenceDatabase.key_for` resolves the key from ``.lookup``
-        first so that it never has to.
+        index build. **A name it cannot find is a warning on stderr and exit 0**, so an
+        empty answer is how absence arrives here.
 
         Parameters
         ----------
@@ -864,8 +788,8 @@ class MmseqsLikeTool(InstalledTool):
             names in ``.lookup`` with ``id_mode=1``.
         entry_type : int, optional
             ``--idx-entry-type``. ``2`` is the parallel header database; the default is the
-            sequence one. **It does not accept ``id_mode=1``** — the header database has no
-            ``.lookup`` of its own — so a header is asked for by numeric key.
+            sequence one. The header database has no ``.lookup``, so **it does not accept
+            ``id_mode=1``** — a header is asked for by numeric key.
         id_mode : int, optional
             ``--id-mode``. ``1`` resolves each id through the database's ``.lookup``.
         extra : sequence of str, optional
@@ -935,8 +859,8 @@ class MmseqsLikeTool(InstalledTool):
         """Search ``query`` against ``target`` and write the hits to ``output``.
 
         The one verb both lanes are built on: ``query`` is a FASTA for MMseqs2 and a
-        structure for Foldseek, ``target`` is either a registered database or a raw file
-        the tool converts, and the columns are this tool's :attr:`format_columns`.
+        structure for Foldseek, ``target`` is either a registered database or a raw file the
+        tool converts, and the columns are this tool's :attr:`format_columns`.
 
         Parameters
         ----------
@@ -947,8 +871,8 @@ class MmseqsLikeTool(InstalledTool):
         output : pathlib.Path
             The tab-separated hits.
         extra : sequence of str, optional
-            Further arguments, passed through unread — ``-s``, ``--max-seqs`` and the
-            rest belong to the caller that knows what it is searching.
+            Further arguments, passed through unread — search settings belong to the
+            caller that knows what it is searching.
         overwrite : bool, default False
             Search regardless of freshness.
 
@@ -1051,8 +975,8 @@ class MmseqsLikeTool(InstalledTool):
         clusters : pathlib.Path
             The cluster database to write.
         extra : sequence of str, optional
-            Further arguments, passed through unread — ``--min-seq-id``, ``-c`` and the
-            rest belong to the caller that knows what it is clustering.
+            Further arguments, passed through unread — the thresholds belong to the caller
+            that knows what it is clustering.
         overwrite : bool, default False
             Cluster regardless of freshness.
 
@@ -1094,10 +1018,8 @@ class Mmseqs(MmseqsLikeTool):
 class Foldseek(MmseqsLikeTool):
     """Foldseek — the structure half, and the one that vendors the other.
 
-    ``alntmscore`` and ``lddt`` are what a structural hit is judged on and MMseqs2 has no
-    answer for either. ``q3di`` is deliberately **absent**: it appears in no
-    ``--format-output`` list on 10-941cd33, and asking for it fails the whole search with
-    ``Format code q3di does not exist.``
+    Its extra columns are what a structural hit is judged on, and MMseqs2 has no answer for
+    either.
 
     Examples
     --------
@@ -1124,8 +1046,7 @@ def doctor() -> dict[str, str]:
     Raises
     ------
     ToolNotFoundError
-        If any required tool is missing. The message names the missing tool and the
-        command that installs it.
+        If any required tool is missing.
 
     Examples
     --------

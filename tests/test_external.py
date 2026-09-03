@@ -1,11 +1,8 @@
 """Tests for protein.external — the one module that shells out to a native binary.
 
-Almost nothing here needs a tool installed: a stub on `PATH` is a real binary as far as
-this module is concerned, so resolution, the two run flavours, the failure message, the
-version cache and `doctor` are all driven against one. The command grammar needs no binary
-at all — `MmseqsLikeTool` reaches the process only through `ExternalTool.run`, and one
-`monkeypatch.setattr` on that catches every invocation, which is the property most of the
-rest of the suite will stand on.
+Nothing here needs a tool installed: a stub on `PATH` is a real binary as far as this module
+is concerned, and the command grammar needs no binary at all, because one
+`monkeypatch.setattr(ExternalTool, "run", ...)` catches every invocation.
 """
 
 from __future__ import annotations
@@ -43,8 +40,7 @@ _SOURCE_ROOT = Path(__file__).resolve().parents[1] / "src" / "protein"
 def _forget_versions() -> Iterator[None]:
     """Clear the path-keyed version cache around every test.
 
-    The cache lives as long as the process, which is right for a pipeline and wrong here:
-    a stub written at one tmp_path must never be answered from what another test learned.
+    A stub written at one tmp_path must never be answered from what another test learned.
     """
     clear_version_cache()
     yield
@@ -55,9 +51,8 @@ def _forget_versions() -> Iterator[None]:
 def on_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Callable[[str, str], Path]:
     """Return a helper that puts an executable stub on `PATH` under a chosen tool name.
 
-    `PATH` becomes exactly this directory, and the interpreter is pointed somewhere empty,
-    so the tools the pixi environment really has cannot answer for a test that never
-    installed them -- the resolver's second lookup would otherwise find them.
+    The interpreter is pointed somewhere empty too, or the resolver's second lookup would
+    find the tools the pixi environment really has.
     """
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -77,8 +72,7 @@ def on_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Callable[[str, s
 def run_calls(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
     """Replace `ExternalTool.run` on the base class and collect every call's arguments.
 
-    One patch, both adapters, both tools: this is the property `run_to` is written for,
-    and every grammar test below rides on it rather than on a binary.
+    One patch, both adapters, both tools — the property `run_to` is written for.
     """
     calls: list[list[str]] = []
 
@@ -208,9 +202,8 @@ def test_run_to_runs_again_when_told_to_overwrite(tmp_path: Path) -> None:
 def test_run_to_goes_out_through_run_so_one_patch_catches_every_invocation(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    # The single most load-bearing line in this module: patching `run` on the ABC has to
-    # stop a `run_to` made by either adapter, or the suite has a hole a real binary falls
-    # through.
+    # Patching `run` on the ABC has to stop a `run_to` made by either adapter, or the
+    # suite has a hole a real binary falls through.
     caught: list[list[str]] = []
 
     def record(
@@ -274,8 +267,6 @@ def test_a_missing_binary_raises_with_its_install_instructions_as_the_message(
 
 
 def test_the_two_tools_are_asked_version_because_they_reject_the_double_dash_flag() -> None:
-    # Measured on the pinned builds: `mmseqs --version` and `foldseek --version` print a
-    # usage dump and exit 1, so the default flag would report both as installed-but-silent.
     assert InstalledTool("mmseqs").version_args == ("version",)
     assert InstalledTool("foldseek").version_args == ("version",)
     assert InstalledTool("someothertool").version_args == DEFAULT_VERSION_ARGS
@@ -389,8 +380,7 @@ def test_only_foldseek_adds_the_structural_columns() -> None:
 
 
 def test_no_format_column_is_q3di_because_foldseek_rejects_that_code() -> None:
-    # Measured on foldseek 10-941cd33: `--format-output q3di` fails the whole search with
-    # "Format code q3di does not exist." It is in neither tool's `--format-output` list.
+    # Asking for it fails the whole search, so neither tool may name it.
     assert "q3di" not in Foldseek().format_output
     assert "q3di" not in Mmseqs().format_output
 
@@ -540,8 +530,8 @@ def _imports_subprocess(module: Path) -> bool:
 
 
 def test_every_adapter_and_every_tool_is_one_external_tool() -> None:
-    # The stand-in is a full ExternalTool rather than a patched-out method, which is what
-    # makes the freshness rule and the failure message the same code in a test as in a run.
+    # The stand-in being a full ExternalTool is what makes the freshness rule and the
+    # failure message the same code in a test as in a run.
     assert issubclass(RecordingTool, ExternalTool)
     assert issubclass(InstalledTool, ExternalTool)
     assert issubclass(MmseqsLikeTool, ExternalTool)
