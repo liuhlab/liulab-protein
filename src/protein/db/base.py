@@ -849,7 +849,7 @@ def _adopted_directory(path: Path) -> Path:
     raise LookupError(
         f"{path} is neither a directory holding an ffindex database nor an ffindex prefix "
         f"with a .dbtype beside it. Point `adopt` at the directory `mmseqs databases` or "
-        f"`foldseek databases` wrote, e.g. /scratch/zhoulab/hanliu/protein/db/swissprot."
+        f"`foldseek databases` wrote."
     )
 
 

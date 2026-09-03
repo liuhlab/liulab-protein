@@ -33,7 +33,7 @@ misfires, is as much a contribution as adding one.
   a ruff target, a pyright version — and `conformance` holds that copy to the floor.
 - **hatchling + hatch-vcs**. The version comes from the newest git tag. Never hand-edit one.
 - **`platforms = ["linux-64"]`**, so nothing resolves on macOS. The gate runs in CI on
-  `ubuntu-latest`, or on GPU71FM, which is the only host this project uses.
+  `ubuntu-latest`, or on a linux-64 host with pixi.
 - Environments: `default` (the gate), `test`, `docs`, and `esm` — the only one with torch.
 
 ## Architecture

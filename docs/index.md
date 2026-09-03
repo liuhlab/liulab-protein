@@ -83,7 +83,7 @@ subdirectory of it, rather than inventing a second root.
 Name it with `LIULAB_DATA`:
 
 ```bash
-export LIULAB_DATA=/scratch/zhoulab/hanliu
+export LIULAB_DATA=/path/to/lab-data
 ```
 
 If you do not, a couple of well-known lab paths are tried, and then `~/liulab_data`.

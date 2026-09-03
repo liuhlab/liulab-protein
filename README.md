@@ -50,7 +50,7 @@ Databases are gigabytes and shared, so they live under the lab data directory ra
 in the repo. Name it once:
 
 ```bash
-export LIULAB_DATA=/scratch/zhoulab/hanliu
+export LIULAB_DATA=/path/to/lab-data
 ```
 
 Everything lands under `$LIULAB_DATA/protein/`: databases in `db/<name>/`, the SIFTS map in
