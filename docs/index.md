@@ -114,7 +114,7 @@ protein db adopt swissprot /path/to/swissprot
 
 Use `download` when they are not. It hands the job to `mmseqs databases` or `foldseek
 databases`, then registers what they left behind. Budget the real sizes, not the advertised
-ones: Swiss-Prot lands at 1.9G and pdb100 at 4.3G.
+ones: Swiss-Prot lands at 1.1G and pdb100 at 4.3G.
 
 ```bash
 protein db download swissprot

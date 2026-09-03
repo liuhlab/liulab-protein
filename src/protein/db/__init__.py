@@ -113,7 +113,9 @@ class Declaration:
 
 
 #: The two databases v1 can fetch, with the sizes they really land at rather than the ones
-#: the publishers bill: Swiss-Prot 1.1G plus 824 MB of ``swissprot_taxonomy``, pdb100 4.3G.
+#: the publishers bill: Swiss-Prot 1.1G, pdb100 4.3G. The 824 MB of ``swissprot_taxonomy``
+#: `mmseqs databases` also writes is one of the eleven files **inside** that 1.1G, not a sum
+#: on top of it — ``du -sb`` on the real directory is 1,149,140,927 bytes.
 #: The registry must eventually carry names at UniRef50 and AlphaFold DB scale — 8.8 GB and a
 #: measured 491 GB of source — so nothing here assumes a database is small, and neither is
 #: declared, because neither has been measured on this cluster.
@@ -123,7 +125,7 @@ DECLARED: Mapping[str, Declaration] = MappingProxyType(
             name="swissprot",
             source="UniProtKB/Swiss-Prot",
             factory=SwissProt,
-            description="UniProtKB reviewed entries, searched with MMseqs2 (1.9G on disk)",
+            description="UniProtKB reviewed entries, searched with MMseqs2 (1.1G on disk)",
         ),
         "pdb": Declaration(
             name="pdb",
