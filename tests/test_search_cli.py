@@ -20,6 +20,8 @@ from protein.external import Mmseqs
 from protein.search.cli import _Hits, _report, app
 from protein.search.mmseqs import read_hits
 
+from . import plain_text
+
 _MMSEQS_HITS = Path(__file__).resolve().parent / "data" / "mmseqs_hits_p01308.tsv"
 
 _INSULIN = "MALWMRLLPLLALLALWGPDPAAAFVNQHLCGSHLVEALYLVCGERGFFYTPKTRREAEDLQ"
@@ -53,9 +55,11 @@ def test_the_sub_app_registers_its_commands_under_the_names_it_gave_them() -> No
 
 
 def test_every_command_takes_json() -> None:
+    # `plain_text`, not `result.output`: rich styles the first dash of `--json` separately,
+    # so the raw output carries no such substring wherever colour is on. See tests/__init__.
     for command in app.registered_commands:
         assert command.name is not None
-        assert "--json" in _run(command.name, "--help").output, command.name
+        assert "--json" in plain_text(_run(command.name, "--help").output), command.name
 
 
 def test_the_root_app_mounts_the_lane_as_protein_search() -> None:

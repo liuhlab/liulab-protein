@@ -24,6 +24,8 @@ from protein.cli import app as root_app
 from protein.embed import Embedding
 from protein.embed.cli import app
 
+from . import plain_text
+
 _DATA = Path(__file__).resolve().parent / "data"
 _FASTA = _DATA / "uniprot_p01308.fasta"
 _THREE = _DATA / "uniprot_three.fasta"
@@ -51,10 +53,12 @@ def test_the_command_is_registered_under_the_name_it_was_given() -> None:
 
 
 def test_every_command_takes_json() -> None:
+    # `plain_text`, not `result.output`: rich styles the first dash of `--json` separately,
+    # so the raw output carries no such substring wherever colour is on. See tests/__init__.
     for command in app.registered_commands:
         assert command.name is not None
         result = CliRunner().invoke(root_app, ["esm", command.name, "--help"])
-        assert "--json" in result.output, command.name
+        assert "--json" in plain_text(result.output), command.name
 
 
 def test_the_lane_is_mounted_on_the_root_app_as_esm() -> None:

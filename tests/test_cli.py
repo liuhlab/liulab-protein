@@ -17,6 +17,8 @@ from protein import __version__
 from protein.cli import app
 from protein.external import ToolNotFoundError
 
+from . import plain_text
+
 _TOOLS = {"mmseqs": "18.8cc5c", "foldseek": "10.941cd33"}
 
 
@@ -71,7 +73,20 @@ def test_every_command_is_registered_under_a_name_it_was_given() -> None:
 
 
 def test_every_command_takes_json() -> None:
+    # `plain_text`, not `result.output`: rich styles the first dash of `--json` separately,
+    # so the raw output carries no such substring wherever colour is on. See tests/__init__.
     for command in app.registered_commands:
         assert command.name is not None
         result = CliRunner().invoke(app, [command.name, "--help"])
-        assert "--json" in result.output, command.name
+        assert "--json" in plain_text(result.output), command.name
+
+
+def test_the_help_still_shows_json_when_rich_colours_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The trap `plain_text` exists for, pinned so the next reader does not undo it. Colour is
+    # off under a bare `ssh` and on under GitHub Actions, and rich styles the first dash of
+    # `--json` on its own — so a substring check on the raw output answers differently in the
+    # two places. Measured by #17 as a red CI job beside a green gate.
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    result = CliRunner().invoke(app, ["version", "--help"])
+    assert "\x1b[" in result.output
+    assert "--json" in plain_text(result.output)

@@ -28,6 +28,8 @@ from protein.cli import app as root_app
 from protein.core import Protein
 from protein.sifts import SiftsFormatError, SiftsNotDownloadedError, app
 
+from . import plain_text
+
 _SLICE = Path(__file__).parent / "data" / "sifts_pdb_chain_uniprot_slice.tsv"
 
 #: The release the slice was cut from, verbatim from its own first line.
@@ -393,10 +395,12 @@ def test_every_command_is_registered_under_a_name_it_was_given() -> None:
 
 
 def test_every_command_takes_json() -> None:
+    # `plain_text`, not `result.output`: rich styles the first dash of `--json` separately,
+    # so the raw output carries no such substring wherever colour is on. See tests/__init__.
     for command in app.registered_commands:
         assert command.name is not None
         result = CliRunner().invoke(app, [command.name, "--help"])
-        assert "--json" in result.output, command.name
+        assert "--json" in plain_text(result.output), command.name
 
 
 def test_a_bare_invocation_prints_help_instead_of_nothing() -> None:
