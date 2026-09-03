@@ -106,10 +106,23 @@ docs-build = "zensical build --clean --strict"
 [tool.pixi.feature.esm.pypi-dependencies]
 esm = ">=3.4,<4"
 
-# torch 2.11 requires setuptools <82; the conda solve otherwise pins 84 and the pypi solve
-# then has no torch to pick. Measured, not guessed -- see the commit.
+# torch comes from conda-forge and not from PyPI, and that one line is what makes this
+# environment usable (#19). PyPI's default torch 2.11 wheel is the cu130 variant: it refuses
+# to initialise CUDA against this cluster's 12.6 driver, and it loads the SYSTEM libstdc++,
+# whose CXXABI is older than the one conda-forge scipy needs -- so `import torch` then
+# `import esm` died as well, and both defects had the one cause. conda-forge builds torch
+# against the same libstdc++ as everything else here, and the build the solver picks follows
+# the platform: cuda129 under the `cuda = "12"` variant, cpu on a machine with no GPU.
+# Measured on an H100: `torch.cuda.is_available()` is True with LD_LIBRARY_PATH unset, so
+# nothing here ships a load-path workaround.
+#
+# The bound repeats `esm`'s own `torch >=2.11,<2.12` because the conda solve runs first:
+# without it the solver takes 2.13 and the PyPI solve then has no torch to pick. A
+# `setuptools = "<82"` ceiling used to sit beside it for the same reason. It is gone -- the
+# conda-forge package declares `setuptools <82` itself, and re-solving without the copy
+# leaves the lock at 81.0.0 unchanged.
 [tool.pixi.feature.esm.dependencies]
-setuptools = "<82"
+pytorch = ">=2.11,<2.12"
 
 # `default` takes `test` so pyright can resolve pytest, and not `docs`, which exists so that
 # exactly one CI job installs it.
@@ -118,7 +131,8 @@ default = { features = ["test"], solve-group = "default" }
 test = { features = ["test"], solve-group = "default" }
 docs = { features = ["docs"], solve-group = "default" }
 # Not a CI job: no runner has a GPU, and the weights are gigabytes. Its own solve group, so
-# the setuptools ceiling torch needs stays off the environments that run the gate.
+# torch, the CUDA runtime it drags in and the setuptools ceiling it declares all stay off the
+# environments that run the gate.
 esm = { features = ["test", "esm"] }
 
 [tool.pixi.tasks]
