@@ -106,14 +106,20 @@ docs-build = "zensical build --clean --strict"
 [tool.pixi.feature.esm.pypi-dependencies]
 esm = ">=3.4,<4"
 
+# torch 2.11 requires setuptools <82; the conda solve otherwise pins 84 and the pypi solve
+# then has no torch to pick. Measured, not guessed -- see the commit.
+[tool.pixi.feature.esm.dependencies]
+setuptools = "<82"
+
 # `default` takes `test` so pyright can resolve pytest, and not `docs`, which exists so that
 # exactly one CI job installs it.
 [tool.pixi.environments]
 default = { features = ["test"], solve-group = "default" }
 test = { features = ["test"], solve-group = "default" }
 docs = { features = ["docs"], solve-group = "default" }
-# Not a CI job: no runner has a GPU, and the weights are gigabytes.
-esm = { features = ["test", "esm"], solve-group = "default" }
+# Not a CI job: no runner has a GPU, and the weights are gigabytes. Its own solve group, so
+# the setuptools ceiling torch needs stays off the environments that run the gate.
+esm = { features = ["test", "esm"] }
 
 [tool.pixi.tasks]
 lint = "ruff check ."
