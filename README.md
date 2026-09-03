@@ -42,16 +42,7 @@ s["A"].uniprot  # ('P0CG48',) — from SIFTS, not from the file
 s["A"].search("pdb")  # a DataFrame of Foldseek hits
 ```
 
-There is a command for each of those:
-
-```text
-protein version | doctor
-protein db        list | adopt | download | status
-protein esm       embed
-protein search    seq | struct
-protein sifts     prepare | status
-protein structure fetch | show
-```
+There is a command for each of those. `protein --help` lists them.
 
 ## Point it at the data
 
@@ -64,7 +55,7 @@ export LIULAB_DATA=/scratch/zhoulab/hanliu
 
 Everything lands under `$LIULAB_DATA/protein/`: databases in `db/<name>/`, the SIFTS map in
 `sifts/`, cached coordinates in `structures/`. Register a database that is already on disk
-with `protein db adopt`, or fetch one with `protein db download`. The docs explain both.
+with `protein db adopt`, or fetch one with `protein db download`.
 
 ## Check your work
 

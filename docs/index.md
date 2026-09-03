@@ -27,11 +27,6 @@ nothing to go and fetch by hand. Ask the package whether it can see them:
 pixi run protein doctor
 ```
 
-```text
-mmseqs: 18.8cc5c
-foldseek: 10.941cd33
-```
-
 Embedding is the one exception. ESM-C needs torch, which is heavy enough that it lives in
 its own environment:
 
@@ -55,8 +50,8 @@ s["A"].uniprot  # ('P0CG48',) — from SIFTS, not from the file
 s["A"].search("pdb")  # a DataFrame of Foldseek hits
 ```
 
-Embedding is a class you build and keep, because the weights are 1.33 GB and somebody has
-to own them:
+Embedding is a class you build and keep, because the weights are large and somebody has to
+own them:
 
 ```python
 from protein import ESMC
@@ -113,20 +108,17 @@ protein db adopt swissprot /path/to/swissprot
 ```
 
 Use `download` when they are not. It hands the job to `mmseqs databases` or `foldseek
-databases`, then registers what they left behind. Budget the real sizes, not the advertised
-ones: Swiss-Prot lands at 1.1G and pdb100 at 4.3G.
+databases`, then registers what they left behind:
 
 ```bash
 protein db download swissprot
 protein db list
-protein db status swissprot
 ```
 
 The SIFTS map is smaller and comes from the EBI rather than from either tool:
 
 ```bash
 protein sifts prepare
-protein sifts status
 ```
 
 Both of those need the network, so run them on a login node. The lab's compute nodes have
@@ -143,23 +135,7 @@ pixi run check
 It runs every step, then prints all the failures at once. Read to the bottom before you
 fix anything.
 
-The docs site is built by a separate command, because it needs a heavier environment:
-
-```bash
-pixi run docs-build
-```
-
-## Where things live
-
-| Path | What it holds |
-| --- | --- |
-| `src/protein/` | the package |
-| `tests/` | the tests |
-| `docs/` | this site |
-| `scripts/check.sh` | the gate every commit has to pass |
-| `CONTEXT.md` | the glossary: the words this repo uses |
-
-Some notes are written for coding agents, not for people. Conventions go under
+Some notes here are written for coding agents, not for people. Conventions go under
 `docs/agents/`, decision records under `docs/adr/`, and research notes under
 `docs/research/`. Nothing in those three directories shows up in the menu or the search
 box, and a page written there is still reachable by its own URL.

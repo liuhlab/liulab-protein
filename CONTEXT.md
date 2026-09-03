@@ -11,11 +11,9 @@ unchanged — this package imports `genome.store` rather than restating them.
 Foldseek's structural alphabet: twenty letters, one per residue, naming the geometry of that
 residue's nearest tertiary contact. It turns a fold into a string, which is how Foldseek
 searches structures with MMseqs2's machinery. A **Database** searched with Foldseek stores
-one — `pdb100` keeps it in the `_ss` sibling of its ffindex set.
+one.
 
-This package never computes a 3Di string and never reads one. Foldseek 10 has no `q3di`
-output column, biotite's own encoder is noted and unused, and sequence-to-3Di prediction is
-out of v1.
+This package never computes a 3Di string and never reads one.
 
 ### Chain
 
@@ -34,10 +32,10 @@ A large, immutable set of local ffindex files that an **External tool** searches
 completion record is the registration; a name addresses a directory; nothing is persisted
 centrally.**
 
-Immutable is literal. The index holds byte offsets into the data file, so editing the data
-breaks every offset, and every change makes a new database instead. No mutating verb is
-exposed. Two ways in: `adopt` a set already on disk, or `download` one through the tool's own
-downloader. **SIFTS** is not a Database — it is a prepared set.
+Immutable is literal: the index holds byte offsets into the data file, so a change makes a new
+database rather than an edit, and no mutating verb is exposed. Two ways in — `adopt` a set
+already on disk, or `download` one through the tool's own downloader. **SIFTS** is not a
+Database; it is a prepared set.
 
 ### Embedding
 
@@ -66,31 +64,27 @@ where the tool takes that thing directly, never where the class would first have
 something else.*
 
 It has no `embed()` either, and that is a second rule: **resident state gets an object; a
-subprocess does not.** ESM-C holds 1.33 GB of weights across calls, so the weights became the
-`ESMC` object you construct and keep. mmseqs holds nothing between calls and reaches its
-**Database** by path, so `search()` stays a method. The asymmetry between `p.search(db)` and
-`ESMC().embed(p)` is this rule, not an oversight.
+subprocess does not.** ESM-C holds its weights across calls, so they became the `ESMC` object
+you construct and keep; mmseqs holds nothing between calls, so `search()` stays a method. The
+asymmetry between `p.search(db)` and `ESMC().embed(p)` is this rule, not an oversight.
 
 ### SIFTS
 
 The EBI's re-curated map between PDB chains and UniProt accessions, and the only join
 between this package's two namespaces. **An accession addresses a sequence; a PDB id
-addresses a structure.** Neither owns the other, and the map is many-to-many both ways:
-1.00% of chains carry more than one accession, and one accession reaches a median of 2
-entries and a maximum of 3,668.
+addresses a structure.** Neither owns the other, and the map is many-to-many both ways: a
+chain may carry several accessions, and an accession many entries.
 
 It is segment-level, not chain-level. A row is an entry, an author chain, an accession and
-two residue ranges, so one chain-and-accession pair may carry several rows — up to 33. Both
-ranges come back verbatim: 2.2% of segments have unequal range lengths, so no offset is
-computed and no caller is handed one.
+two residue ranges, so one chain-and-accession pair may carry several rows. The two ranges
+are not always the same length, so both come back verbatim and no offset is computed.
 
-A structure file carries its own cross-reference and it disagrees. `1UBQ` chain A is
-`P62988` in the mmCIF's `_struct_ref_seq` and `P0CG48` in SIFTS, because the file holds the
-depositor's reference frozen at deposition and SIFTS holds PDBe's re-curated one. The join
-therefore reads SIFTS alone, so that `Protein.structures` and `Chain.uniprot` round-trip.
+A structure file carries its own cross-reference and it disagrees, because the file holds the
+depositor's reference frozen at deposition: `1UBQ` chain A is `P62988` in the mmCIF's
+`_struct_ref_seq` and `P0CG48` in SIFTS. The join therefore reads SIFTS alone, so that
+`Protein.structures` and `Chain.uniprot` round-trip.
 
-Stored as a prepared set at `<LIULAB_DATA>/protein/sifts/pdb_chain_uniprot.tsv.gz`. See
-`protein.sifts`.
+A prepared set under the **Data dir**, not a **Database**. See `protein.sifts`.
 
 ### Structure
 
