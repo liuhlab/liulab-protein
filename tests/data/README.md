@@ -30,3 +30,35 @@ converters would write `C` there, and this package writes `X`.
 
 Neither file is subsampled. A Swiss-Prot record is a few hundred residues, so the whole entry
 is smaller than an excerpt plus the note explaining what was cut.
+
+## Search hits
+
+Run on GPU71FM, 2026-09-03, against the real databases under
+`/scratch/zhoulab/hanliu/protein/db/`. Both runs asked for the columns the package asks for,
+so each file is what `protein.search` reads back:
+
+```bash
+mmseqs easy-search q.fasta db/swissprot/swissprot hits.tsv tmpdir \
+  -s 1.0 --threads 4 --max-seqs 20 \
+  --format-output query,target,pident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits
+
+foldseek easy-search 1ubq.cif db/pdb/pdb100 fshits.tsv fstmp \
+  -s 1.0 --threads 4 --max-seqs 20 \
+  --format-output query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits,alntmscore,lddt
+```
+
+| File | What it is | Departs from the source |
+| --- | --- | --- |
+| `mmseqs_hits_p01308.tsv` | 20 Swiss-Prot hits for `P01308`, human insulin | nothing |
+| `foldseek_hits_1ubq.tsv` | 20 pdb100 hits for `1UBQ`, ubiquitin | nothing |
+
+`--max-seqs 20` is why each file holds 20 rows. The query for the first was the insulin
+sequence in `uniprot_p01308.fasta`; the query for the second was `1UBQ.cif`, downloaded from
+`https://files.rcsb.org/download/1UBQ.cif`. Neither query file is kept here — a hit table is
+what the code parses, and the structure is 103 kB.
+
+The two files are also the evidence for two claims the code makes. MMseqs2 reports `pident`
+as a percentage, so an identical hit reads `100.000`; Foldseek reports `fident` as a
+fraction, so its best hit reads `0.973`. And Foldseek's last two columns are `alntmscore`
+and `lddt`, with no `q3di` anywhere: that column does not exist in Foldseek 10-941cd33, and
+asking for it fails the whole search.
