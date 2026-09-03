@@ -5,9 +5,8 @@ command, and the model has its own lane behind the `model` marker. The one path 
 real class is the unknown-slug refusal, which answers before anything is loaded.
 
 Invoked through the root app -- `protein esm embed ...` -- and never through this sub-app
-alone. A Typer app holding exactly one command collapses into that command, so invoking this
-one directly would read `embed` as the FASTA path. Mounting is what makes it a group, and
-mounted is how anyone runs it.
+alone: a Typer app holding exactly one command collapses into that command, so invoking this
+one directly would read `embed` as the FASTA path.
 """
 
 from __future__ import annotations
@@ -54,7 +53,7 @@ def test_the_command_is_registered_under_the_name_it_was_given() -> None:
 
 def test_every_command_takes_json() -> None:
     # `plain_text`, not `result.output`: rich styles the first dash of `--json` separately,
-    # so the raw output carries no such substring wherever colour is on. See tests/__init__.
+    # so the raw output carries no such substring wherever colour is on.
     for command in app.registered_commands:
         assert command.name is not None
         result = CliRunner().invoke(root_app, ["esm", command.name, "--help"])
@@ -62,7 +61,7 @@ def test_every_command_takes_json() -> None:
 
 
 def test_the_lane_is_mounted_on_the_root_app_as_esm() -> None:
-    # `in`, not `==`: three more lanes mount themselves on the same list.
+    # `in`, not `==`: the other lanes mount themselves on the same list.
     assert "esm" in [group.name for group in root_app.registered_groups]
     result = CliRunner().invoke(root_app, ["esm", "--help"])
     assert result.exit_code == 0
@@ -108,8 +107,7 @@ def test_the_layer_it_was_given_reaches_the_model_and_the_provenance(stand_in: N
 
 
 def test_an_unknown_checkpoint_exits_one_and_names_the_slugs_that_exist() -> None:
-    # Not stood in for: the real class refuses the slug before it imports torch, which is
-    # what makes a checkpoint table better than an arbitrary HF id.
+    # Not stood in for: the real class refuses the slug before it imports torch.
     result = CliRunner().invoke(
         root_app, ["esm", "embed", str(_FASTA), "--checkpoint", "esmc_300m"]
     )

@@ -1,27 +1,19 @@
 """Sequence search with MMseqs2, and the hit table both **External tool**s answer with.
 
 :func:`search` is the whole lane: one sequence, one **Database**, one
-``mmseqs easy-search``, one :class:`~pandas.DataFrame`. It is what
-:meth:`protein.search.mixin.SearchMixin.search` calls, and the query FASTA it writes lives
-and dies inside :meth:`~protein.external.MmseqsLikeTool.scratch_dir`, so a search leaves
-nothing behind.
+``mmseqs easy-search``, one :class:`~pandas.DataFrame`.
 
 **The hit table's grammar is here, not in each tool's module.** Foldseek vendors MMseqs2, so
-the two write the same tab-separated columns chosen the same way — which is why
-:class:`~protein.external.Foldseek` subclasses :class:`~protein.external.MmseqsLikeTool` and
-why :mod:`protein.search.foldseek` reads its results with :func:`read_hits` from here rather
-than with a second parser. :data:`COLUMN_DTYPES` types every column either tool can emit, so
-a column is named and typed **once** and neither tool's order reaches a caller.
+:mod:`protein.search.foldseek` reads its results with :func:`read_hits` from here rather than
+with a second parser, and :data:`COLUMN_DTYPES` names and types every column either tool can
+emit exactly once.
 
 The two tools disagree about identity on purpose: MMseqs2 reports ``pident``, a percentage,
-and Foldseek reports ``fident``, a fraction. Both are in :data:`COLUMN_DTYPES` under their
-own names, and nothing here renames one to the other — a frame says which number it carries
-by which column it has.
+and Foldseek reports ``fident``, a fraction. Nothing here renames one to the other — a frame
+says which number it carries by which column it has.
 
-**Resolving a bare name is not this lane's business.** ``search("swissprot")`` turns a name
-into a path by asking :mod:`protein.db`, which owns the database layout and spells it once.
-:func:`database_path` here is the one line that reaches over, and what it needs of a
-**Database** is :class:`SearchTarget` — one read-only attribute wide.
+A bare name is resolved by :mod:`protein.db`, which owns the database layout;
+:func:`database_path` is the one line that reaches over.
 
 Examples
 --------
@@ -62,12 +54,8 @@ __all__ = [
 ]
 
 #: Every column either **External tool** can be asked for, mapped to the dtype it is read
-#: as. One table rather than one per tool, because the columns are one set: Foldseek vendors
-#: MMseqs2 and adds two, and the identity column is the only name they disagree on.
-#:
-#: ``pident`` is a percentage and ``fident`` the same quantity as a fraction, so a caller
-#: comparing two frames compares the column it has rather than a number that silently
-#: changed scale. Both are ``float64``; nothing here converts one into the other.
+#: as — one table rather than one per tool. ``pident`` is a percentage and ``fident`` the
+#: same quantity as a fraction; nothing here converts one into the other.
 COLUMN_DTYPES: Mapping[str, str] = MappingProxyType(
     {
         "query": "string",
@@ -89,21 +77,17 @@ COLUMN_DTYPES: Mapping[str, str] = MappingProxyType(
 )
 
 #: What the ``query`` column says when the searched **Protein** has no accession. A FASTA
-#: record needs a header and MMseqs2 reports its first token, so the alternative is an empty
-#: one — a hit table whose ``query`` column is blank rather than obviously a placeholder.
+#: record needs a header, and the alternative is a blank ``query`` column.
 DEFAULT_QUERY_NAME = "query"
 
 
 class SearchTarget(Protocol):
     """What a search needs of a **Database**: the path its **External tool** is pointed at.
 
-    The whole contract, deliberately. ``protein.db``'s ``Database`` is not built yet, so this
-    is what :func:`search` types its argument against and what the class must satisfy — one
-    attribute, so satisfying it constrains nothing else about the class.
+    One read-only attribute, so satisfying it constrains nothing else about the class.
 
     :attr:`path` is the **ffindex prefix**, not the directory holding it: MMseqs2 and Foldseek
-    take ``.../swissprot`` and find ``swissprot.index``, ``swissprot.dbtype`` and the rest
-    beside it themselves.
+    take ``.../swissprot`` and find ``swissprot.index`` and the rest beside it themselves.
     """
 
     @property
@@ -129,9 +113,8 @@ def hit_dtypes(tool: MmseqsLikeTool) -> dict[str, str]:
     Raises
     ------
     KeyError
-        If the tool asks for a column :data:`COLUMN_DTYPES` does not type. That is the
-        column table and the tool drifting apart, and it fails here rather than producing a
-        frame whose dtype pandas guessed.
+        If the tool asks for a column :data:`COLUMN_DTYPES` does not type, rather than
+        producing a frame whose dtype pandas guessed.
 
     Examples
     --------
@@ -179,9 +162,8 @@ def empty_hits(tool: MmseqsLikeTool) -> pd.DataFrame:
 def read_hits(output: Path, tool: MmseqsLikeTool) -> pd.DataFrame:
     """Read what ``tool`` wrote to ``output`` as a named, typed hit table.
 
-    The tab-separated file carries no header — the column names are the ones the tool was
-    asked for, and this is the one place they are put back on. An output that is missing or
-    empty is a search that found nothing, which :func:`empty_hits` answers.
+    The tab-separated file carries no header, and this is the one place the names are put
+    back on. An output that is missing or empty is a search that found nothing.
 
     Parameters
     ----------
@@ -208,9 +190,8 @@ def read_hits(output: Path, tool: MmseqsLikeTool) -> pd.DataFrame:
     dtypes = hit_dtypes(tool)
     if not output.is_file() or output.stat().st_size == 0:
         return empty_hits(tool)
-    # Typed after the read rather than during it: `read_csv`'s own `dtype=` is annotated
-    # `dict[Hashable, Dtype]`, and `dict` is invariant in its key, so no `dict[str, str]`
-    # satisfies it. `astype` takes a mapping and is what the sibling package uses.
+    # `astype` and not `read_csv(dtype=...)`: `dtype=` is annotated `dict[Hashable, Dtype]`,
+    # and `dict` is invariant in its key, so no `dict[str, str]` satisfies it.
     return pd.read_csv(output, sep="\t", header=None, names=list(dtypes)).astype(dtypes)
 
 
@@ -225,22 +206,20 @@ def search_flags(
     """Turn the named search knobs into the arguments both tools spell the same way.
 
     Only what was asked for is passed: an omitted knob leaves the tool's own default, which
-    differs between them and between versions and is not this package's to restate.
+    is not this package's to restate.
 
     Parameters
     ----------
     sensitivity : float, optional
-        ``-s``. Lower is faster and finds less; MMseqs2 defaults to 5.7 and Foldseek to 9.5.
+        ``-s``. Lower is faster and finds less.
     evalue : float, optional
         ``-e``. Hits above it are not reported.
     max_seqs : int, optional
         ``--max-seqs``. How many targets per query pass the prefilter, which caps the hits.
     threads : int, optional
-        ``--threads``. **Worth naming on a shared machine**: both tools default to every
-        core, which on the lab's GPU node is 192 of them.
+        ``--threads``. **Worth naming on a shared machine**: both tools default to every core.
     extra : sequence of str, optional
-        Further arguments, appended unread — anything neither this package nor the caller
-        should have to wait for a release to pass.
+        Further arguments, appended unread.
 
     Returns
     -------
@@ -268,13 +247,8 @@ def database_path(database: SearchTarget | str) -> Path:
     """Return the ffindex prefix to search against, from a **Database** or a registered name.
 
     A :class:`SearchTarget` answers with its own :attr:`~SearchTarget.path`. A ``str`` is a
-    registered name, and :func:`protein.db.database_path` resolves it — including the rule
-    that **the prefix inside the directory is not always the name**: measured on GPU71FM,
-    ``db/swissprot/`` holds ``swissprot`` and ``db/pdb/`` holds ``pdb100``.
-
-    The layout is spelled in :mod:`protein.db` and only there. This function is the one line
-    that reaches over, so a search and a **Database** can never disagree about where a name
-    points.
+    registered name, which :func:`protein.db.database_path` resolves — including the rule
+    that **the prefix inside the directory is not always the name**.
 
     Parameters
     ----------
@@ -300,14 +274,13 @@ def database_path(database: SearchTarget | str) -> Path:
     >>> database_path(Registered())
     PosixPath('/data/protein/db/swissprot/swissprot')
     >>> database_path("swissprot")                                   # doctest: +SKIP
-    PosixPath('/scratch/zhoulab/hanliu/protein/db/swissprot/swissprot')
+    PosixPath('.../protein/db/swissprot/swissprot')
     """
     if not isinstance(database, str):
         return Path(database.path)
 
-    # Deferred: `protein.db` reaches liulab-genome and this package's own `Protein`, and a
-    # search that was handed a path should pay for neither. The module rather than the
-    # function, so a test that re-points the layout is seen here.
+    # Deferred: `protein.db` reaches liulab-genome, and a search handed a path pays nothing
+    # for it. The module and not the function, so a test that re-points the layout is seen.
     from protein import db
 
     return db.database_path(database)
@@ -327,23 +300,21 @@ def search(
 ) -> pd.DataFrame:
     """Search one amino-acid sequence against ``database`` and return the hits.
 
-    One ``mmseqs easy-search``. The query FASTA and the tool's output both land in a
-    :meth:`~protein.external.MmseqsLikeTool.scratch_dir`, which removes them however the
-    search ends — a one-sequence query is not a file anyone wants left on a cluster
-    filesystem, and the frame is the answer.
+    One ``mmseqs easy-search``. The query FASTA and the tool's output both live and die
+    inside a :meth:`~protein.external.MmseqsLikeTool.scratch_dir`, so a search leaves
+    nothing behind and the frame is the answer.
 
     Parameters
     ----------
     sequence : str
-        The residues to search with, as ``str(protein.sequence)`` gives them.
+        The residues to search with.
     database : SearchTarget or str
         What to search against: a **Database**, or the name of a registered one.
     query_name : str, default "query"
         The FASTA header this query is written under, which is what the ``query`` column
         reports.
     tool : protein.external.MmseqsLikeTool, optional
-        The tool to drive. Defaults to :class:`~protein.external.Mmseqs`; a test binds a
-        stand-in here or patches :meth:`protein.external.ExternalTool.run`.
+        The tool to drive. Defaults to :class:`~protein.external.Mmseqs`.
     sensitivity, evalue, max_seqs, threads : optional
         As :func:`search_flags`.
     extra : sequence of str, optional

@@ -1,9 +1,8 @@
-"""Tests for `protein search` — the sub-app, its one command, and how it renders.
+"""Tests for `protein search` — the sub-app, its commands, and how it renders.
 
 The search itself is patched out at `protein.search.mmseqs.search`, which is what the mixin
 calls: the tool has its own tests, and what is under test here is what the command hands the
-lane and what it prints. The frame it renders is real Foldseek-free mmseqs output from
-`tests/data/`, so the rendering is exercised on numbers a tool actually wrote.
+lane and what it prints, on real mmseqs output from `tests/data/`.
 """
 
 from __future__ import annotations
@@ -31,8 +30,7 @@ def _run(*args: str):
     """Invoke the lane the way a caller does — through the root app, as `protein search`.
 
     Not `invoke(app, ...)`: a Typer app holding exactly one command collapses into that
-    command, so `seq` was read as the sequence argument until #15 added `struct`. It parses
-    either way now, and going through the root app is still how a caller reaches it.
+    command, and the root app is how a caller reaches it either way.
     """
     return CliRunner().invoke(protein.cli.app, ["search", *args])
 
@@ -56,7 +54,7 @@ def test_the_sub_app_registers_its_commands_under_the_names_it_gave_them() -> No
 
 def test_every_command_takes_json() -> None:
     # `plain_text`, not `result.output`: rich styles the first dash of `--json` separately,
-    # so the raw output carries no such substring wherever colour is on. See tests/__init__.
+    # so the raw output carries no such substring wherever colour is on.
     for command in app.registered_commands:
         assert command.name is not None
         assert "--json" in plain_text(_run(command.name, "--help").output), command.name

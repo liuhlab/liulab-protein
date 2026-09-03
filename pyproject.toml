@@ -48,8 +48,7 @@ packages = ["src/protein"]
 [tool.pixi.workspace]
 # bioconda second, so conda-forge still wins every tie. It carries mmseqs2 and foldseek.
 channels = ["conda-forge", "bioconda"]
-# linux-64 only: this is a cluster package. The cuda entry is what the `esm` environment
-# resolves against on a GPU node.
+# linux-64 only: this is a cluster package. The cuda variant is what `esm` resolves against.
 platforms = [{ platform = "linux-64", cuda = "12" }, "linux-64"]
 
 [tool.pixi.pypi-dependencies]
@@ -57,10 +56,8 @@ liulab-protein = { path = ".", editable = true }
 # Not in `[project] dependencies`: PyPI rejects metadata carrying a git+https reference.
 liulab-genome = { git = "https://github.com/liuhlab/liulab-genome.git" }
 
-# The interpreter. `requires-python` is the floor, and conformance holds every other Python
-# version this repo declares to it.
-# Runtime dependencies are mirrored from `[project] dependencies` so pixi takes them from
-# conda-forge rather than PyPI.
+# `requires-python` is the floor, and conformance holds every other declared Python version to
+# it. Runtime dependencies are mirrored from `[project]` so pixi takes them from conda-forge.
 [tool.pixi.dependencies]
 python = "3.13.*"
 typer = ">=0.12"
@@ -68,10 +65,8 @@ numpy = ">=2"
 pandas = ">=2.1,<3"
 pyarrow = ">=17"
 biotite = ">=1"
-# liulab-genome declares these conda-side only, so pip resolution cannot supply them.
-# Without either one, `import genome` fails — and it fails on the FIRST line, because
-# `genome/__init__.py` reaches the motif lane, so `from genome.store import data_dir` is
-# just as dead as `import genome`. That import is what `store.py` is built on.
+# liulab-genome declares these conda-side only, so pip cannot supply them, and without either
+# one `import genome` fails on its first line. `store.py` is built on that import.
 gffutils = ">=0.13"
 moods = ">=1.9.4,<2"
 # The external tools. Nothing outside src/protein/external.py may call them.
@@ -81,7 +76,7 @@ ruff = "*"
 # Exact: Pylance is pyright, so the editor and CI must give one verdict.
 pyright = "==1.1.411"
 python-build = "*"
-# Exact: the jargon map and the grade-11 number were measured against this version.
+# Exact: the rules in `styles/` are tuned to this version.
 vale = "3.19.0.*"
 markdownlint-cli2 = "*"
 # For conformance, which parses mkdocs.yml and runs in `default`.
@@ -89,8 +84,7 @@ pyyaml = "*"
 
 [tool.pixi.feature.test.dependencies]
 pytest = "*"
-# Declared here too, not inherited: the tests run conformance, and a test environment shaped
-# differently from this one would import-error on every test.
+# Declared here too, not inherited: the tests run conformance, which imports it.
 pyyaml = "*"
 
 # Exact: at 0.0.x nothing promises the next patch is compatible.
@@ -98,32 +92,21 @@ pyyaml = "*"
 zensical = "==0.0.57"
 mkdocstrings-python = ">=2.0.7,<3"
 
-# On the feature, so these resolve in the `docs` environment with no `-e` flag.
-# `serve` ignores `--strict` and says so, hence its absence.
+# On the feature, so these resolve in `docs` with no `-e` flag. `serve` ignores `--strict`.
 [tool.pixi.feature.docs.tasks]
 docs = "zensical serve"
 docs-build = "zensical build --clean --strict"
 
-# `esm` is its own feature because it pins torch to an exact minor (>=2.11,<2.12), which would
-# otherwise dominate every solve. PyPI-only: `esm` is on no conda channel.
+# Its own feature: the torch pin below would otherwise dominate every solve. PyPI-only,
+# because `esm` is on no conda channel.
 [tool.pixi.feature.esm.pypi-dependencies]
 esm = ">=3.4,<4"
 
-# torch comes from conda-forge and not from PyPI, and that one line is what makes this
-# environment usable (#19). PyPI's default torch 2.11 wheel is the cu130 variant: it refuses
-# to initialise CUDA against this cluster's 12.6 driver, and it loads the SYSTEM libstdc++,
-# whose CXXABI is older than the one conda-forge scipy needs -- so `import torch` then
-# `import esm` died as well, and both defects had the one cause. conda-forge builds torch
-# against the same libstdc++ as everything else here, and the build the solver picks follows
-# the platform: cuda129 under the `cuda = "12"` variant, cpu on a machine with no GPU.
-# Measured on an H100: `torch.cuda.is_available()` is True with LD_LIBRARY_PATH unset, so
-# nothing here ships a load-path workaround.
-#
-# The bound repeats `esm`'s own `torch >=2.11,<2.12` because the conda solve runs first:
-# without it the solver takes 2.13 and the PyPI solve then has no torch to pick. A
-# `setuptools = "<82"` ceiling used to sit beside it for the same reason. It is gone -- the
-# conda-forge package declares `setuptools <82` itself, and re-solving without the copy
-# leaves the lock at 81.0.0 unchanged.
+# torch from conda-forge, never PyPI: the PyPI wheel's CUDA build refuses this cluster's
+# driver and loads the system libstdc++, which then breaks `import esm` too. conda-forge
+# builds against the same libstdc++ as everything else here and picks its build from the
+# platform variant. The bound repeats `esm`'s own `torch >=2.11,<2.12` because the conda solve
+# runs first, and without it the PyPI solve has no torch left to pick.
 [tool.pixi.feature.esm.dependencies]
 pytorch = ">=2.11,<2.12"
 
@@ -133,9 +116,8 @@ pytorch = ">=2.11,<2.12"
 default = { features = ["test"], solve-group = "default" }
 test = { features = ["test"], solve-group = "default" }
 docs = { features = ["docs"], solve-group = "default" }
-# Not a CI job: no runner has a GPU, and the weights are gigabytes. Its own solve group, so
-# torch, the CUDA runtime it drags in and the setuptools ceiling it declares all stay off the
-# environments that run the gate.
+# Not a CI job: no runner has a GPU. Its own solve group, so torch and the CUDA runtime it
+# drags in stay off the environments that run the gate.
 esm = { features = ["test", "esm"] }
 
 [tool.pixi.tasks]
@@ -146,8 +128,7 @@ typecheck = "pyright"
 test = "pytest"
 build = "python -m build"
 # `.`, never an absolute path: an absolute path matches no `.vale.ini` section and exits 0.
-# The globs stop vale walking trees it never lints — check.sh runs steps concurrently, and a
-# walk of .pixi/ races pytest writing __pycache__ there.
+# The globs keep the walk out of trees pytest writes to while `check.sh` runs both steps.
 vale = "vale --glob='!{.pixi,site,dist,build}/**' ."
 markdownlint = "markdownlint-cli2"
 conformance = "python scripts/conformance.py"
@@ -201,14 +182,13 @@ typeCheckingMode = "standard"
 # Not redundant: `standard` does not check that a parameter is annotated at all. `Any`
 # satisfies it, so the fix is always in the file you are editing. Scoped off `tests/` below.
 reportMissingParameterType = "error"
-# Deliberately NOT `reportUnknownParameterType`: it also fails annotated parameters and
-# inferred return types whose types an untyped dependency owns. Not a bar a lab repo can meet.
+# Deliberately NOT `reportUnknownParameterType`: it also fails annotated parameters whose
+# types an untyped dependency owns. Not a bar a lab repo can meet.
 useLibraryCodeForTypes = true
 reportMissingTypeStubs = "none"
 
-# `tests/` back to plain `standard`. A fixture's type is pytest's, not the author's, and a
-# test signature promises a caller nothing: the rule fired four times on twenty lines of
-# correct test code and caught nothing (#65). `src` keeps it. Do not delete this block.
+# `tests/` back to plain `standard`: a fixture's type is pytest's, not the author's, and a test
+# signature promises a caller nothing. `src` keeps it. Do not delete this block.
 [[tool.pyright.executionEnvironments]]
 root = "tests"
 reportMissingParameterType = "none"
@@ -216,24 +196,20 @@ reportMissingParameterType = "none"
 # ============================== pytest ==============================
 
 [tool.pytest.ini_options]
-# `src` is collected for its docstring examples alone: `--doctest-modules` runs them, so an
-# example that has drifted from the code it documents fails.
+# `src` is collected for its docstring examples alone: `--doctest-modules` runs them, so a
+# drifted example fails.
 testpaths = ["tests", "src"]
-# `--continue-on-collection-errors` because collecting `src` IMPORTS every module in it. A
-# module needing an absent optional dependency — a plotting path, a CUDA path, a
-# platform-specific binding — used to abort collection and run zero tests. It now costs one
-# error. Measured: the run still exits non-zero, and a drifted example still fails (#66).
+# `--continue-on-collection-errors` because collecting `src` imports every module in it: a
+# module needing an absent optional dependency costs one error instead of the whole run.
 addopts = [
     "-ra",
     "--strict-markers",
     "--strict-config",
     "--doctest-modules",
     "--continue-on-collection-errors",
-    # The gate lane. The two markers are a boolean partition, so the deselection has to live
-    # somewhere or a `model` test added later runs in CI and tries to download 1.33 GB of
-    # weights. It cannot live on the `test` task: conformance rule 12 makes every CI step
-    # `pixi run <task>`, and the task is what CI calls. addopts is prepended, so the ESM lane
-    # is still `pytest -m model` — a command-line `-m` wins over this one.
+    # The gate lane, and it has to live here rather than on the `test` task, because the task
+    # is what CI calls. addopts is prepended, so the ESM lane is still `pytest -m model` — a
+    # command-line `-m` wins over this one.
     "-m",
     "not model",
 ]
@@ -243,10 +219,8 @@ markers = [
 ]
 filterwarnings = [
     "error",
-    # `protein.seq` warns on purpose when it folds U, O or J to X, and its docstring examples
-    # show that fold. Errored, each of those examples would be a failure. Targeted at the one
-    # category raised for this reason; the warning itself is asserted with `pytest.warns` in
-    # tests/test_seq.py, so tolerating it here does not stop testing it.
+    # `protein.seq` warns on purpose when it folds U, O or J to X, and its examples show the
+    # fold. `tests/test_seq.py` asserts the warning, so tolerating it here still tests it.
     "default::protein.seq.ResidueCoercionWarning",
 ]
 

@@ -1,9 +1,7 @@
 """Tests for the root CLI — the two commands belonging to no lane, and the conventions.
 
 `doctor` is driven against a patched `protein.external.doctor` rather than the binaries:
-what is under test is what the command prints and what it exits with, and the tools have
-their own tests. The convention checks are here because four lanes will each mount a
-sub-app against them.
+what is under test is what the command prints and what it exits with.
 """
 
 from __future__ import annotations
@@ -67,14 +65,13 @@ def test_doctor_exits_one_and_prints_the_install_command_when_a_tool_is_missing(
 
 
 def test_every_command_is_registered_under_a_name_it_was_given() -> None:
-    # The convention each lane's sub-app follows: names given explicitly, so `--help` and
-    # the module docstring's doctest cannot drift from the functions.
+    # Names given explicitly, so `--help` and the module docstring's doctest cannot drift
+    # from the functions.
     assert [command.name for command in app.registered_commands] == ["version", "doctor"]
 
 
 def test_every_command_takes_json() -> None:
-    # `plain_text`, not `result.output`: rich styles the first dash of `--json` separately,
-    # so the raw output carries no such substring wherever colour is on. See tests/__init__.
+    # `plain_text`, not `result.output`: rich styles the first dash of `--json` separately.
     for command in app.registered_commands:
         assert command.name is not None
         result = CliRunner().invoke(app, [command.name, "--help"])
@@ -82,10 +79,9 @@ def test_every_command_takes_json() -> None:
 
 
 def test_the_help_still_shows_json_when_rich_colours_it(monkeypatch: pytest.MonkeyPatch) -> None:
-    # The trap `plain_text` exists for, pinned so the next reader does not undo it. Colour is
-    # off under a bare `ssh` and on under GitHub Actions, and rich styles the first dash of
-    # `--json` on its own — so a substring check on the raw output answers differently in the
-    # two places. Measured by #17 as a red CI job beside a green gate.
+    # The trap `plain_text` exists for, pinned so the next reader does not undo it: colour is
+    # off under a bare `ssh` and on in CI, so a substring check on the raw output answers
+    # differently in the two places.
     monkeypatch.setenv("FORCE_COLOR", "1")
     result = CliRunner().invoke(app, ["version", "--help"])
     assert "\x1b[" in result.output

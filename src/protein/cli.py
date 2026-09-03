@@ -2,8 +2,7 @@
 
 Every command that names a **Database**, an **Embedding** or a search ships from the module
 that owns it, beside the result type it renders. What is left here is the two commands
-belonging to no lane — ``version`` and ``doctor`` — and the :meth:`typer.Typer.add_typer`
-calls that mount the lanes.
+belonging to no lane and the :meth:`typer.Typer.add_typer` calls that mount the rest.
 
 Examples
 --------
@@ -65,30 +64,10 @@ def doctor(
 
 # --- the lane sub-apps -------------------------------------------------------
 #
-# One `add_typer` per lane, mounted here and nowhere else. Mounting is two lines — an
-# import beside the two above and one call beside the ones below. All four lanes have
-# landed; a fifth adds its own pair here.
-#
-# `sifts` is the one lane that is a module rather than a package, so its own `app` is
-# `protein.sifts.app` and its import reads `from protein import sifts as _sifts_cli`.
+# One `add_typer` per lane, mounted here and nowhere else.
 #
 app.add_typer(_db_cli.app, name="db")
 app.add_typer(_esm_cli.app, name="esm")
 app.add_typer(_search_cli.app, name="search")
 app.add_typer(_sifts_cli.app, name="sifts")
 app.add_typer(_structure_cli.app, name="structure")
-#
-# What a lane's own `cli.py` owes, all of it demonstrated above:
-#
-#   - a module-level `app = typer.Typer(help=..., no_args_is_help=True)`;
-#   - every import aliased with a leading underscore, so `app.registered_commands` is the
-#     whole of what the module exports;
-#   - command names given explicitly and hyphenated -- `@app.command("table-row")` -- while
-#     the function stays snake_case;
-#   - a runnable doctest in the module docstring listing its own commands, which is what
-#     makes a command added without a name fail the gate;
-#   - `--json` on every command, rendered from a result dataclass's `as_json()` so the text
-#     and the JSON cannot drift;
-#   - one module-level `_<TOPIC>_ERRORS` tuple naming what the sub-app catches, spelled
-#     once with a comment saying which failure is which exception;
-#   - a failure that prints `error: {err}` to stderr and raises `typer.Exit(code=1)`.

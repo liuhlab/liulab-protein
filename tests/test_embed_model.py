@@ -1,20 +1,18 @@
-"""The model lane: one real ESM-C forward pass, on GPU71FM, in the `esm` environment.
+"""The model lane: one real ESM-C forward pass, in the `esm` environment.
 
     pixi run -e esm pytest -m model
 
 `-m "not model"` is in `addopts`, so plain `pytest` deselects every test here and the gate
 stays green on a machine with no weights. Selecting the lane by hand is the only way in.
 
-**Nothing here skips.** Genome's `require_tools.sh` was written because a skip is green: a
-lane that selects its tests, skips them all and exits 0 reports a pass having run nothing.
-So a missing `torch`, a missing `esm` or a cold HF cache fails this lane loudly instead —
-you asked for the model lane, and not running the model is not a smaller answer to that.
+**Nothing here skips.** A lane that selects its tests, skips them all and exits 0 reports a
+pass having run nothing, so a missing `torch`, a missing `esm` or a cold HF cache fails
+loudly instead.
 
-`HF_HUB_OFFLINE` is set below rather than left to chance. The suite's network guard is
-autouse and cannot be opted out of, and hub clients raise straight through it rather than
-falling back to the cache, so offline mode is what makes "the model lane embeds, it does not
-download" true rather than merely intended. It is read once, at the hub client's import, so
-it is set here at collection and not in a fixture.
+`HF_HUB_OFFLINE` makes "the model lane embeds, it does not download" true rather than merely
+intended: the suite's autouse network guard cannot be opted out of, and hub clients raise
+straight through it rather than falling back to the cache. It is read once at the hub
+client's import, so it is set here at collection and not in a fixture.
 """
 
 from __future__ import annotations
@@ -32,8 +30,7 @@ os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
 pytestmark = pytest.mark.model
 
-#: 33 residues, so the assertion the whole map is sharpest about — 33 rows and not 35 — is
-#: readable in the failure message.
+#: The lane's one query. Its length is what the row count is checked against.
 SEQUENCE = "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"
 
 #: What ESMC-300M is, independent of what any object reports.
@@ -61,8 +58,8 @@ def _require_the_esm_environment() -> None:
         try_to_load_from_cache,
     )
 
-    # The weights, proved present rather than assumed: offline mode is on, so a cold cache
-    # would otherwise fail deep inside `from_pretrained` naming neither HF_HOME nor the fix.
+    # Offline mode is on, so a cold cache would otherwise fail deep inside `from_pretrained`
+    # naming neither HF_HOME nor the fix.
     if not isinstance(try_to_load_from_cache(CHECKPOINTS["300m"][0], "config.json"), str):
         pytest.fail(
             f"model lane: {CHECKPOINTS['300m'][0]} is not in the Hugging Face cache "
@@ -72,13 +69,11 @@ def _require_the_esm_environment() -> None:
 
 @pytest.fixture(scope="session")
 def esmc() -> ESMC:
-    """One ESMC-300M, loaded once for the whole lane — 1.33 GB is not per test."""
+    """One ESMC-300M, loaded once for the whole lane rather than per test."""
     _require_the_esm_environment()
-    # biohub/ESMC-300M's config.json predates the ESM-C field rename, so loading it raises a
-    # real FutureWarning naming both spellings (#19 measured it under `simplefilter("error")`).
-    # Asserted rather than ignored: `filterwarnings = ["error"]` would fail this lane
-    # otherwise, and pinning it here means an upstream fix shows up as a failing test rather
-    # than as a stale entry in pyproject.toml that nobody removes.
+    # The published config predates the ESM-C field rename, so loading it raises a real
+    # FutureWarning. Asserted rather than ignored, so an upstream fix shows up as a failing
+    # test rather than as a stale entry in pyproject.toml that nobody removes.
     with pytest.warns(FutureWarning, match="pre-alignment ESMC field names"):
         model = ESMC()
     return model
@@ -87,9 +82,8 @@ def esmc() -> ESMC:
 def test_the_lane_reports_which_device_it_actually_ran_on(
     esmc: ESMC, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    # Reported, not asserted: #1 documents CPU as a supported fallback and #19 declined to
-    # make GPU availability an environment assertion. But a run that took minutes because it
-    # quietly landed on the CPU should say so in its own output.
+    # Reported, not asserted: the CPU is a supported fallback. But a run that took minutes
+    # because it quietly landed there should say so in its own output.
     with capsys.disabled():
         print(f"\nESMC({esmc.checkpoint!r}) is on {esmc.device}")
     assert esmc.device in {"cpu", "cuda"} or esmc.device.startswith("cuda:")
@@ -101,8 +95,7 @@ def test_the_checkpoint_reports_the_width_and_depth_the_table_claims(esmc: ESMC)
 
 
 def test_one_real_embedding_has_one_row_per_residue_and_not_two_more(esmc: ESMC) -> None:
-    # THE assertion. `last_hidden_state` is (1, L + 2, d_model) because ESM-C's tokenizer
-    # adds BOS and EOS; the lane strips both, so 33 residues is 33 rows.
+    # THE assertion. ESM-C's tokenizer adds BOS and EOS; the lane strips both.
     protein = Protein(SEQUENCE, id="test")
     embedding = esmc.embed(protein)
     assert embedding.shape == (33, 960)
@@ -125,17 +118,17 @@ def test_the_embedding_records_where_it_came_from(esmc: ESMC) -> None:
 
 
 def test_the_default_layer_is_the_last_hidden_state_under_its_own_number(esmc: ESMC) -> None:
-    # `-1` does not survive onto the returned object: 30 is what a notebook reads a week
-    # later, and 30 is an index into `hidden_states` that means something on its own.
+    # `-1` does not survive onto the returned object: an index into `hidden_states` means
+    # something on its own a week later.
     assert esmc.embed(Protein(SEQUENCE, id="test")).layer == N_LAYERS
 
 
 def test_asking_for_the_last_layer_by_number_gives_the_same_array_as_the_default(
     esmc: ESMC,
 ) -> None:
-    # The fast path is only sound because `hidden_states[-1]` IS `last_hidden_state`:
-    # `layer=-1` reads the latter without asking for all 31 tensors, and `layer=30` reads
-    # the former. If the two ever diverge, this fails rather than someone's analysis.
+    # The fast path is only sound because `hidden_states[-1]` IS `last_hidden_state`: the
+    # default reads the latter without materialising every layer. If the two ever diverge,
+    # this fails rather than someone's analysis.
     protein = Protein(SEQUENCE, id="test")
     np.testing.assert_array_equal(
         esmc.embed(protein).array, esmc.embed(protein, layer=N_LAYERS).array
@@ -145,9 +138,8 @@ def test_asking_for_the_last_layer_by_number_gives_the_same_array_as_the_default
 def test_the_embedding_layer_is_index_zero_and_is_not_the_last_hidden_state(
     esmc: ESMC,
 ) -> None:
-    # What #7 left unchecked and #13 was told to measure: `hidden_states[0]` is the
-    # embedding-layer output, so it is a real answer for `layer=0` and a very different one
-    # from the default.
+    # `hidden_states[0]` is the embedding-layer output, so it is a real answer for `layer=0`
+    # and a very different one from the default.
     protein = Protein(SEQUENCE, id="test")
     first = esmc.embed(protein, layer=0)
     assert first.layer == 0

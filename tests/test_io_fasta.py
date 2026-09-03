@@ -18,13 +18,7 @@ _SOURCE_ROOT = Path(__file__).resolve().parents[1] / "src" / "protein"
 _INSULIN_HEADER = "sp|P01308|INS_HUMAN Insulin OS=Homo sapiens OX=9606 GN=INS PE=1 SV=1"
 _INSULIN_LENGTH = 110
 
-#: What ADR-0002 bans. Each substitutes a different residue without a word.
-#:
-#: The first three rewrite ``U`` to ``C`` and ``O`` to ``K``. ``convert_letter_3to1`` was
-#: found by #15 and has the same defect from the other direction: it answers ``'C'`` for
-#: ``"SEC"`` where ``biotite.structure.info.one_letter_code`` answers ``'U'``, and it
-#: ``KeyError``s on every modified residue rather than saying so. ``Chain.sequence`` uses
-#: ``one_letter_code`` and :func:`protein.seq.to_protein_sequence` instead.
+#: What ADR-0002 bans: each substitutes a different residue without a word.
 _BANNED_CONVERTERS = frozenset(
     {"get_sequence", "get_sequences", "to_sequence", "convert_letter_3to1"}
 )
@@ -46,8 +40,8 @@ def test_read_records_reads_every_record_in_a_multi_record_file() -> None:
 
 
 def test_a_header_survives_byte_for_byte_including_a_run_of_spaces(tmp_path: Path) -> None:
-    # The reason biotite's file layer is adopted rather than reimplemented: nothing in the
-    # header is normalised, so `OS=` and friends arrive as the file spells them.
+    # Why biotite's file layer is adopted rather than reimplemented: nothing in the header
+    # is normalised.
     odd = tmp_path / "odd.fasta"
     odd.write_text(">P12345   two  spaces  here\nMKTAY\n", encoding="utf-8")
     assert next(iter(fasta.read_records(odd)))[0] == "P12345   two  spaces  here"
@@ -68,8 +62,7 @@ def test_format_records_returns_what_write_records_would_have_written(tmp_path: 
 
 
 def test_a_gzipped_file_is_read_and_written_like_a_plain_one(tmp_path: Path) -> None:
-    # biotite has no gzip FASTA reader, so this branch is ours; that it is one branch rather
-    # than a parallel set of functions is what this test pins.
+    # biotite has no gzip FASTA reader, so this branch is ours.
     records = [("a", "MKTAY")]
     compressed = tmp_path / "one.fasta.gz"
     fasta.write_records(compressed, records)
@@ -93,8 +86,8 @@ def test_an_empty_header_gives_none_twice() -> None:
 
 
 def test_a_uniprot_header_is_not_taken_apart_here() -> None:
-    # `sp|P01308|INS_HUMAN` is a Swiss-Prot convention, not a FASTA one, so the identifier
-    # arrives whole and the Database that knows the convention resolves it.
+    # A Swiss-Prot convention, not a FASTA one, so the identifier arrives whole and the
+    # Database that knows the convention resolves it.
     identifier, _ = fasta.split_header(_INSULIN_HEADER)
     assert identifier == "sp|P01308|INS_HUMAN"
 
@@ -121,7 +114,6 @@ def test_read_proteins_builds_one_protein_per_record() -> None:
 
 
 def test_a_selenocysteine_in_the_file_is_folded_to_x_and_named_in_the_warning() -> None:
-    # P07203 is glutathione peroxidase 1, one of the 285 Swiss-Prot entries carrying `U`.
     # ADR-0002 is what makes this `X` and not biotite's `C`.
     with pytest.warns(ResidueCoercionWarning, match="P07203"):
         proteins = list(fasta.read_proteins(_DATA / "uniprot_three.fasta"))
@@ -165,8 +157,8 @@ def test_no_module_in_this_package_reaches_for_biotites_converters() -> None:
 def _converter_references(module: Path) -> list[tuple[str, int]]:
     """Return every ``(name, line)`` where ``module`` names a banned converter in code.
 
-    Parsed rather than grepped, so a docstring or a comment naming one — this repo's own
-    prose about the rule — is not an offence, and a call or an import is.
+    Parsed rather than grepped, so a docstring or a comment naming one is not an offence and
+    a call or an import is.
     """
     tree = ast.parse(module.read_text(encoding="utf-8"), filename=str(module))
     found: list[tuple[str, int]] = []

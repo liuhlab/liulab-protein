@@ -1,9 +1,8 @@
 """The two guards every test runs behind: no network, and a data root of its own.
 
 Both are autouse and neither can be opted out of, which is what makes "no test reaches the
-network" and "no test writes into the lab's real data" guarantees rather than habits. They are
-a module rather than a conftest so the root ``conftest.py`` can load them as a plugin; why that
-matters is written there.
+network" and "no test writes into the lab's real data" guarantees rather than habits. A module
+rather than a conftest so the root ``conftest.py`` can load them as a plugin.
 
 The network guard is also what makes this package's bulk-not-per-ID rule enforceable: a code
 path that queries a remote API one accession at a time is untestable by construction here.
@@ -18,18 +17,15 @@ from typing import Any, NoReturn
 import pytest
 import requests
 
-#: The environment variable naming the lab's data root. It is
-#: ``genome.store.data_dir.LIULAB_DATA_ENV``, spelled out rather than imported: importing
-#: anything from ``genome`` pulls in its whole package, which needs optional dependencies the
-#: gate environment does not carry, and a guard that can fail to load is not a guard.
+#: The environment variable naming the lab's data root, spelled out rather than imported so
+#: that a guard cannot fail to load.
 LIULAB_DATA_ENV = "LIULAB_DATA"
 
 #: Address families that leave this machine. ``AF_UNIX`` is local IPC, never the network, and
-#: pytest itself uses it, so the guard delegates to the real call for anything else.
+#: pytest itself uses it.
 _NETWORK_FAMILIES = frozenset({socket.AF_INET, socket.AF_INET6})
 
-#: What to do instead, carried by every blocked call: an error that only says "no network"
-#: leaves the reader to work out how to write the test offline.
+#: What to do instead, carried by every blocked call.
 _OFFLINE_HELP = (
     "No test may reach the network. Put the bytes in tests/data, with their provenance in "
     "tests/data/README.md, and monkeypatch the one call that would have fetched them."
@@ -56,18 +52,11 @@ def _address_text(address: Any) -> str:
 def no_network(monkeypatch: pytest.MonkeyPatch) -> None:
     """Make reaching the network a failure, in every test, without being asked for.
 
-    Two cuts, because one is not enough:
-
-    - ``requests.Session.request``, which every ``requests`` call funnels through — biotite's
-      ``rcsb.fetch`` and ``uniprot.fetch`` included, so a download a test forgot to replace
-      trips here naming the URL it was about to pull.
-    - ``socket.socket.connect``/``connect_ex`` for the internet address families, as the
-      backstop under everything that is not ``requests``: urllib, ftp, a dependency phoning
-      home. ``AF_UNIX`` is local IPC rather than the network and is left alone — pytest's own
-      machinery uses it.
-
-    Nothing opts out. A test that needs bytes stands them in from ``tests/data``. A docstring
-    example asks for nothing at all, which is why this reaches those too.
+    Two cuts, because one is not enough: ``requests.Session.request``, which every
+    ``requests`` call funnels through — biotite's ``rcsb.fetch`` and ``uniprot.fetch``
+    included — and ``socket.socket.connect``/``connect_ex`` as the backstop under everything
+    that is not ``requests``. Nothing opts out; a test that needs bytes stands them in from
+    ``tests/data``.
     """
     real_connect = socket.socket.connect
     real_connect_ex = socket.socket.connect_ex
@@ -96,12 +85,9 @@ def no_network(monkeypatch: pytest.MonkeyPatch) -> None:
 def liulab_data(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     """Point the data root at this test's own directory, in every test, unasked.
 
-    The one place the root is set. A test that forgot would write into the lab's real
-    reference data — gigabytes of Swiss-Prot and PDB that nothing in this suite may touch —
-    and "no test writes there" is a guarantee only if nothing can slip past.
-
-    Request it to name the root: ``liulab_data / "protein"`` is where this package's files
-    land. Re-point it with ``monkeypatch.setenv`` in the few tests that are *about* the root.
+    The one place the root is set, because "no test writes into the lab's real reference
+    data" is a guarantee only if nothing can slip past. Request it to name the root:
+    ``liulab_data / "protein"`` is where this package's files land.
     """
     monkeypatch.setenv(LIULAB_DATA_ENV, str(tmp_path))
     return tmp_path

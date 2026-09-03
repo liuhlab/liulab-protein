@@ -1,27 +1,19 @@
 """Swiss-Prot: the one **Database** that reads its own headers.
 
 ``swissprot["P12345"]`` gives back a :class:`~protein.core.Protein` whose accession, entry
-name, description, organism, taxon id and gene are all filled — and that is what earns this
-class a subclass where ``pdb`` is a row in a declaration table. A name and a URL are a row;
-knowing what ``sp|P12345|AATM_RABIT Aspartate aminotransferase, mitochondrial OS=Oryctolagus
-cuniculus OX=9986 GN=GOT2 PE=1 SV=2`` means is behaviour.
+name, description, organism, taxon id and gene are all filled.
 
-**The header split is in two layers, and both are needed.**
-:func:`protein.io.fasta.split_header` does the plain FASTA one — first token, then free text
-— so a UniProt header lands whole as ``sp|P12345|AATM_RABIT``. Resolving *that* into a
+**The header split is in two layers.** :func:`protein.io.fasta.split_header` does the plain
+FASTA one, which leaves a UniProt header's first token whole; resolving *that* into a
 database prefix, an accession and an entry name is a UniProtKB convention rather than a FASTA
-one, so it is here. :func:`parse_uniprot_header` is public because it is the same grammar a
-caller meets in any UniProt FASTA, not only in this database.
+one, so it is here. :func:`parse_uniprot_header` is public because a caller meets the same
+grammar in any UniProt FASTA.
 
-**Retrieval is offline and it is not bulk.** Two ``mmseqs view`` calls per entry, roughly a
-quarter of a second each — see :meth:`~protein.db.base.SequenceDatabase.entry`. A job that
-wants thousands of entries should search or export, not loop.
-
-**The residues may already have been folded before we saw them.** ``mmseqs databases`` builds
-with ``createdb --gpu 1``, which encodes ``B`` to ``D``, ``Z`` to ``E`` and ``U``/``O`` to
-``X``. Nothing is warned about at retrieval, because nothing distinguishes a folded ``D``
-from a real one; :attr:`~protein.db.base.Database.is_gpu_encoded` and
-:meth:`~protein.db.base.Database.status` carry the label instead. ADR-0003 is the whole
+**Retrieval is offline and it is not bulk** — see
+:meth:`~protein.db.base.SequenceDatabase.entry`. A job wanting many entries should search or
+export rather than loop. Nothing warns that the residues may already have been folded,
+because nothing distinguishes a folded ``D`` from a real one;
+:attr:`~protein.db.base.Database.is_gpu_encoded` carries the label instead, and ADR-0003 the
 argument.
 
 Examples
@@ -56,9 +48,8 @@ __all__ = [
 ]
 
 #: UniProt's two-letter header fields, mapped to what this package calls them in
-#: :attr:`protein.core.Protein.metadata`. A field UniProt adds later is kept under its own
-#: two letters rather than dropped — a header this package cannot name is still a header it
-#: must not lose.
+#: :attr:`protein.core.Protein.metadata`. A field with no name here is kept under its own two
+#: letters rather than dropped.
 UNIPROT_FIELDS: Mapping[str, str] = MappingProxyType(
     {
         "OS": "organism",
@@ -69,19 +60,17 @@ UNIPROT_FIELDS: Mapping[str, str] = MappingProxyType(
     }
 )
 
-#: The three fields whose values are numbers. Read as :class:`int` when they parse as one and
-#: left as text when they do not, so ``metadata["taxon_id"]`` is something `liulab-genome`'s
-#: cross-reference tables can be joined on rather than a string that looks like a number.
+#: The fields whose values are numbers, read as :class:`int` when they parse as one, so
+#: ``metadata["taxon_id"]`` can be joined on rather than being text that looks like a number.
 INTEGER_FIELDS: frozenset[str] = frozenset({"OX", "PE", "SV"})
 
-#: The whitespace before a ``KEY=`` field, which is where the description ends and the
-#: annotation begins. A lookahead, so the split keeps the key: values hold spaces
-#: (``OS=Oryctolagus cuniculus``) and only the two-letter keys are anchored.
+#: The whitespace before a ``KEY=`` field, which is where the description ends. A lookahead,
+#: so the split keeps the key: a value may hold spaces and only the keys are anchored.
 _FIELD_BOUNDARY = re.compile(r"\s+(?=[A-Z]{2}=)")
 
 #: The UniProtKB identifier grammar: ``<db>|<accession>|<entry name>``, where ``db`` is
-#: ``sp`` for a reviewed entry and ``tr`` for an unreviewed one. Anything else is not this
-#: grammar and is left whole rather than sliced into the wrong fields.
+#: ``sp`` for a reviewed entry and ``tr`` for an unreviewed one. Anything else is left whole
+#: rather than sliced into the wrong fields.
 _IDENTIFIER = re.compile(r"^(?P<entry_type>sp|tr)\|(?P<accession>[^|]+)\|(?P<entry_name>[^|]+)$")
 
 
@@ -127,14 +116,10 @@ class UniProtHeader:
 def parse_uniprot_header(header: str) -> UniProtHeader:
     """Resolve one UniProt FASTA header into an accession, an entry name and its fields.
 
-    The header this reads is the source FASTA's own, byte-for-byte: ``createdb`` copies the
-    bytes through unchanged and ``mmseqs view`` hands them back, so this is UniProt FASTA
-    parsing rather than anything MMseqs2-specific.
-
     A header that does not carry the ``db|accession|name`` grammar keeps its first token in
     :attr:`~UniProtHeader.identifier` and leaves the three resolved names ``None``. Nothing
-    is guessed: a UniRef or a locally built FASTA is a different naming scheme, and slicing
-    it on pipes would put the wrong text in the accession.
+    is guessed: a UniRef or a locally built FASTA names things differently, and slicing one
+    on pipes would put the wrong text in the accession.
 
     Parameters
     ----------
@@ -199,14 +184,13 @@ def _typed(key: str, value: str) -> Any:
 class SwissProt(SequenceDatabase):
     """UniProtKB/Swiss-Prot as a local MMseqs2 database, addressed by accession.
 
-    Adds two things to :class:`~protein.db.base.SequenceDatabase`, and they are what earn it
-    a class of its own: an accession is folded to upper case on the way in, because that is
-    the one spelling UniProt uses and ``.lookup`` is byte-matched; and the header on the way
+    Adds two things to :class:`~protein.db.base.SequenceDatabase`: an accession is folded to
+    upper case on the way in, because ``.lookup`` is byte-matched; and the header on the way
     out is resolved by :func:`parse_uniprot_header` into ``id``, ``name``, ``description``
     and :attr:`~protein.core.Protein.metadata`.
 
-    This is also where the `liulab-genome` link will land: ``metadata["taxon_id"]`` and
-    ``metadata["gene"]`` are what ``genome.xref`` joins on.
+    The `liulab-genome` link lands here — ``metadata["taxon_id"]`` and ``metadata["gene"]``
+    are what ``genome.xref`` joins on — and is still open as issue #26.
 
     Examples
     --------

@@ -14,8 +14,8 @@ from protein.seq import InvalidResidueError, ResidueCoercionWarning
 
 _DATA = Path(__file__).resolve().parent / "data"
 
-# Insulin, 110 residues, the single-record fixture. Spelled here so a test can say what it
-# expects without reading the file it is testing the reader against.
+# The single-record fixture, spelled here so a test need not read the file it is testing the
+# reader against.
 _INSULIN_ID = "sp|P01308|INS_HUMAN"
 _INSULIN_DESCRIPTION = "Insulin OS=Homo sapiens OX=9606 GN=INS PE=1 SV=1"
 _INSULIN_LENGTH = 110
@@ -47,7 +47,7 @@ def test_metadata_is_copied_so_the_caller_cannot_change_it_afterwards() -> None:
     assert p.metadata == {"organism": "Homo sapiens"}
 
 
-# --- the sequence is biotite's type, not a str (#22) -------------------------
+# --- the sequence is biotite's type, not a str -------------------------------
 
 
 def test_the_sequence_is_a_biotite_protein_sequence() -> None:
@@ -55,8 +55,8 @@ def test_the_sequence_is_a_biotite_protein_sequence() -> None:
 
 
 def test_the_sequence_does_not_compare_equal_to_the_string_it_was_built_from() -> None:
-    # The consequence of holding biotite's type, and the one that surprises: `str(...)` is
-    # how ESM-C and mmseqs get their string.
+    # The consequence of holding biotite's type: `str(...)` is how a tokenizer or a
+    # subprocess gets its string.
     p = Protein("MKTAY")
     assert p.sequence != "MKTAY"
     assert str(p.sequence) == "MKTAY"
@@ -188,9 +188,8 @@ def test_the_search_mixin_comes_first_in_the_bases() -> None:
 
 @pytest.mark.parametrize("absent", ["embed", "structure", "foldseek_search", "from_structure"])
 def test_protein_carries_neither_coordinates_nor_the_weights(absent: str) -> None:
-    # Two rules, one assertion. Foldseek takes a structure and a Protein has none (#9); ESM-C
-    # holds 1.33 GB of weights, which need a lifetime the caller can see, so `ESMC` is an
-    # object rather than a method here (#7).
+    # Two rules, one assertion: foldseek takes a structure and a Protein has none, and
+    # ESM-C's weights need a lifetime the caller can see, so `ESMC` is an object.
     assert not hasattr(Protein, absent)
 
 

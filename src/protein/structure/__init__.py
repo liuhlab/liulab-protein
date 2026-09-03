@@ -2,11 +2,9 @@
 
 Two classes and no mixin. :class:`~protein.structure.structure.Structure` is a peer of
 :class:`~protein.core.Protein`, not a part of one: a protein is addressed by a UniProt
-accession and a structure by a PDB id, the two are many-to-many in **both** directions
-(47,348 entries reach more than one accession, 43,032 accessions reach more than one entry),
-and a structure also holds nucleic acids and ligands that have no protein at all. SIFTS is
-the join, it is chain-level, and it therefore lands on
-:class:`~protein.structure.chain.Chain`.
+accession and a structure by a PDB id, the two are many-to-many in **both** directions, and a
+structure also holds nucleic acids and ligands that have no protein at all. SIFTS is the
+join, it is chain-level, and it therefore lands on :class:`~protein.structure.chain.Chain`.
 
 ``Protein.foldseek_search()`` is not here and is not anywhere: Foldseek takes a structure,
 so the search lives where the coordinates are. *A method exists where the tool supports the

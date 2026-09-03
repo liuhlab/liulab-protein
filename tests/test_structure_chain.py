@@ -2,7 +2,7 @@
 
 The sharp one is `uniprot`: `1UBQ` chain A is `P62988` in the mmCIF sitting in `tests/data`
 and `P0CG48` in SIFTS, so a chain that answered from the file it was parsed from would be
-visibly wrong. It is run against the committed SIFTS slice, through the whole prepared-set
+visibly wrong. It runs against the committed SIFTS slice, through the whole prepared-set
 pipeline, so nothing about the answer is stubbed.
 """
 
@@ -31,7 +31,7 @@ _UBQ = _DATA / "1ubq.cif.gz"
 _BNA = _DATA / "1bna.cif.gz"
 _SLICE = _DATA / "sifts_pdb_chain_uniprot_slice.tsv"
 
-#: Ubiquitin, the 76 residues `1UBQ` was solved for.
+#: Ubiquitin, the residues `1UBQ` was solved for.
 _UBIQUITIN = "MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
 
 
@@ -51,8 +51,8 @@ def bna() -> Structure:
 def prepared_sifts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Run the prepared-set pipeline against the committed slice, offline.
 
-    The same shape `tests/test_sifts.py` uses: the one call that would download is replaced
-    through its module, and everything after it is the real code.
+    The one call that would download is replaced through its module; everything after it is
+    the real code.
     """
     packed = tmp_path / "publisher" / "pdb_chain_uniprot.tsv.gz"
     packed.parent.mkdir(parents=True)
@@ -143,8 +143,8 @@ def test_a_dna_chain_says_so(bna: Structure) -> None:
 
 
 def test_the_kind_is_the_majority_and_not_a_demand_for_purity(bna: Structure) -> None:
-    # `1BNA` chain A is 243 nucleotide atoms and 37 waters, because a chain carries what was
-    # modelled against it. A rule wanting every atom to match would call this one `other`.
+    # A chain carries the waters modelled against it, so a rule wanting every atom to match
+    # would call this one `other`.
     chain = bna["A"]
     assert len(chain) == 280
     assert chain.kind == "nucleic"
@@ -166,8 +166,8 @@ def test_the_sequence_is_the_residues_the_chain_was_solved_for(ubq: Structure) -
 
 
 def test_the_waters_sharing_the_chain_label_are_not_in_the_sequence(ubq: Structure) -> None:
-    # 1UBQ's 58 waters carry chain label `A` too, so a sequence built without the amino-acid
-    # filter would be 58 residues too long.
+    # 1UBQ's waters carry chain label `A` too, so a sequence built without the amino-acid
+    # filter would be that many residues too long.
     assert len(ubq["A"].sequence) == 76
 
 
@@ -213,8 +213,8 @@ def test_a_non_protein_chain_still_looks_embeddable_and_fails_when_asked(
 def test_a_chain_answers_from_sifts_and_not_from_the_file_it_was_parsed_from(
     prepared_sifts: None,
 ) -> None:
-    # The whole join in one assertion. `1UBQ` chain A is `P62988` in this very mmCIF's
-    # `_struct_ref_seq` and `P0CG48` in SIFTS; the second is the answer.
+    # `1UBQ` chain A is `P62988` in this very mmCIF's `_struct_ref_seq` and `P0CG48` in
+    # SIFTS; the second is the answer.
     assert Structure.from_file(_UBQ, id="1UBQ")["A"].uniprot == ("P0CG48",)
 
 
@@ -285,9 +285,9 @@ def test_the_written_query_holds_that_chain_and_nothing_else(
 def test_a_chain_label_of_more_than_one_character_survives_the_query(
     tmp_path: Path, pdb_database: Path, runs: _Runs
 ) -> None:
-    # `foldseek convert2pdb` truncates such a label in silence and a PDB file cannot hold
-    # one at all. The query is mmCIF, so the label survives in both the file's name -- which
-    # is what Foldseek reports a one-chain query under -- and in the file.
+    # `foldseek convert2pdb` truncates such a label in silence and a PDB file cannot hold one
+    # at all. The query is mmCIF, so the label survives in the file and in its name -- which
+    # is what Foldseek reports a one-chain query under.
     atoms = io.read_atoms(_UBQ).copy()
     atoms.chain_id = np.full(atoms.array_length(), "Q1", dtype="U4")
     relabelled = tmp_path / "1ubq.cif"

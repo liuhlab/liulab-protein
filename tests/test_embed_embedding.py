@@ -1,8 +1,7 @@
 """Tests for `Embedding` — the value object, which is pure numpy and needs no weights.
 
 Every test here runs in the gate. That is the point of keeping `embedding.py` free of torch:
-the thing a caller actually holds is testable on a machine with no CUDA, no `esm` package and
-nothing in the HF cache.
+the thing a caller actually holds is testable with no weights anywhere.
 """
 
 from __future__ import annotations
@@ -28,8 +27,7 @@ def _embedding(
 
 
 def test_len_is_the_residue_count_and_not_the_tokenised_length() -> None:
-    # The sharp one, held here as well as in the model lane: BOS and EOS are stripped before
-    # an `Embedding` is built, so 33 residues is 33 rows and never 35.
+    # BOS and EOS are stripped before an `Embedding` is built, so the rows are the residues.
     assert len(_embedding(rows=33)) == 33
 
 
@@ -60,9 +58,8 @@ def test_mean_is_the_per_residue_average_and_has_one_row_per_model_dimension() -
 
 
 def test_mean_needs_no_mask_because_every_row_is_a_residue() -> None:
-    # #1 called a per-sequence vector "a masked mean you write". The mask exists for padded
-    # batches; one un-padded sequence with BOS and EOS gone has nothing to mask, so the plain
-    # mean is exact — asserted against an explicit average rather than against numpy itself.
+    # The mask exists for padded batches; one un-padded sequence with BOS and EOS gone has
+    # nothing to mask, so the plain mean is exact — asserted against an explicit average.
     rng = np.random.default_rng(0)
     array = rng.standard_normal((7, 5)).astype(np.float32)
     expected = sum(array[row] for row in range(7)) / 7
@@ -80,7 +77,7 @@ def test_an_embedding_cannot_be_edited_after_the_fact() -> None:
 
 
 def test_an_embedding_carries_no_instance_dict() -> None:
-    # `slots=True`: the four fields are all of it, and nothing can be stapled on later.
+    # `slots=True`: nothing can be stapled on later.
     assert not hasattr(_embedding(), "__dict__")
 
 

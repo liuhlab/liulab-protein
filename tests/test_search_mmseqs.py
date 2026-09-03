@@ -1,11 +1,9 @@
 """Tests for the sequence half of the search lane, and the hit table it owns.
 
 No binary and no database. Every search here rides on one
-`monkeypatch.setattr(ExternalTool, "run", ...)`, which is the property `run_to` was written
-for: it catches both adapters and both tools, so what reaches the command line, what the
+`monkeypatch.setattr(ExternalTool, "run", ...)`, so what reaches the command line, what the
 query FASTA held and what the frame came back as are all observable without mmseqs. The
-tables that get parsed are real output — `tests/data/mmseqs_hits_p01308.tsv` came off
-GPU71FM, and its provenance is in `tests/data/README.md`.
+tables that get parsed are real output; their provenance is in `tests/data/README.md`.
 """
 
 from __future__ import annotations
@@ -34,7 +32,7 @@ from protein.search.mmseqs import (
 #: The lane's source directory, found from this file so the test moves with the repo.
 _LANE = Path(__file__).resolve().parents[1] / "src" / "protein" / "search"
 
-#: A real Swiss-Prot search, run by hand on GPU71FM — see `tests/data/README.md`.
+#: A real Swiss-Prot search — see `tests/data/README.md`.
 _MMSEQS_HITS = Path(__file__).resolve().parent / "data" / "mmseqs_hits_p01308.tsv"
 
 _INSULIN = "MALWMRLLPLLALLALWGPDPAAAFVNQHLCGSHLVEALYLVCGERGFFYTPKTRREAEDLQ"
@@ -90,8 +88,8 @@ def test_the_column_table_types_every_column_either_tool_asks_for() -> None:
 
 
 def test_each_tool_keeps_its_own_identity_column_and_neither_is_renamed() -> None:
-    # A percentage and a fraction. Flattening them would make two frames comparable that
-    # are not, so the column a caller has is what says which number it holds.
+    # A percentage and a fraction: flattening them would make two frames comparable that
+    # are not.
     assert hit_dtypes(Mmseqs())["pident"] == "float64"
     assert hit_dtypes(Foldseek())["fident"] == "float64"
     assert "fident" not in hit_dtypes(Mmseqs())
@@ -142,7 +140,7 @@ def test_a_real_mmseqs_table_reads_the_dtypes_the_table_declares() -> None:
     assert str(frame.dtypes["target"]) == "string"
     assert str(frame.dtypes["alnlen"]) == "int64"
     assert str(frame.dtypes["evalue"]) == "float64"
-    # pident is a percentage, and mmseqs really does write 100.000 for an identical hit.
+    # pident is a percentage, not a fraction.
     assert frame.loc[0, "pident"] == pytest.approx(100.0)
 
 
@@ -165,8 +163,7 @@ def test_a_registered_name_resolves_to_the_ffindex_database_inside_its_directory
 def test_a_directory_whose_database_is_spelled_differently_resolves_to_the_shortest_stem(
     liulab_data: Path,
 ) -> None:
-    # Measured on GPU71FM: `db/pdb/` holds `pdb100` and its `_h`, `_ca`, `_clu` and `_seq`
-    # siblings, so the registered name and the ffindex prefix are not the same string.
+    # The registered name and the ffindex prefix inside its directory need not match.
     directory = liulab_data / "protein" / "db" / "pdb"
     directory.mkdir(parents=True)
     for stem in ("pdb100", "pdb100_h", "pdb100_ca", "pdb100_clu", "pdb100_seq", "pdb100_seq_h"):
@@ -308,7 +305,7 @@ def test_a_protein_hands_back_the_hits_as_they_were_parsed(swissprot: Path, runs
 
 def test_no_module_in_the_search_lane_imports_pandas_at_module_level() -> None:
     # `protein.core` imports the mixin, so anything at the top of a lane module is paid for
-    # by every `import protein` — including by a caller that never searches anything.
+    # by every `import protein`.
     offenders = sorted(
         source.name for source in _lane_modules() if "pandas" in _module_level_imports(source)
     )
