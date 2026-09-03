@@ -1,22 +1,15 @@
 """FASTA, in two layers: biotite's records below, this package's proteins above.
 
 The **record layer** is adopted whole. ``FastaFile.read_iter`` and ``FastaFile.write_iter``
-parse and render, and a header survives byte-for-byte — every space, every ``OS=`` field,
-exactly as the file spells it. :func:`read_records`, :func:`write_records` and
-:func:`format_records` are thin over them, adding only gzip, which biotite has no reader for.
+parse and render, and a header survives byte-for-byte. :func:`read_records`,
+:func:`write_records` and :func:`format_records` are thin over them, adding only gzip, which
+biotite has no reader for.
 
 The **protein layer** is ours. :func:`read_proteins` turns each record into a
 :class:`~protein.core.Protein`, whose sequence is built by
-:func:`protein.seq.to_protein_sequence` and by nothing else.
-
-**biotite's converters are never called.** ``fasta.get_sequence`` and ``fasta.get_sequences``
-rewrite ``U`` to ``C`` and ``O`` to ``K`` without a word — a different residue, claimed
-silently, in 285 Swiss-Prot entries. That is ADR-0002, and a test walks ``src/protein/`` to
-enforce it.
-
-**Two modules are called ``fasta``.** biotite's is ``biotite.sequence.io.fasta``; this one is
-``protein.io.fasta``. The import below takes the one class this module needs rather than the
-module, so no call site here can be read as the wrong one.
+:func:`protein.seq.to_protein_sequence` and by nothing else. **biotite's converters are never
+called**: they rewrite ``U`` to ``C`` and ``O`` to ``K`` without a word (ADR-0002), and a test
+walks ``src/protein/`` to enforce it.
 
 A header is split the plain FASTA way: the first whitespace-delimited token is the identifier
 and the rest is free text. A UniProt header therefore lands whole — ``sp|P01308|INS_HUMAN``
@@ -60,8 +53,8 @@ __all__ = [
     "write_records",
 ]
 
-#: Residues per line when writing, which is biotite's own default. Named here so the two
-#: writers and :meth:`protein.core.Protein.to_fasta` cannot drift apart.
+#: Residues per line when writing. Named here so the two writers and
+#: :meth:`protein.core.Protein.to_fasta` cannot drift apart.
 DEFAULT_LINE_WIDTH = 80
 
 
@@ -69,10 +62,8 @@ def read_records(source: str | Path) -> Iterator[tuple[str, str]]:
     """Yield one ``(header, sequence)`` pair per record in the FASTA file at ``source``.
 
     The header is everything after ``>``, byte-for-byte, and the sequence is one unwrapped
-    string. Neither is checked against any alphabet: this is the record layer, and the
-    string-to-sequence step is :func:`read_proteins`'.
-
-    Reading is lazy, so the file stays open until the iterator is exhausted or dropped.
+    string. Neither is checked against any alphabet: this is the record layer. Reading is
+    lazy, so the file stays open until the iterator is exhausted or dropped.
 
     Parameters
     ----------
@@ -107,8 +98,7 @@ def write_records(
         Where to write. A name ending ``.gz`` is compressed. The parent directory must
         exist; nothing here creates one.
     records : iterable of tuple of (str, str)
-        ``(header, sequence)`` pairs. The header is written after ``>`` verbatim, so it must
-        already be what the file should say.
+        ``(header, sequence)`` pairs. The header is written after ``>`` verbatim.
     line_width : int, default 80
         Residues per line.
     """
@@ -150,8 +140,7 @@ def read_proteins(source: str | Path) -> Iterator[Protein]:
     """Yield one :class:`~protein.core.Protein` per record in the FASTA file at ``source``.
 
     Each header is split by :func:`split_header` into the protein's ``id`` and
-    ``description``, and each sequence goes through :func:`protein.seq.to_protein_sequence`,
-    so a record whose residues are outside the alphabet raises here rather than downstream.
+    ``description``, and each sequence goes through :func:`protein.seq.to_protein_sequence`.
 
     Parameters
     ----------
@@ -194,9 +183,8 @@ def write_proteins(
 ) -> None:
     """Write ``proteins`` to the FASTA file at ``destination``, replacing what is there.
 
-    One record each, rendered by :meth:`protein.core.Protein.to_fasta`, so a protein written
-    here and one written on its own say the same thing. Streaming: a generator is consumed
-    one protein at a time.
+    One record each, rendered by :meth:`protein.core.Protein.to_fasta`. Streaming: a
+    generator is consumed one protein at a time.
 
     Parameters
     ----------
@@ -217,7 +205,7 @@ def split_header(header: str) -> tuple[str | None, str | None]:
 
     The plain FASTA convention and nothing more: the first whitespace-delimited token is the
     identifier, the rest is description. A UniProt header's ``sp|P01308|INS_HUMAN`` comes
-    back whole — see this module's docstring for why it is not taken apart here.
+    back whole — see this module's docstring.
 
     Parameters
     ----------
@@ -248,8 +236,8 @@ def split_header(header: str) -> tuple[str | None, str | None]:
 def join_header(identifier: str | None, description: str | None) -> str:
     """Join an identifier and a description into one FASTA header.
 
-    The inverse of :func:`split_header` for any header of that shape. It is not a byte-exact
-    inverse of every header: a run of spaces between the two parts comes back as one, and
+    The inverse of :func:`split_header` for any header of that shape, but not a byte-exact
+    inverse of every one: a run of spaces between the two parts comes back as one, and
     leading whitespace is dropped.
 
     Parameters
@@ -277,8 +265,7 @@ def join_header(identifier: str | None, description: str | None) -> str:
 def _open_text(path: Path, mode: Literal["rt", "wt"]) -> TextIO:
     """Open ``path`` as UTF-8 text, decompressing or compressing when it ends ``.gz``.
 
-    biotite reads and writes any text handle, so gzip support is this one branch rather than
-    a parallel set of functions.
+    biotite reads and writes any text handle, so gzip support is this one branch.
     """
     if path.suffix == ".gz":
         return gzip.open(path, mode, encoding="utf-8")
