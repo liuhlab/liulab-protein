@@ -1,49 +1,29 @@
 """SIFTS: the PDB-UniProt map, and the one join between this package's two namespaces.
 
-A **Protein** is addressed by a UniProt accession; a PDB id addresses a **Structure**.
-Neither namespace knows the other, and SIFTS — the EBI's re-curated chain-to-accession
-map, one 6.2 MB TSV republished weekly — is what joins them. It is many-to-many in both
-directions: 1.00% of chains carry more than one accession, and one accession reaches a
-median of 2 entries and a maximum of 3,668.
+A **Protein** is addressed by a UniProt accession, a **Structure** by a PDB id, and SIFTS —
+the EBI's re-curated chain-to-accession map — is the only join between them, many-to-many in
+both directions. Every mmCIF carries its own ``_struct_ref_seq``, which holds the depositor's
+reference frozen at deposition and disagrees; ``Chain.uniprot`` reads this table alone.
 
-**The join reads SIFTS and never the structure file.** Every mmCIF carries its own
-``_struct_ref_seq``, and it disagrees: ``1UBQ`` chain A is ``P62988`` residues 1-76 in the
-file and ``P0CG48`` residues 609-684 here, because the file holds the depositor's reference
-frozen at deposition and SIFTS holds PDBe's re-curated one. Mixing the two breaks the round
-trip — ``Protein.structures`` yields ``1ubq``, whose chain A would then call itself
-``P62988`` — so ``Chain.uniprot`` reads this table alone.
-
-**A Prepared set, not a Database.** :mod:`genome.store.prepared` already runs this pipeline
-three times, and what a fourth declares is a URL, a directory name and a reader. Everything
-else — the fetch, the working area, the staged rename, the digest, the **Completion marker**
-and the sentence that sends a caller to a login node — is that module's. This one is a peer
-of :mod:`protein.store`, not a tenant of ``db/``: a **Database** is immutable ffindex files
+**A Prepared set, not a Database.** :mod:`genome.store.prepared` owns the fetch, the working
+area, the staged rename, the digest and the **Completion marker**, and what this module
+declares is a URL, a directory name and a reader. A **Database** is immutable ffindex files
 searched by a subprocess, and SIFTS is none of those.
 
-**The stored form is a gzipped TSV and not a parquet**, which #20 asked for and #23
-repeated. Two measurements on GPU71FM against the real release forced the change.
-:func:`genome.store.prepared.unpacked_digest` decodes every stored byte as UTF-8, so the
-shared pipeline cannot digest a binary file at all. And the parquet's margin over a
-seven-column sorted TSV is 98 ms against 212 ms, and 4.68 MB against **4.30 MB** — the TSV
-is the smaller of the two. #20's table compared the parquet against reparsing the
-publisher's nine-column source in pure Python (6.21 MB, 0.92 s), which is not this file.
-
-**Nothing is pinned and nothing is checked for staleness.** There is no archive:
-``ftp.ebi.ac.uk/pub/databases/msd/sifts/`` holds only the current release, overwritten in
-place, so a digest pinned today would reject every release after it and a release not
-downloaded while current is gone. The reader records what it read instead — the publisher's
-own header line, ``PDB: 35.26 | UniProt: 2026.03`` — and :func:`status` prints it back,
-offline. Refresh is :attr:`~genome.store.prepared.PreparedSource.repair`: delete and rebuild.
+**Nothing is pinned and nothing is checked for staleness**, because the publisher keeps no
+archive and overwrites the file in place, so a digest taken today would reject every release
+after it. The reader records the release line it read instead, and :func:`status` prints it
+back, offline. Refresh is :attr:`~genome.store.prepared.PreparedSource.repair`: delete and
+rebuild.
 
 **Two verbs, one per direction, over a cached table.** Reach them through the module —
 ``from protein import sifts``, then ``sifts.accessions_for(...)`` — never by importing the
-name, so one ``monkeypatch.setattr`` reaches every caller. Their shapes are asymmetric
-because the cardinalities are: a chain has one accession 99% of the time, so
-:func:`accessions_for` is a tuple; an accession reaches thousands of chains, so
-:func:`structures_for` is a frame.
+name, so one ``monkeypatch.setattr`` reaches every caller. Their shapes follow the
+cardinalities: a chain usually has one accession, so :func:`accessions_for` is a tuple; an
+accession reaches many chains, so :func:`structures_for` is a frame.
 
-**Both ranges come back verbatim and no offset is computed.** 23,046 rows (2.2%) have
-``res_end - res_beg != sp_end - sp_beg``, so a single integer shift is not always definable.
+**Both residue ranges come back verbatim and no offset is computed**, because for some
+segments none is definable.
 
 Examples
 --------
@@ -103,12 +83,11 @@ __all__ = [
 #: release only, so this URL names no version and never will.
 SIFTS_URL = "https://ftp.ebi.ac.uk/pub/databases/msd/sifts/flatfiles/tsv/pdb_chain_uniprot.tsv.gz"
 
-#: This set's directory under :func:`protein.store.protein_data_dir`. One release-free
-#: directory, because there is nothing to keep a second one of.
+#: This set's directory under :func:`protein.store.protein_data_dir`.
 SIFTS_SUBDIR = "sifts"
 
-#: The file the set is read from: the publisher's nine columns cut to seven and sorted,
-#: gzipped. 4.30 MB against the source's 6.21 MB, read whole in 212 ms.
+#: The file the set is read from: the publisher's nine columns cut to seven, sorted and
+#: gzipped.
 STORED_NAME = "pdb_chain_uniprot.tsv.gz"
 
 #: What the **Completion marker** calls what it recorded.
@@ -120,13 +99,12 @@ SIFTS_NAME = "pdb_chain_uniprot"
 #: How an error names this set.
 DESCRIPTION = "the SIFTS PDB-UniProt map"
 
-#: The call that prepares it, quoted verbatim into every error a caller repairs by running
-#: it.
+#: The call that prepares it, quoted into every error a caller repairs by running it.
 PREPARE_COMMAND = "protein sifts prepare"
 
-#: The publisher's columns, in the publisher's order and spelling. Checked against the
-#: file's own second line, so a re-published file with a different shape fails loudly here
-#: rather than being sliced into the wrong columns.
+#: The publisher's columns, in the publisher's order and spelling. Checked against the file's
+#: own header line, so a re-shaped file fails here rather than being sliced into the wrong
+#: columns.
 SOURCE_COLUMNS: tuple[str, ...] = (
     "PDB",
     "CHAIN",
@@ -140,44 +118,40 @@ SOURCE_COLUMNS: tuple[str, ...] = (
 )
 
 #: What is stored, and all of what is stored. ``PDB_BEG``/``PDB_END`` — the author numbering
-#: — are dropped: they are blank in 56% and 48% of rows, and the mmCIF's
-#: ``_pdbx_poly_seq_scheme`` gives the same SEQRES-to-author mapping completely, per residue
-#: and with insertion codes, for any structure a caller actually holds.
+#: — are dropped: they are often blank, and an mmCIF's ``_pdbx_poly_seq_scheme`` gives the
+#: same mapping per residue and with insertion codes.
 COLUMNS: tuple[str, ...] = ("pdb", "chain", "accession", "res_beg", "res_end", "sp_beg", "sp_end")
 
-#: The columns the stored frame is sorted by. Accession first, because that is the direction
-#: a whole-table scan would be slowest in and the one :func:`structures_for` takes.
+#: The columns the stored frame is sorted by. Accession first, the direction
+#: :func:`structures_for` takes.
 SORT_COLUMNS: tuple[str, ...] = ("accession", "pdb", "chain")
 
-#: What each stored column is read back as. Spelled out rather than inferred, so the four
-#: residue bounds come back as the ``int32`` they were written as and the three names stay
-#: strings. ``Hashable``-keyed because that is the mapping ``read_csv`` takes, and ``dict``
-#: is invariant in both parameters.
+#: What each stored column is read back as. Spelled out rather than inferred, so the residue
+#: bounds come back as the ``int32`` they were written as. ``Hashable``-keyed because that is
+#: the mapping ``read_csv`` takes.
 READ_DTYPES: dict[Hashable, Any] = {
     **dict.fromkeys(COLUMNS[:3], "string"),
     **dict.fromkeys(COLUMNS[3:], "int32"),
 }
 
-#: The publisher's first line, e.g. ``# 2026/08/30 - 13:24 | PDB: 35.26 | UniProt: 2026.03``.
-#: It is the only thing in the file that says which release this is, and with no archive to
-#: pin against it is the whole reproducibility record.
+#: The publisher's first line, the only thing in the file that says which release this is
+#: and, with no archive to pin against, the whole reproducibility record.
 _HEADER_RE = re.compile(
     r"^#\s*(?P<released>.+?)\s*\|\s*PDB:\s*(?P<pdb>\S+)\s*\|\s*UniProt:\s*(?P<uniprot>\S+)\s*$"
 )
 
-#: What a failed SIFTS call raises. A set that is not here, and a directory an interrupted
-#: run left unfinished, are ``RuntimeError``s; a publisher's file this package cannot read is
-#: a ``ValueError``; a file that went away under the read is an ``OSError``.
+#: What a failed SIFTS call raises: a set that is not here or an interrupted run is a
+#: ``RuntimeError``, a file this reader cannot slice a ``ValueError``, and a file that went
+#: away under the read an ``OSError``.
 _SIFTS_ERRORS = (ValueError, OSError, RuntimeError)
 
 
 class SiftsNotDownloadedError(prepared.PreparedSetNotDownloadedError):
     """The SIFTS map is not prepared on this machine and could not be fetched.
 
-    Distinct from an empty answer, and deliberately so: ``()`` from
-    :func:`accessions_for` means the chain genuinely has no protein — every nucleic-acid
-    chain, every ligand chain, every entry SIFTS never curated — and conflating the two
-    would let a script map nothing and look like it worked.
+    Distinct from an empty answer, and deliberately so: ``()`` from :func:`accessions_for`
+    means the chain genuinely has no protein, and conflating the two would let a script map
+    nothing and look like it worked.
 
     Examples
     --------
@@ -189,9 +163,8 @@ class SiftsNotDownloadedError(prepared.PreparedSetNotDownloadedError):
 class SiftsFormatError(ValueError):
     """What arrived is not the file this reader knows how to slice.
 
-    A :class:`ValueError`: the bytes are a bad value. Raised while the lines go past and
-    before anything is placed, so a file the publisher re-shaped never lands on disk to be
-    read back as a finished set.
+    Raised before anything is placed, so a file the publisher re-shaped never lands on disk
+    to be read back as a finished set.
 
     Examples
     --------
@@ -229,9 +202,9 @@ def source() -> prepared.PreparedSource:
     -------
     genome.store.prepared.PreparedSource
         The URL, the directory, the reader and the error class.
-        :attr:`~genome.store.prepared.PreparedSource.checksum` is ``None``: the publisher
-        overwrites this file weekly in place, so a pin would reject every release after the
-        one it was taken from. The digest of what was stored is recorded instead.
+        :attr:`~genome.store.prepared.PreparedSource.checksum` is ``None``, because the
+        publisher overwrites this file in place; the digest of what was stored is recorded
+        instead.
 
     Examples
     --------
@@ -260,16 +233,15 @@ def source() -> prepared.PreparedSource:
 def read_sifts(lines: Iterator[str], staged: Path, *, origin: str) -> Mapping[str, Any]:
     """Turn the publisher's lines into the stored slice, and say what was read.
 
-    The whole of what this package adds to :func:`genome.store.prepared.prepare`. Seven of
-    the publisher's nine columns are kept, the rows are sorted by :data:`SORT_COLUMNS`, and
-    the first line — the only place the file names its own release — comes back as the
-    marker's record of which SIFTS this is.
+    The whole of what this package adds to :func:`genome.store.prepared.prepare`: seven of
+    the publisher's nine columns, sorted by :data:`SORT_COLUMNS`, and the release line for
+    the marker to record.
 
     Parameters
     ----------
     lines : iterator of str
-        The publisher's unpacked lines, line endings and all. **The data rows end in CRLF
-        and the first line does not**, so every line is stripped of both.
+        The publisher's unpacked lines, line endings and all. They are mixed — CRLF and LF
+        in one file — so every line is stripped of both.
     staged : pathlib.Path
         Where to write the slice, inside the working area.
     origin : str
@@ -310,12 +282,12 @@ def read_sifts(lines: Iterator[str], staged: Path, *, origin: str) -> Mapping[st
         )
 
     frame = pd.DataFrame(rows).astype(dict.fromkeys(COLUMNS[3:], "int32"))
-    # Stable, so the several segments one (pdb, chain, accession) triple carries stay in
-    # the publisher's own order — which is the order their residue ranges ascend in.
+    # Stable, so the several segments of one triple keep the publisher's order, which is the
+    # order their residue ranges ascend in.
     frame = frame.sort_values(list(SORT_COLUMNS), kind="stable", ignore_index=True)
     staged.parent.mkdir(parents=True, exist_ok=True)
-    # `mtime=0`, so one release cut on two machines gives byte-identical files and the
-    # digest the marker records is a fact about the rows rather than about the clock.
+    # `mtime=0`, so the same rows give byte-identical files and the recorded digest is a fact
+    # about them rather than about the clock.
     frame.to_csv(staged, sep="\t", index=False, compression={"method": "gzip", "mtime": 0})
     return {
         "sifts_header": header,
@@ -328,9 +300,6 @@ def read_sifts(lines: Iterator[str], staged: Path, *, origin: str) -> Mapping[st
 
 def prepare(*, progressbar: bool = True) -> prepared.Prepared:
     """Fetch and store the map, or return the one already here.
-
-    One call to :func:`genome.store.prepared.prepare`, which is the point: the fetch, the
-    working area, the staged rename, the digest and the marker are all that module's.
 
     Parameters
     ----------
@@ -357,8 +326,8 @@ def prepare(*, progressbar: bool = True) -> prepared.Prepared:
     Prepared(path=PosixPath('/scratch/liulab/protein/sifts/pdb_chain_uniprot.tsv.gz'), ...)
     """
     result = prepared.prepare(source(), progressbar=progressbar)
-    # The file under the cache's key may have just been replaced, and a cache that outlives
-    # the bytes it read is the one way this module can answer from a release that is gone.
+    # The stored file may have just been replaced, and a cache outliving the bytes it read
+    # would answer from a release that is gone.
     clear_cache()
     return result
 
@@ -376,9 +345,9 @@ class SiftsStatus:
     released : str or None
         When the publisher cut this release, as its own first line spells it.
     pdb_release : str or None
-        The PDB release the map was built against, e.g. ``"35.26"``.
+        The PDB release the map was built against.
     uniprot_release : str or None
-        The UniProt release, e.g. ``"2026.03"``.
+        The UniProt release.
     rows : int or None
         How many mapping rows were stored.
     completed_at : str or None
@@ -427,9 +396,9 @@ class SiftsStatus:
 def status() -> SiftsStatus:
     """Report what is on disk here, reading the marker and nothing else.
 
-    **Offline, and it stays offline.** There is no archive of past releases to compare
-    against, updates are rare, and the lab's compute nodes have no network — so this says
-    which release is here and never whether a newer one exists.
+    **Offline, and it stays offline.** There is no archive to compare against and the lab's
+    compute nodes have no network, so this says which release is here and never whether a
+    newer one exists.
 
     Returns
     -------
@@ -463,9 +432,8 @@ def status() -> SiftsStatus:
 def table() -> pd.DataFrame:
     """Return the whole map, read once per file and then held.
 
-    41 MB resident and 212 ms to read, so the first caller pays for the rest. **Do not
-    mutate what comes back** — every caller shares it; the two verbs each hand back a slice
-    of their own.
+    **Do not mutate what comes back** — every caller shares it; the two verbs each hand back
+    a slice of their own.
 
     Returns
     -------
@@ -504,9 +472,9 @@ def clear_cache() -> None:
 def structures_for(accession: str) -> pd.DataFrame:
     """Return every PDB chain segment SIFTS maps ``accession`` to.
 
-    A frame and not a list of ids, because an entry id alone does not say *which chain* to
-    fetch coordinates for — and because ``P0DTD1`` reaches 6,181 chains across 3,668
-    entries, which is not a number of objects to build.
+    A frame and not a list of ids: an entry id alone does not say *which chain* to fetch
+    coordinates for, and a well-studied accession reaches more chains than there is reason to
+    build objects for.
 
     Parameters
     ----------
@@ -518,8 +486,8 @@ def structures_for(accession: str) -> pd.DataFrame:
     -------
     pandas.DataFrame
         :data:`COLUMNS`, one row per segment, in the stored order. Empty when SIFTS carries
-        nothing for this accession — which is the true answer for a protein no structure
-        has been solved for.
+        nothing for this accession, which is the true answer for a protein no structure has
+        been solved for.
 
     Raises
     ------
@@ -539,9 +507,8 @@ def structures_for(accession: str) -> pd.DataFrame:
 def accessions_for(pdb: str, chain: str) -> tuple[str, ...]:
     """Return the UniProt accessions SIFTS maps one PDB chain to.
 
-    A tuple and never a scalar: 9,941 chains — 1.00% — carry more than one accession, up to
-    four (``8uqe`` B), and a surface that answered with the first would be wrong once in a
-    hundred without saying so.
+    A tuple and never a scalar: a chain may carry more than one accession, and a surface that
+    answered with the first would be wrong without saying so.
 
     Parameters
     ----------
@@ -550,18 +517,15 @@ def accessions_for(pdb: str, chain: str) -> tuple[str, ...]:
         that is what the input is folded to.
     chain : str
         The author chain label — ``auth_asym_id``, which is what SIFTS keys on. **Not
-        folded**: 62,551 rows carry a lower-case single-letter label, and ``10eg`` has both
-        an ``A`` and an ``a``, so case is part of the name.
+        folded**: ``10eg`` carries both an ``A`` and an ``a``, so case is part of the name.
 
     Returns
     -------
     tuple of str
-        The accessions, deduplicated and in accession order — the order
-        :data:`SORT_COLUMNS` puts them in, not the publisher's row order, which is by
-        residue range. ``()`` when this chain has no
-        protein — every nucleic-acid chain, every ligand chain, every entry SIFTS never
-        curated — and also for an id SIFTS does not carry at all, which is what a chain of a
-        ``Structure.from_file`` that is not a PDB entry gets.
+        The accessions, deduplicated and in accession order — the order :data:`SORT_COLUMNS`
+        puts them in, not the publisher's row order, which is by residue range. ``()`` when
+        this chain has no protein, and also for an id SIFTS does not carry at all, which is
+        what a chain of a ``Structure.from_file`` that is not a PDB entry gets.
 
     Raises
     ------
@@ -585,15 +549,11 @@ def _read_table(path: Path) -> pd.DataFrame:
     """Read one stored slice, keyed by the file it read.
 
     Keyed by the path rather than cached on a nullary call, so a process that re-points the
-    **Data dir** — every test in this suite does — reads the set it now names instead of the
-    one it read first.
+    **Data dir** reads the set it now names instead of the one it read first.
 
-    ``keep_default_na=False`` is load-bearing and not caution: **SIFTS carries 205 rows whose
-    chain is labelled** ``NA`` — ``9on4`` has one, between its ``MA`` and its ``OA`` — and
-    pandas' default missing-value list reads that name as a missing value and loses the
-    chain. It is spelled this way and not as ``na_filter=False``, which does the same thing
-    and which **the pyarrow engine silently ignores**: measured here, that spelling returned
-    205 nulls and no ``NA``. The pyarrow engine is twice the C one, 209 ms against 410 ms.
+    ``keep_default_na=False`` is load-bearing: **``NA`` is a real chain label**, which pandas'
+    default missing-value list would read as a missing value and lose. Spelled this way and
+    not as ``na_filter=False``, which the pyarrow engine silently ignores.
     """
     return pd.read_csv(
         path,
@@ -667,7 +627,7 @@ def _add_row(rows: dict[str, list[Any]], line: str, *, number: int, origin: str)
 
 
 def _as_int(value: str, *, column: str, number: int, origin: str) -> int:
-    """Read one residue bound, which SIFTS populates in every row of these four columns."""
+    """Read one residue bound, and refuse a row that does not hold an integer."""
     try:
         return int(value)
     except ValueError as error:
@@ -707,8 +667,7 @@ def status_command(
 ) -> None:
     """Say which SIFTS release is prepared here, without touching the network.
 
-    Nothing is checked against the publisher: there is no archive to compare with, and the
-    machines this runs on have no network.
+    Nothing is checked against the publisher, which keeps no archive to compare with.
     """
     try:
         found = status()

@@ -7,9 +7,8 @@ that namespace is SIFTS, it is chain-level, and it therefore attaches to
 :class:`~protein.structure.chain.Chain` rather than here.
 
 **The asymmetric unit, and not a biological assembly** — a consequence rather than a taste.
-SIFTS keys on AU author chains, so ``Chain.uniprot`` only answers against the AU; and 26.7%
-of entries (60,057, up to 44) have more than one assembly, so ``Structure("1UBQ")`` would
-otherwise be undefined for a quarter of the archive.
+SIFTS keys on AU author chains, so ``Chain.uniprot`` only answers against the AU, and many
+entries have more than one assembly, which would leave ``Structure("1UBQ")`` undefined.
 
 **The path is held and the parse is lazy.** Foldseek needs a file on disk whatever else
 happens, so the file is what a structure *is*; :attr:`~Structure.atoms` and
@@ -18,17 +17,13 @@ read, fetched or looked up by constructing one, and :func:`repr` stays free.
 
 **Coordinates: local first, RCSB on a miss, one cache.** :func:`fetch` looks under
 :func:`structure_data_dir` and, finding nothing, asks ``files.rcsb.org`` and leaves the file
-there. The look-local-first half is ``biotite.database.rcsb.fetch``'s own — it skips the
-download when the target exists and is non-empty, and re-fetches a zero-byte one — so this
-module supplies the root and the gzipped spelling and adopts the rest. A bulk rsync mirror
-is therefore optional: an operator may fill the cache ahead of time, and no API changes if
-they do not. That is what keeps 113 GiB off v1's critical path.
+there. Look-local-first is ``biotite.database.rcsb.fetch``'s own, so this module supplies the
+root and the gzipped spelling and adopts the rest. A bulk rsync mirror is therefore optional:
+an operator may fill the cache ahead of time, and no API changes if they do not.
 
-**pdb100 is a search target and never a coordinate source.** It is C-alpha only, 79% of
-named chains are absent from its index, and ``convert2pdb`` renumbers residues 1..N —
-verified on ``102l`` chain A, which comes out as 1-163 where SIFTS records two segments in
-author numbering from 41. That renumbering destroys the residue-level SIFTS join, which is
-the reason the offsets are carried at all.
+**pdb100 is a search target and never a coordinate source.** It is C-alpha only, it indexes
+a fraction of named chains, and ``convert2pdb`` renumbers residues from 1, which destroys the
+residue-level SIFTS join the offsets are carried for.
 
 Examples
 --------
@@ -73,9 +68,8 @@ __all__ = [
 #: but one file per entry, fetched on demand and never all at once.
 STRUCTURE_SUBDIR = "structures"
 
-#: What is fetched and what the cache is keyed by. mmCIF, because it is what RCSB serves,
-#: what biotite reads best, and the only one of the two that can spell a chain label of more
-#: than one character — 12% of the archive's.
+#: What is fetched and what the cache is keyed by. mmCIF, because it is what RCSB serves and
+#: the only one of the two formats that can spell a chain label of more than one character.
 COORDINATE_FORMAT = "cif"
 
 #: The call that fills the cache where there is a network, quoted into the error a machine
@@ -90,8 +84,8 @@ _MAX_LISTED = 12
 class CoordinatesNotDownloadedError(RuntimeError):
     """The coordinates are not in the cache and this machine could not fetch them.
 
-    One class for both ways that happens, because the caller's next move is the same:
-    a compute node with no network, and an id RCSB does not serve. The message names the id,
+    One class for both ways that happens — a compute node with no network, and an id RCSB
+    does not serve — because the caller's next move is the same. The message names the id,
     the cache directory and the command that fills it from a login node.
 
     Examples
@@ -137,9 +131,9 @@ def cached_path(pdb_id: str) -> Path | None:
     Returns
     -------
     pathlib.Path or None
-        ``<cache>/<id>.cif`` when it is there and non-empty, else ``<cache>/<id>.cif.gz``
-        on the same terms — the spelling a gzipped rsync mirror leaves — else ``None``. A
-        zero-byte file reads as absent, which is how an interrupted download is repaired.
+        ``<cache>/<id>.cif`` when it is there and non-empty, else ``<cache>/<id>.cif.gz`` on
+        the same terms, else ``None``. A zero-byte file reads as absent, which is how an
+        interrupted download is repaired.
 
     Examples
     --------
@@ -182,9 +176,8 @@ def fetch(pdb_id: str) -> Path:
     if local is not None:
         return local
 
-    # Deferred: `biotite.database.rcsb` pulls `requests`, and reading a file that is already
-    # cached should not pay for an HTTP client. The module rather than the function, so a
-    # test can monkeypatch `rcsb.fetch` and have this call see it.
+    # Deferred, because reading a cached file should not pay for an HTTP client. The module
+    # rather than the function, so a test can monkeypatch `rcsb.fetch` and be seen here.
     from biotite.database import RequestError, rcsb
 
     directory = structure_data_dir()
@@ -209,8 +202,7 @@ class Structure:
     id : str
         The PDB entry id, e.g. ``"1UBQ"`` — what this structure is addressed by, in either
         case. It is **not folded**: it is what :meth:`__repr__` and every chain key spell,
-        and the two places that need one case fold it themselves (the coordinate cache
-        lower-cases, and so does SIFTS).
+        and the coordinate cache and SIFTS lower-case it themselves.
     path : str or pathlib.Path, optional
         The coordinate file, when it is already known. Omitted, it is resolved on first use
         by :func:`fetch` — the cache, then RCSB.
@@ -249,10 +241,9 @@ class Structure:
         path : str or pathlib.Path
             An mmCIF or PDB file, optionally gzipped. It must exist.
         id : str, optional
-            What to call it. Defaults to the file's own stem, with ``.gz`` and the format
-            suffix removed — which is also the name **Foldseek** reports the query under, so
-            a hit table and ``chain.id`` agree by construction. Give one when the file is
-            named something other than its entry.
+            What to call it. Defaults to the file's own stem, which is also the name
+            **Foldseek** reports the query under, so a hit table and ``chain.id`` agree by
+            construction. Give one when the file is named something other than its entry.
 
         Returns
         -------
@@ -341,8 +332,8 @@ class Structure:
         Returns
         -------
         tuple of str
-            The labels as the file spells them. **12% of the archive's are more than one
-            character**, so nothing may index one by position.
+            The labels as the file spells them. **Not all are one character**, so nothing may
+            index one by position.
 
         Examples
         --------
@@ -370,14 +361,13 @@ class Structure:
     def search(self, database: SearchTarget | str, **kwargs: Any) -> pd.DataFrame:
         """Search this whole structure against ``database`` with Foldseek.
 
-        **One invocation, not a loop over chains.** Verified: Foldseek fans a multi-chain
-        query out itself and reports each chain in the ``query`` column, as
-        ``<entry>_<chain>`` — the same convention SIFTS keys on. A one-chain entry is
-        reported under the file's stem alone, with no chain suffix.
+        **One invocation, not a loop over chains**: Foldseek fans a multi-chain query out
+        itself and reports each chain in the ``query`` column as ``<entry>_<chain>``, the
+        same convention SIFTS keys on.
 
         **The file goes to Foldseek as it is**, unparsed: the two tools do not read the same
         set of formats, and refusing here what Foldseek would have read is this package
-        inventing a limit. A file neither can read fails inside Foldseek, with its message.
+        inventing a limit.
 
         Parameters
         ----------
@@ -391,8 +381,7 @@ class Structure:
         -------
         pandas.DataFrame
             One row per hit, in Foldseek's column order. Identity is ``fident``, a
-            **fraction**, where MMseqs2's ``pident`` is a percentage, and ``alntmscore`` and
-            ``lddt`` come last.
+            **fraction**, where MMseqs2's ``pident`` is a percentage.
 
         Raises
         ------
@@ -423,8 +412,8 @@ class Structure:
         Returns
         -------
         Chain
-            The chain. This is the door a chain is reached through, and the one place a
-            label is checked.
+            The chain. This is the door a chain is reached through, and the one place a label
+            is checked.
 
         Raises
         ------
@@ -455,9 +444,8 @@ class Structure:
     def __repr__(self) -> str:
         """Return e.g. ``Structure('1UBQ')`` — the id, and deliberately nothing else.
 
-        Neither the chain count nor the atom count is in here: both would parse the file,
-        and one of them would fetch it, so printing a structure in a debugger would reach
-        the network.
+        A chain or atom count would parse the file and could fetch it, so printing a
+        structure in a debugger would reach the network.
 
         Examples
         --------
