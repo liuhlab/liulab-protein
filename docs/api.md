@@ -63,6 +63,17 @@ rather than one of them.
 
 ::: protein.embed.esm.features
 
+## Folding
+
+A `FoldingRequest` is what goes in: one entry per chain, and every check the model itself
+does not make.
+
+::: protein.fold
+    options:
+      members: false
+
+::: protein.fold.request
+
 ## Search
 
 One lane, two queries: a sequence goes to MMseqs2, coordinates go to Foldseek. Both answer

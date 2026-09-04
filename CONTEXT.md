@@ -58,6 +58,24 @@ Foldseek vendors MMseqs2, so the two share a command grammar and a database form
 shared half is `MmseqsLikeTool`; what genuinely differs — Foldseek's `fident` against
 MMseqs2's `pident`, and Foldseek's extra columns — is named on the subclasses.
 
+### FoldingRequest
+
+**A class, not just a word.** What one structure prediction takes in: one entry per chain,
+each naming its kind — protein, DNA or RNA — its sequence, the accession it came from, and,
+for a protein chain, an **MSA**. Built at the call site and dropped after the fold, which is
+what separates it from a **Structure**: lifetime, not content.
+
+It carries **no output path**. Where the answer is written is not an input, so one request
+folds to two destinations.
+
+**Every check the model does not make lives here**, because past its own sibling-row check
+the model degrades in silence: an alignment whose query row is not the chain's sequence, or
+whose length disagrees, is refused rather than cut or gap-filled. A nucleic chain refuses an
+alignment outright — the model accepts one there and drops it. A protein chain given none
+gets the depth-1 alignment on its own sequence.
+
+Chain labels are derived from position, since nobody named these chains. See `protein.fold`.
+
 ### MSA
 
 A multiple sequence alignment, held as `(header, row)` pairs of plain text with row 0 the
