@@ -9,6 +9,21 @@ sets one.
 
 ### Added
 
+- **Structures in 3D, in a notebook and on the site.** `Structure.view()` and `Chain.view()`
+  build a viewer from the coordinates they hold and hand back py3Dmol's own object, so every
+  3Dmol.js call is there. `show()` draws it in a notebook, `write_html()` gives the HTML a
+  page embeds, and `write_html(open_file)` writes a whole page a browser opens. A chain's view
+  holds that chain and not the entry around it, because the atoms are written rather than
+  filtered in the viewer.
+
+  **Displaying a structure still draws nothing.** Neither class gained `_repr_html_`. A
+  notebook calls that on every display, and a structure reads its file only when something
+  asks for atoms, so an HTML repr would download coordinates for a line that merely printed
+  an object. Ask for the view, and you choose when that happens (ADR-0008).
+
+  The site shows one too. [Work with structures](docs/guides/structures.md) runs the call
+  while the site is built, so the viewer on that page is made by the code the page shows.
+
 - **Alignments, built here at last.** `MSA` holds one, and reads and writes A3M.
   `Protein.msa(db)` searches a database and hands back an alignment in memory, the way
   `Protein.search(db)` hands back a table of hits. `align(sequences, query=...)` runs MUSCLE

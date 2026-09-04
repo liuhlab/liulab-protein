@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     import pandas as pd
+    import py3Dmol
     from biotite.structure import AtomArray, AtomArrayStack
 
     from protein.fold.predictions import Confidence
@@ -463,6 +464,39 @@ class Structure:
         from protein.search import foldseek
 
         return foldseek.search(self.path, database, **kwargs)
+
+    def view(self, **kwargs: Any) -> py3Dmol.view:
+        """Return a 3D viewer holding every atom of this structure.
+
+        Nothing draws by itself. ``.show()`` renders it in a notebook, ``.write_html()``
+        gives the HTML a page embeds, and ``.write_html(handle)`` writes a whole page into
+        an open file. Displaying a structure draws nothing, on purpose: an HTML repr would
+        parse the file on every display and could fetch it (ADR-0008).
+
+        Parameters
+        ----------
+        **kwargs : Any
+            Forwarded to :func:`protein.structure.view.view` — ``width``, ``height`` and
+            ``style``. The name is this structure's :attr:`id`.
+
+        Returns
+        -------
+        py3Dmol.view
+            A ribbon per chain, coloured N to C, and every 3Dmol.js call forwarded.
+
+        Raises
+        ------
+        CoordinatesNotDownloadedError
+            If this structure's file is neither cached nor fetchable.
+
+        Examples
+        --------
+        >>> with open("1ubq.html", "w") as page:                    # doctest: +SKIP
+        ...     Structure("1UBQ").view().write_html(page)
+        """
+        from protein.structure import view as _view
+
+        return _view.view(self.atoms, name=self.id, **kwargs)
 
     def __getitem__(self, key: str) -> Chain:
         """Return the chain labelled ``key``.

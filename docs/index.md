@@ -54,7 +54,11 @@ s = Structure("1UBQ")  # coordinates arrive on first use
 s.chain_ids  # ('A',)
 s["A"].uniprot  # ('P0CG48',) — from SIFTS, not from the file
 s["A"].search("pdb")  # a DataFrame of Foldseek hits
+s.view().show()  # the fold itself, in 3D, in a notebook
 ```
+
+Nothing about that last line is a notebook trick. `view()` hands back a viewer you can also
+write to a page, and [Work with structures](guides/structures.md) shows one running.
 
 ## Build an alignment for one protein
 

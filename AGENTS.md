@@ -50,7 +50,7 @@ src/protein/
 ├── db/          Database, SequenceDatabase, StructureDatabase, SwissProt
 ├── embed/       ESMC holds the weights; Embedding is what one call returns
 ├── search/      mmseqs.py owns the hit table; foldseek.py reuses its parser
-└── structure/   Structure and Chain
+└── structure/   Structure and Chain, and view.py — coordinates in py3Dmol
 ```
 
 Four rules shape all of it:

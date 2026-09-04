@@ -48,6 +48,7 @@ from protein.io import structure as _io
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
+    import py3Dmol
     from biotite.sequence import NucleotideSequence, ProteinSequence
     from biotite.structure import AtomArray
     from numpy.typing import NDArray
@@ -343,6 +344,35 @@ class Chain:
             query = work / f"{self.id}.{_QUERY_FORMAT}"
             _io.write_atoms(query, self.atoms)
             return foldseek.search(query, database, tool=tool, **kwargs)
+
+    def view(self, **kwargs: Any) -> py3Dmol.view:
+        """Return a 3D viewer holding this chain's atoms, and no others.
+
+        The chain is serialised on its own rather than filtered in the viewer, so what is
+        drawn is what :attr:`atoms` holds. Nothing renders by itself — see
+        :meth:`Structure.view`.
+
+        Parameters
+        ----------
+        **kwargs : Any
+            Forwarded to :func:`protein.structure.view.view` — ``width``, ``height`` and
+            ``style``. The name is this chain's :attr:`id`, so a saved page says which
+            chain it holds.
+
+        Returns
+        -------
+        py3Dmol.view
+            A ribbon coloured N to C. A ligand or water chain carries no cartoon and draws
+            nothing until a caller names another style.
+
+        Examples
+        --------
+        >>> with open("1ubq_a.html", "w") as page:                    # doctest: +SKIP
+        ...     Structure("1UBQ")["A"].view().write_html(page)
+        """
+        from protein.structure import view as _view
+
+        return _view.view(self.atoms, name=self.id, **kwargs)
 
     def __len__(self) -> int:
         """Return the number of atoms this chain has.

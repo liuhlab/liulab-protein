@@ -6,6 +6,9 @@ accession and a structure by a PDB id, the two are many-to-many in **both** dire
 structure also holds nucleic acids and ligands that have no protein at all. SIFTS is the
 join, it is chain-level, and it therefore lands on :class:`~protein.structure.chain.Chain`.
 
+:mod:`protein.structure.view` is the third module and holds no class: a viewer is py3Dmol's
+object, built from the atoms either of these two hold.
+
 ``Protein.foldseek_search()`` is not here and is not anywhere: Foldseek takes a structure,
 so the search lives where the coordinates are. *A method exists where the tool supports the
 thing directly, never where the class would first have to acquire something else.*
