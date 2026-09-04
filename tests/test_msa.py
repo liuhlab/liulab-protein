@@ -139,6 +139,62 @@ def test_repr_names_the_depth_and_the_match_state_count() -> None:
     assert repr(MSA.from_a3m(_PAIRED)) == "MSA(depth 3, 22 match states)"
 
 
+# --- compress ----------------------------------------------------------------
+
+
+def test_compress_demotes_the_anchor_rows_gap_columns_to_insertions() -> None:
+    compressed = MSA([("query", "MK-TAY"), ("hit", "MKWTAY")]).compress()
+    assert compressed.rows == (("query", "MKTAY"), ("hit", "MKwTAY"))
+
+
+def test_compress_drops_a_column_where_both_the_anchor_and_the_row_are_gaps() -> None:
+    compressed = MSA([("query", "MK-TAY"), ("hit", "MK-TAY")]).compress()
+    assert compressed.rows[1] == ("hit", "MKTAY")
+
+
+def test_compress_leaves_a_deletion_in_a_match_column_alone() -> None:
+    compressed = MSA([("query", "MKTAY"), ("hit", "MK--Y")]).compress()
+    assert compressed.rows[1] == ("hit", "MK--Y")
+
+
+def test_the_designated_row_leads_the_result_and_the_rest_keep_their_order() -> None:
+    symmetric = MSA([("a", "MK-T"), ("b", "MKWT"), ("c", "MK-T")])
+    assert [header for header, _ in symmetric.compress(1).rows] == ["b", "a", "c"]
+
+
+def test_compressing_on_a_gapped_row_leaves_that_row_without_gaps() -> None:
+    compressed = MSA([("query", "M-K-T"), ("hit", "MAKGT")]).compress()
+    assert compressed.query == "MKT"
+    assert compressed.match_states == 3
+
+
+def test_a_compressed_alignment_is_checked_like_any_other() -> None:
+    # It comes back through the constructor, so a caller cannot be handed a bad shape.
+    compressed = MSA([("query", "MK-TAY"), ("hit", "MKWTAY")]).compress()
+    assert isinstance(compressed, MSA)
+    assert compressed.match_states == count_match_states(compressed.query)
+
+
+def test_compress_carries_the_comment_line() -> None:
+    assert MSA([("q", "MK-T"), ("h", "MKWT")], comment="#4").compress().comment == "#4"
+
+
+def test_compressing_an_a3m_raises_because_it_is_not_a_symmetric_alignment() -> None:
+    with pytest.raises(InvalidAlignmentError, match="symmetric") as raised:
+        MSA([("query", "MKTAY"), ("hit", "MKTaaAY")]).compress()
+    assert raised.value.row == 1
+
+
+def test_compress_on_a_row_that_is_not_there_raises() -> None:
+    with pytest.raises(IndexError):
+        MSA([("query", "MKTAY"), ("hit", "MKTAY")]).compress(7)
+
+
+def test_there_is_no_expand() -> None:
+    # Declined on purpose: nothing in this package needs a rectangular matrix back.
+    assert not hasattr(MSA([("query", "MKTAY")]), "expand")
+
+
 # --- the two exits -----------------------------------------------------------
 
 

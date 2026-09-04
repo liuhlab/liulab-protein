@@ -46,7 +46,7 @@ def doctor(
 ) -> None:
     """Report availability and versions of the required native tools.
 
-    Exits with code 1 if either tool is missing from PATH; the message names the command
+    Exits with code 1 if any one of them is missing from PATH; the message names the command
     that installs it.
     """
     try:

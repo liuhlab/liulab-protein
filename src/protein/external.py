@@ -1,10 +1,14 @@
 """The one place this package shells out to a native binary.
 
 An **External tool** is a binary the package drives rather than reimplements: ``mmseqs``
-searches sequences, ``foldseek`` searches structures. :class:`ExternalTool` says where one
-is, what version it is, and how to run it — including only when what it would build is
-stale. :class:`InstalledTool` shells out for real; :class:`RecordingTool` records the calls
-and runs nothing, which is what a test binds a search to.
+searches sequences, ``foldseek`` searches structures, ``muscle`` aligns a set of them.
+:class:`ExternalTool` says where one is, what version it is, and how to run it — including
+only when what it would build is stale. :class:`InstalledTool` shells out for real;
+:class:`RecordingTool` records the calls and runs nothing, which is what a test binds a
+search to.
+
+MUSCLE is the one this module never runs: biotite's ``Muscle5App`` takes a ``bin_path``, so
+:class:`Muscle` answers where the binary is and biotite does the rest.
 
 **Foldseek vendors MMseqs2**, so :class:`MmseqsLikeTool` owns the command grammar the two
 share and the concrete tools name only what differs.
@@ -51,17 +55,19 @@ class _Installation:
 
 
 #: Where a binary differs from the default of ``pixi add <lowercased name>`` asked
-#: ``--version``. Neither tool here accepts ``--version``; both answer ``version``. Nothing
-#: outside this module spells a conda package name.
+#: ``--version``. No tool here accepts ``--version``: the two searchers answer ``version``
+#: and MUSCLE answers ``-version``. Nothing outside this module spells a conda package name.
 _INSTALLATIONS: dict[str, _Installation] = {
     "mmseqs": _Installation("mmseqs2", "https://github.com/soedinglab/MMseqs2", ("version",)),
     "foldseek": _Installation(
         "foldseek", "https://github.com/steineggerlab/foldseek", ("version",)
     ),
+    "muscle": _Installation("muscle", "https://github.com/rcedgar/muscle", ("-version",)),
 }
 
-#: The **External tool**s :func:`doctor` checks.
-REQUIRED_TOOLS: tuple[str, ...] = ("mmseqs", "foldseek")
+#: The **External tool**s :func:`doctor` checks. Every one of them is required — there is no
+#: optional tier, so a tool named here is installed by ``pixi install`` like any other.
+REQUIRED_TOOLS: tuple[str, ...] = ("mmseqs", "foldseek", "muscle")
 
 #: What :func:`doctor` reports for a tool that runs but will not identify itself.
 NO_VERSION_REPORTED = "installed; reports no version"
@@ -1034,6 +1040,26 @@ class Foldseek(MmseqsLikeTool):
         super().__init__("foldseek")
 
 
+class Muscle(InstalledTool):
+    """MUSCLE — the aligner, located here and driven by biotite.
+
+    The one **External tool** this module does not run. ``Muscle5App.align()`` takes a
+    ``bin_path`` and owns the temporary files, the arguments and the parsing, so what this
+    class is for is :attr:`~ExternalTool.path` — and the version line :func:`doctor` reports
+    beside the other two.
+
+    Examples
+    --------
+    >>> Muscle().name, Muscle().package
+    ('muscle', 'muscle')
+    >>> Muscle().version_args
+    ('-version',)
+    """
+
+    def __init__(self) -> None:
+        super().__init__("muscle")
+
+
 def doctor() -> dict[str, str]:
     """Verify every **External tool** the package needs and report what each one is.
 
@@ -1050,7 +1076,7 @@ def doctor() -> dict[str, str]:
 
     Examples
     --------
-    >>> doctor()                                          # doctest: +SKIP
-    {'mmseqs': '18.8cc5c', 'foldseek': '10.941cd33'}
+    >>> sorted(doctor())                                  # doctest: +SKIP
+    ['foldseek', 'mmseqs', 'muscle']
     """
     return {name: InstalledTool(name).version or NO_VERSION_REPORTED for name in REQUIRED_TOOLS}

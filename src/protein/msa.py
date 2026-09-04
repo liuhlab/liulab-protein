@@ -11,6 +11,10 @@ The **shape** is checked at construction and the **residues are not**. An alignm
 file's content, and refusing a row because a database entry spells ``U`` would reject
 well-formed A3M this class only holds and hands back.
 
+:func:`align` is the module's verb for a set of sequences the caller already holds. It runs
+MUSCLE through biotite and anchors what comes back with :meth:`MSA.compress`, which is what
+turns a symmetric alignment into an A3M.
+
 Examples
 --------
 >>> from protein import MSA
@@ -29,16 +33,31 @@ MKTaAY
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, cast
+
+from biotite.application.muscle import Muscle5App
+
+from protein import seq
+from protein.external import Muscle
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-__all__ = ["MSA", "InvalidAlignmentError", "count_match_states"]
+    from protein.external import ExternalTool
+
+__all__ = ["MSA", "InvalidAlignmentError", "align", "count_match_states"]
 
 #: Offending positions the lowercase message lists before it counts the rest.
 _MAX_LISTED = 5
+
+#: What a gap is written as. A3M also spells an insert-column gap ``.``; nothing here
+#: produces one, and :meth:`MSA.compress` reads only this.
+_GAP = "-"
+
+#: What MUSCLE needs before it will align anything.
+_MIN_ALIGNED = 2
 
 
 class InvalidAlignmentError(ValueError):
@@ -208,6 +227,55 @@ class MSA:
         a3m.write_records(path, self.rows, comment=self.comment)
         return Path(path)
 
+    def compress(self, index: int = 0) -> Self:
+        """Anchor this alignment on row ``index`` and return the result.
+
+        The columns where that row has a gap stop being columns: a residue in one becomes a
+        lowercase insertion, and a gap in one disappears. The designated row leads the
+        result, which is what makes it the query. There is no ``expand``: nothing in this
+        package needs a rectangular matrix back.
+
+        Parameters
+        ----------
+        index : int, default 0
+            The row to anchor on. It is moved to row 0; the rest keep their order.
+
+        Returns
+        -------
+        MSA
+            A new alignment, checked at construction like any other. The comment is carried.
+
+        Raises
+        ------
+        InvalidAlignmentError
+            If the rows are not all as long as row ``index``. Compressing needs a symmetric
+            alignment — one alignment column per character — and an A3M is not one.
+        IndexError
+            If there is no row ``index``.
+
+        Examples
+        --------
+        >>> MSA([("query", "MK-TAY"), ("hit", "MKWTAY")]).compress().rows
+        (('query', 'MKTAY'), ('hit', 'MKwTAY'))
+        >>> MSA([("a", "MK-T"), ("b", "MKWT")]).compress(1).rows
+        (('b', 'MKWT'), ('a', 'MK-T'))
+        """
+        anchor = self.rows[index][1]
+        width = len(anchor)
+        ragged = next((row for row, (_, text) in enumerate(self.rows) if len(text) != width), None)
+        if ragged is not None:
+            raise InvalidAlignmentError(
+                f"compress anchors on row {index}, which needs every row to be {width} "
+                f"characters long; row {ragged} is {len(self.rows[ragged][1])}. A symmetric "
+                f"alignment has one character per column, and an A3M does not.",
+                row=ragged,
+            )
+        order = [index, *(row for row in range(len(self.rows)) if row != index)]
+        return type(self)(
+            ((self.rows[row][0], _demote(self.rows[row][1], anchor)) for row in order),
+            comment=self.comment,
+        )
+
     @property
     def depth(self) -> int:
         """How many rows the alignment holds, the query included.
@@ -265,6 +333,101 @@ class MSA:
         MSA(depth 1, 5 match states)
         """
         return f"{type(self).__name__}(depth {self.depth}, {self.match_states} match states)"
+
+
+def align(
+    sequences: Mapping[str, str] | Iterable[tuple[str, str]],
+    *,
+    query: str,
+    tool: ExternalTool | None = None,
+) -> MSA:
+    """Align sequences the caller already holds, and anchor the result on ``query``.
+
+    A function and not a method: MUSCLE takes a **set**, and this package has no class for
+    one. No **Database** is involved and none is searched — this is the verb for homologues
+    that came from a paper, a colleague or an earlier search.
+
+    biotite drives the binary. Its ``Muscle5App`` — version 5, not the ``MuscleApp`` that
+    wraps version 3 — owns the temporary files, the arguments and the parsing; this package
+    locates the binary, builds the sequences through :func:`protein.seq.to_protein_sequence`
+    and hands both over. MUSCLE aligns symmetrically, so the result is anchored by
+    :meth:`MSA.compress` before it is returned.
+
+    Parameters
+    ----------
+    sequences : mapping of str to str, or iterable of tuple of (str, str)
+        ``(header, residues)`` pairs, which is what :func:`protein.io.fasta.read_records`
+        yields, or a mapping of the same. Residues are ungapped.
+    query : str
+        The header of the sequence to anchor on. It becomes row 0.
+    tool : protein.external.ExternalTool, optional
+        Where the binary is. Defaults to :class:`~protein.external.Muscle`.
+
+    Returns
+    -------
+    MSA
+        Query-anchored, in the order the sequences arrived except that the query leads.
+
+    Raises
+    ------
+    ValueError
+        If fewer than two sequences were given. MUSCLE aligns a set, not a sequence.
+    LookupError
+        If no sequence carries the ``query`` header. The message names the headers there are.
+    protein.seq.InvalidResidueError
+        If a sequence holds anything outside :data:`protein.seq.ALPHABET`.
+    protein.external.ToolNotFoundError
+        If ``muscle`` is not installed.
+
+    Warns
+    -----
+    protein.seq.ResidueCoercionWarning
+        If a sequence holds ``U``, ``O`` or ``J``, which this package folds to ``X``.
+
+    Examples
+    --------
+    >>> msa = align({"P01308": "MKTAYIAK", "Q6YK33": "MKTYIAK"}, query="P01308")  # doctest: +SKIP
+    >>> msa.query_header                                                          # doctest: +SKIP
+    'P01308'
+    """
+    records = _records(sequences)
+    if len(records) < _MIN_ALIGNED:
+        raise ValueError(
+            f"align takes at least {_MIN_ALIGNED} sequences and was given {len(records)}; "
+            f"one sequence is not an alignment."
+        )
+    headers = [header for header, _ in records]
+    if query not in headers:
+        raise LookupError(
+            f"no sequence is headed {query!r}, so there is nothing to anchor on. The "
+            f"headers given are {headers}."
+        )
+    typed = [seq.to_protein_sequence(residues, name=header) for header, residues in records]
+    located = tool if tool is not None else Muscle()
+    alignment = Muscle5App.align(typed, bin_path=located.path)
+    rows = zip(headers, alignment.get_gapped_sequences(), strict=True)
+    return MSA(rows).compress(headers.index(query))
+
+
+def _records(sequences: Mapping[str, str] | Iterable[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Return the ``(header, residues)`` pairs, from a mapping or from pairs.
+
+    The casts are the argument's shape and not a doubt about it: a ``Mapping`` is also an
+    ``Iterable``, so no static reading can subtract one branch from the other.
+    """
+    if isinstance(sequences, Mapping):
+        return list(cast("Mapping[str, str]", sequences).items())
+    return list(cast("Iterable[tuple[str, str]]", sequences))
+
+
+def _demote(row: str, anchor: str) -> str:
+    """Return ``row`` with the columns where ``anchor`` has a gap demoted to insertions."""
+    kept = [
+        character.lower() if anchored == _GAP else character
+        for character, anchored in zip(row, anchor, strict=True)
+        if anchored != _GAP or character != _GAP
+    ]
+    return "".join(kept)
 
 
 def _check(rows: tuple[tuple[str, str], ...]) -> int:

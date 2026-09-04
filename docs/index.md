@@ -20,8 +20,8 @@ pixi install
 ```
 
 That reads `pyproject.toml` and builds the environment from the lock file, so you get the
-same versions the tests ran on. It also installs `mmseqs` and `foldseek`, so there is
-nothing to go and fetch by hand. Ask the package whether it can see them:
+same versions the tests ran on. It also installs `mmseqs`, `foldseek` and `muscle`, so there
+is nothing to go and fetch by hand. Ask the package whether it can see them:
 
 ```bash
 pixi run protein doctor
@@ -49,6 +49,25 @@ s.chain_ids  # ('A',)
 s["A"].uniprot  # ('P0CG48',) — from SIFTS, not from the file
 s["A"].search("pdb")  # a DataFrame of Foldseek hits
 ```
+
+## Line up a set of sequences
+
+You may already hold the homologues — from a paper, from a colleague, from an earlier
+search. `align` lines them up with MUSCLE and gives back an alignment anchored on the one
+you name:
+
+```python
+from protein.msa import align
+
+msa = align({"P01308": "MKTAYIAK", "Q6YK33": "MKTAWIAK"}, query="P01308")
+msa.depth  # 2
+msa.to_a3m()  # the alignment as text
+msa.write("insulin.a3m")  # or as a file, at a path you choose
+```
+
+The query goes in the first row, and the columns where it has a gap become lowercase
+insertions. That is what the folding tools expect. Nothing is written unless you call
+`write` and say where.
 
 Embedding is a class you build and keep, because the weights are large and somebody has to
 own them:
