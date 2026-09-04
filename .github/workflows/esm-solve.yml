@@ -1,8 +1,10 @@
-# Proving the `esm` environment still resolves.
+# Installing the locked `esm` environment.
 #
-# Two model-marked test files sit behind `-m model` and no runner has a GPU, so nothing in
-# the pull-request path ever installs `esm`. What breaks there is not the model code: it is
-# the solve — a PyPI-only `esm`, torch from conda-forge rather than PyPI, the CUDA runtime
+# A lock that no longer answers `pyproject.toml` already fails the pull-request jobs, `esm`
+# included: `locked: true` reads the whole workspace and not the one environment being
+# installed. What no job there does is install `esm` — the model tests sit behind `-m model`
+# and no runner has a GPU — so nothing checks that the locked packages still download and
+# still install: a PyPI-only `esm`, torch from conda-forge rather than PyPI, the CUDA runtime
 # headers that Triton's kernel build needs, and the activation that points at them. This
 # workflow installs that environment and stops, which is exactly the half a GPU is not
 # needed for.
@@ -28,6 +30,6 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.10.2
         with:
           environments: esm
-          # The whole point. `locked: true` fails if the lock no longer answers
-          # `pyproject.toml`, so a green run means these pins still resolve together.
+          # Install the locked set rather than solve a new one, so a green run is about
+          # these artifacts and not about whatever resolves that day.
           locked: true

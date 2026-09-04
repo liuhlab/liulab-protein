@@ -90,10 +90,10 @@ sets one.
   never a cross-reference read back out of a file — nothing reads `_struct_ref`. Provenance
   does not survive being written, so a prediction reopened from disk answers `()` again.
 
-- **The `esm` environment is now proved to still resolve**, weekly and on demand. Nothing on
-  the pull-request path installs it, and what breaks there is the solve rather than the model
-  — a PyPI-only `esm`, torch from conda-forge, the CUDA headers Triton's build needs — so no
-  GPU is needed to catch it.
+- **The locked `esm` environment now installs weekly, and on demand.** A stale lock already
+  fails the pull-request jobs, `esm` included. What no job there does is install `esm`, so
+  nothing checks that its packages still download: a PyPI-only `esm`, torch from conda-forge,
+  the CUDA headers Triton's build needs. No GPU is needed for that half.
 
 - **`pixi.lock` and the action tags have a refresh path.** `liulab-genome` is a git dependency
   named nowhere but the lock, so the next re-solve would take whatever that branch was that
