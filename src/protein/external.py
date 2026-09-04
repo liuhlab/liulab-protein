@@ -648,8 +648,8 @@ class MmseqsLikeTool(InstalledTool):
     def scratch_dir(self, purpose: str = "run") -> Iterator[Path]:
         """Yield a temp directory for one command, and remove it however the command ends.
 
-        Every ``easy-*`` verb, ``createindex`` and ``cluster`` take a working directory as a
-        positional argument, and **neither tool removes it**. It lands under the package's
+        Every ``easy-*`` verb and ``search`` take a working directory as a positional
+        argument, and **neither tool removes it**. It lands under the package's
         own data root rather than ``/tmp``: these are the same gigabytes the outputs are,
         and a cluster node's ``/tmp`` is neither large enough nor on the same filesystem.
 
@@ -818,40 +818,6 @@ class MmseqsLikeTool(InstalledTool):
         if id_mode is not None:
             args += ["--id-mode", str(id_mode)]
         return self.run([*args, *extra])
-
-    def createindex(
-        self, database: Path, *, extra: Sequence[str] = (), overwrite: bool = False
-    ) -> Path:
-        """Precompute ``database``'s search index, so a search does not build one per run.
-
-        Parameters
-        ----------
-        database : pathlib.Path
-            The database to index.
-        extra : sequence of str, optional
-            Further arguments, passed through unread.
-        overwrite : bool, default False
-            Index regardless of freshness.
-
-        Returns
-        -------
-        pathlib.Path
-            ``<database>.idx``, the file the index's freshness is judged by.
-
-        Examples
-        --------
-        >>> from pathlib import Path
-        >>> Mmseqs().createindex(Path("sp"))                        # doctest: +SKIP
-        PosixPath('sp.idx')
-        """
-        index = Path(f"{database}.idx")
-        with self.scratch_dir("createindex") as work:
-            return self.run_to(
-                ["createindex", str(database), str(work), *extra],
-                output=index,
-                inputs=[database],
-                overwrite=overwrite,
-            )
 
     def easy_search(
         self,
@@ -1064,99 +1030,6 @@ class MmseqsLikeTool(InstalledTool):
             args += ["--unpack-name-mode", str(name_mode)]
         self.run([*args, *extra])
         return destination
-
-    def convertalis(
-        self,
-        query_db: Path,
-        target_db: Path,
-        result_db: Path,
-        output: Path,
-        *,
-        extra: Sequence[str] = (),
-        overwrite: bool = False,
-    ) -> Path:
-        """Render an alignment database as the same columns :meth:`easy_search` writes.
-
-        Parameters
-        ----------
-        query_db, target_db, result_db : pathlib.Path
-            The three databases the alignment was made from and into.
-        output : pathlib.Path
-            The tab-separated hits.
-        extra : sequence of str, optional
-            Further arguments, passed through unread.
-        overwrite : bool, default False
-            Convert regardless of freshness.
-
-        Returns
-        -------
-        pathlib.Path
-            ``output``.
-
-        Examples
-        --------
-        >>> from pathlib import Path
-        >>> Mmseqs().convertalis(                                   # doctest: +SKIP
-        ...     Path("q"), Path("sp"), Path("aln"), Path("hits.tsv")
-        ... )
-        PosixPath('hits.tsv')
-        """
-        return self.run_to(
-            [
-                "convertalis",
-                str(query_db),
-                str(target_db),
-                str(result_db),
-                str(output),
-                "--format-output",
-                self.format_output,
-                *extra,
-            ],
-            output=output,
-            inputs=[query_db, target_db, result_db],
-            overwrite=overwrite,
-        )
-
-    def cluster(
-        self,
-        database: Path,
-        clusters: Path,
-        *,
-        extra: Sequence[str] = (),
-        overwrite: bool = False,
-    ) -> Path:
-        """Cluster ``database`` into ``clusters``.
-
-        Parameters
-        ----------
-        database : pathlib.Path
-            The database to cluster.
-        clusters : pathlib.Path
-            The cluster database to write.
-        extra : sequence of str, optional
-            Further arguments, passed through unread — the thresholds belong to the caller
-            that knows what it is clustering.
-        overwrite : bool, default False
-            Cluster regardless of freshness.
-
-        Returns
-        -------
-        pathlib.Path
-            ``clusters``.
-
-        Examples
-        --------
-        >>> from pathlib import Path
-        >>> Mmseqs().cluster(Path("sp"), Path("sp_clu"))            # doctest: +SKIP
-        PosixPath('sp_clu')
-        """
-        with self.scratch_dir("cluster") as work:
-            return self.run_to(
-                ["cluster", str(database), str(clusters), str(work), *extra],
-                output=clusters,
-                inputs=[database],
-                overwrite=overwrite,
-            )
 
 
 class Mmseqs(MmseqsLikeTool):

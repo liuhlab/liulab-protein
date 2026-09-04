@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from protein.core import Protein
-    from protein.search.mmseqs import SearchTarget
+    from protein.search.target import SearchTarget
 
 __all__ = ["SearchMixin"]
 
@@ -39,7 +39,7 @@ class SearchMixin:
 
         Parameters
         ----------
-        database : protein.search.mmseqs.SearchTarget or str
+        database : protein.search.target.SearchTarget or str
             What to search against: a **Database**, or the name of a registered one.
         **kwargs : Any
             Forwarded to :func:`protein.search.mmseqs.search`. ``query_name`` is filled in
@@ -67,8 +67,8 @@ class SearchMixin:
         >>> p.search("swissprot").loc[0, "target"]              # doctest: +SKIP
         'P12345'
         """
-        from protein.search import mmseqs
+        from protein.search import mmseqs, target
 
         protein = cast("Protein", self)
-        kwargs.setdefault("query_name", protein.id or mmseqs.DEFAULT_QUERY_NAME)
+        kwargs.setdefault("query_name", protein.id or target.DEFAULT_QUERY_NAME)
         return mmseqs.search(str(protein.sequence), database, **kwargs)

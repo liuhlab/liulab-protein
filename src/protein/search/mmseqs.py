@@ -12,8 +12,8 @@ The two tools disagree about identity on purpose: MMseqs2 reports ``pident``, a 
 and Foldseek reports ``fident``, a fraction. Nothing here renames one to the other — a frame
 says which number it carries by which column it has.
 
-A bare name is resolved by :mod:`protein.db`, which owns the database layout;
-:func:`database_path` is the one line that reaches over.
+Where a search is pointed and how it is tuned live in :mod:`protein.search.target`: both
+tools take them, so neither tool's module owns them.
 
 Examples
 --------
@@ -28,29 +28,27 @@ Examples
 
 from __future__ import annotations
 
-from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING
 
 from protein.external import Mmseqs
+from protein.search.target import DEFAULT_QUERY_NAME, database_path, search_flags
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+    from pathlib import Path
 
     import pandas as pd
 
     from protein.external import MmseqsLikeTool
+    from protein.search.target import SearchTarget
 
 __all__ = [
     "COLUMN_DTYPES",
-    "DEFAULT_QUERY_NAME",
-    "SearchTarget",
-    "database_path",
     "empty_hits",
     "hit_dtypes",
     "read_hits",
     "search",
-    "search_flags",
 ]
 
 #: Every column either **External tool** can be asked for, mapped to the dtype it is read
@@ -75,25 +73,6 @@ COLUMN_DTYPES: Mapping[str, str] = MappingProxyType(
         "lddt": "float64",
     }
 )
-
-#: What the ``query`` column says when the searched **Protein** has no accession. A FASTA
-#: record needs a header, and the alternative is a blank ``query`` column.
-DEFAULT_QUERY_NAME = "query"
-
-
-class SearchTarget(Protocol):
-    """What a search needs of a **Database**: the path its **External tool** is pointed at.
-
-    One read-only attribute, so satisfying it constrains nothing else about the class.
-
-    :attr:`path` is the **ffindex prefix**, not the directory holding it: MMseqs2 and Foldseek
-    take ``.../swissprot`` and find ``swissprot.index`` and the rest beside it themselves.
-    """
-
-    @property
-    def path(self) -> Path:
-        """The ffindex prefix to search against."""
-        ...
 
 
 def hit_dtypes(tool: MmseqsLikeTool) -> dict[str, str]:
@@ -168,7 +147,7 @@ def read_hits(output: Path, tool: MmseqsLikeTool) -> pd.DataFrame:
     Parameters
     ----------
     output : pathlib.Path
-        The tab-separated hits an ``easy-search`` or ``convertalis`` wrote.
+        The tab-separated hits an ``easy-search`` wrote.
     tool : protein.external.MmseqsLikeTool
         The tool that wrote it, whose ``--format-output`` named the columns.
 
@@ -195,97 +174,6 @@ def read_hits(output: Path, tool: MmseqsLikeTool) -> pd.DataFrame:
     return pd.read_csv(output, sep="\t", header=None, names=list(dtypes)).astype(dtypes)
 
 
-def search_flags(
-    *,
-    sensitivity: float | None = None,
-    evalue: float | None = None,
-    max_seqs: int | None = None,
-    threads: int | None = None,
-    extra: Sequence[str] = (),
-) -> list[str]:
-    """Turn the named search knobs into the arguments both tools spell the same way.
-
-    Only what was asked for is passed: an omitted knob leaves the tool's own default, which
-    is not this package's to restate.
-
-    Parameters
-    ----------
-    sensitivity : float, optional
-        ``-s``. Lower is faster and finds less.
-    evalue : float, optional
-        ``-e``. Hits above it are not reported.
-    max_seqs : int, optional
-        ``--max-seqs``. How many targets per query pass the prefilter, which caps the hits.
-    threads : int, optional
-        ``--threads``. **Worth naming on a shared machine**: both tools default to every core.
-    extra : sequence of str, optional
-        Further arguments, appended unread.
-
-    Returns
-    -------
-    list of str
-        The arguments, in the order the parameters are listed, with ``extra`` last.
-
-    Examples
-    --------
-    >>> search_flags(sensitivity=1.0, threads=4)
-    ['-s', '1.0', '--threads', '4']
-    >>> search_flags(extra=["--comp-bias-corr", "0"])
-    ['--comp-bias-corr', '0']
-    """
-    named: list[tuple[str, float | int | None]] = [
-        ("-s", sensitivity),
-        ("-e", evalue),
-        ("--max-seqs", max_seqs),
-        ("--threads", threads),
-    ]
-    flags = [part for flag, value in named if value is not None for part in (flag, str(value))]
-    return [*flags, *extra]
-
-
-def database_path(database: SearchTarget | str) -> Path:
-    """Return the ffindex prefix to search against, from a **Database** or a registered name.
-
-    A :class:`SearchTarget` answers with its own :attr:`~SearchTarget.path`. A ``str`` is a
-    registered name, which :func:`protein.db.database_path` resolves — including the rule
-    that **the prefix inside the directory is not always the name**.
-
-    Parameters
-    ----------
-    database : SearchTarget or str
-        A **Database** to take the path from, or the name of a registered one.
-
-    Returns
-    -------
-    pathlib.Path
-        The ffindex prefix. Nothing is created and no completion record is read.
-
-    Raises
-    ------
-    LookupError
-        If a name has no directory, or a directory holds no ffindex database. The message
-        names the registered names there are.
-
-    Examples
-    --------
-    >>> from pathlib import Path
-    >>> class Registered:
-    ...     path = Path("/data/protein/db/swissprot/swissprot")
-    >>> database_path(Registered())
-    PosixPath('/data/protein/db/swissprot/swissprot')
-    >>> database_path("swissprot")                                   # doctest: +SKIP
-    PosixPath('.../protein/db/swissprot/swissprot')
-    """
-    if not isinstance(database, str):
-        return Path(database.path)
-
-    # Deferred: `protein.db` reaches liulab-genome, and a search handed a path pays nothing
-    # for it. The module and not the function, so a test that re-points the layout is seen.
-    from protein import db
-
-    return db.database_path(database)
-
-
 def search(
     sequence: str,
     database: SearchTarget | str,
@@ -308,7 +196,7 @@ def search(
     ----------
     sequence : str
         The residues to search with.
-    database : SearchTarget or str
+    database : protein.search.target.SearchTarget or str
         What to search against: a **Database**, or the name of a registered one.
     query_name : str, default "query"
         The FASTA header this query is written under, which is what the ``query`` column
@@ -316,7 +204,7 @@ def search(
     tool : protein.external.MmseqsLikeTool, optional
         The tool to drive. Defaults to :class:`~protein.external.Mmseqs`.
     sensitivity, evalue, max_seqs, threads : optional
-        As :func:`search_flags`.
+        As :func:`protein.search.target.search_flags`.
     extra : sequence of str, optional
         Further arguments, appended unread.
 

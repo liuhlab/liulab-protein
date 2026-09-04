@@ -9,7 +9,12 @@
 name: docs
 
 on:
-  push:
+  # `workflow_run` rather than `push`, because two workflows listening on the same push
+  # cannot order themselves and the site once published from a commit the gate rejected.
+  # The `if:` below is the other half: `completed` fires on failure too.
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
     branches: [main]
   # For re-publishing without a commit — a Pages setting changed, a deploy was lost.
   workflow_dispatch:
@@ -27,9 +32,18 @@ concurrency:
 
 jobs:
   deploy:
+    # `workflow_dispatch` carries no `workflow_run`, so the second clause is what keeps the
+    # manual re-publish working.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # A `workflow_run` run is not checked out at the commit that triggered it: the
+          # default is the branch tip, which by now may be a commit the gate has not seen.
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
       - uses: prefix-dev/setup-pixi@v0.10.2
         with:
           environments: docs

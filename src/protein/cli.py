@@ -18,13 +18,13 @@ import json as _json
 import typer
 
 from protein import __version__ as _package_version
-from protein import msa as _msa_cli
 from protein import sifts as _sifts_cli
 from protein.db import cli as _db_cli
 from protein.embed import cli as _esm_cli
 from protein.external import ToolNotFoundError as _ToolNotFoundError
 from protein.external import doctor as _doctor
 from protein.fold import cli as _fold_cli
+from protein.msa import cli as _msa_cli
 from protein.search import cli as _search_cli
 from protein.structure import cli as _structure_cli
 

@@ -24,9 +24,19 @@ and the error you catch when a sequence carries something that is not a residue.
 
 ## Alignments
 
-An `MSA` is one alignment, anchored on the query in its first row and held as text.
+An `MSA` is one alignment, anchored on the query in its first row and held as text. One
+module per job: the class, the search that fills one, and the MUSCLE run that lines one up.
+The commands over them are with every other lane's, below.
 
 ::: protein.msa
+    options:
+      members: false
+
+::: protein.msa.msa
+
+::: protein.msa.mmseqs
+
+::: protein.msa.muscle
 
 ## Structures
 
@@ -89,6 +99,8 @@ with a `pandas.DataFrame` read by the same parser.
 
 ::: protein.search.mixin
 
+::: protein.search.target
+
 ::: protein.search.mmseqs
 
 ::: protein.search.foldseek
@@ -109,6 +121,13 @@ Each block below lists only what its own module writes, so nothing here is docum
 ::: protein.db.base
 
 ::: protein.db.swissprot
+
+## Prepared sets
+
+A `PreparedSet` is the half of a prepared set a caller meets after it is built: its status,
+its cached read, and the two commands that prepare it and say what is here.
+
+::: protein.prepared
 
 ## The PDB to UniProt map
 
@@ -147,6 +166,8 @@ calls.
 ::: protein.embed.cli
 
 ::: protein.fold.cli
+
+::: protein.msa.cli
 
 ::: protein.search.cli
 

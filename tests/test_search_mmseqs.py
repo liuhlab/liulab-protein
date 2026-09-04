@@ -19,15 +19,8 @@ import pytest
 from protein import Protein
 from protein.external import ExternalTool, Foldseek, Mmseqs, MmseqsLikeTool
 from protein.search import mmseqs
-from protein.search.mmseqs import (
-    COLUMN_DTYPES,
-    DEFAULT_QUERY_NAME,
-    database_path,
-    empty_hits,
-    hit_dtypes,
-    read_hits,
-    search_flags,
-)
+from protein.search.mmseqs import COLUMN_DTYPES, empty_hits, hit_dtypes, read_hits
+from protein.search.target import DEFAULT_QUERY_NAME, database_path, search_flags
 
 #: The lane's source directory, found from this file so the test moves with the repo.
 _LANE = Path(__file__).resolve().parents[1] / "src" / "protein" / "search"

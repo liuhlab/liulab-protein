@@ -428,15 +428,6 @@ def test_createdb_names_every_input_before_the_database(run_calls: list[list[str
     assert run_calls == [["createdb", "a.fasta", "b.fasta", "sp"]]
 
 
-def test_createindex_takes_a_scratch_directory_and_answers_the_idx_path(
-    data_root: Path, run_calls: list[list[str]]
-) -> None:
-    assert Mmseqs().createindex(Path("sp")) == Path("sp.idx")
-    verb, database, work = run_calls[0]
-    assert (verb, database) == ("createindex", "sp")
-    assert Path(work).parent == data_root / ".work"
-
-
 def test_easy_search_asks_for_this_tools_columns(
     data_root: Path, run_calls: list[list[str]]
 ) -> None:
@@ -451,14 +442,6 @@ def test_extra_arguments_are_passed_through_after_the_format(
 ) -> None:
     Mmseqs().easy_search(Path("q.fa"), Path("sp"), Path("hits.tsv"), extra=["-s", "7.5"])
     assert run_calls[0][-2:] == ["-s", "7.5"]
-
-
-def test_convertalis_renders_an_alignment_database_as_the_same_columns(
-    run_calls: list[list[str]],
-) -> None:
-    Mmseqs().convertalis(Path("q"), Path("sp"), Path("aln"), Path("hits.tsv"))
-    assert run_calls[0][:5] == ["convertalis", "q", "sp", "aln", "hits.tsv"]
-    assert run_calls[0][5:7] == ["--format-output", Mmseqs().format_output]
 
 
 def test_search_takes_databases_and_a_scratch_directory(
@@ -511,13 +494,6 @@ def test_each_new_verb_is_one_invocation(run_calls: list[list[str]]) -> None:
     Mmseqs().result2msa(Path("q"), Path("sp"), Path("res"), Path("msa"))
     Mmseqs().unpackdb(Path("msa"), Path("out"))
     assert [call[0] for call in run_calls] == ["search", "result2msa", "unpackdb"]
-
-
-def test_cluster_takes_a_scratch_directory(data_root: Path, run_calls: list[list[str]]) -> None:
-    assert Mmseqs().cluster(Path("sp"), Path("sp_clu")) == Path("sp_clu")
-    verb, database, clusters, work = run_calls[0]
-    assert (verb, database, clusters) == ("cluster", "sp", "sp_clu")
-    assert Path(work).parent == data_root / ".work"
 
 
 # --- the scratch directory neither tool cleans -------------------------------

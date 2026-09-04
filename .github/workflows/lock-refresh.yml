@@ -1,0 +1,41 @@
+# Turning a `pixi.lock` jump into a reviewable diff.
+#
+# `liulab-genome` is a git dependency with no revision in `pyproject.toml`, so the lock is
+# the only thing naming the commit this repo builds against. Left alone, the next re-solve
+# — whenever it happens, for whatever reason — takes whatever that branch is that day.
+# Running the re-solve on a schedule makes it a pull request somebody reads instead.
+#
+# Its own trigger, never the pull request: a re-solve is not deterministic and must not be
+# able to turn a branch red.
+name: lock-refresh
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          # Nothing is installed: this job re-solves the lock and opens a pull request, and
+          # `locked: true` would refuse to run before it has.
+          run-install: false
+      - run: pixi run relock
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/pixi-lock
+          title: "chore(deps): refresh pixi.lock"
+          commit-message: "chore(deps): refresh pixi.lock"
+          body: >-
+            Scheduled `pixi update`. The diff is what a re-solve would have taken silently
+            on the next install — including whichever `liulab-genome` commit `main` is at.
+          add-paths: pixi.lock
+          delete-branch: true

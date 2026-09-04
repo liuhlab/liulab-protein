@@ -90,7 +90,51 @@ sets one.
   never a cross-reference read back out of a file — nothing reads `_struct_ref`. Provenance
   does not survive being written, so a prediction reopened from disk answers `()` again.
 
+- **The `esm` environment is now proved to still resolve**, weekly and on demand. Nothing on
+  the pull-request path installs it, and what breaks there is the solve rather than the model
+  — a PyPI-only `esm`, torch from conda-forge, the CUDA headers Triton's build needs — so no
+  GPU is needed to catch it.
+
+- **`pixi.lock` and the action tags have a refresh path.** `liulab-genome` is a git dependency
+  named nowhere but the lock, so the next re-solve would take whatever that branch was that
+  day. A weekly job re-solves and opens a pull request instead; dependabot covers the actions.
+
+### Changed
+
+- **Four moves that widen nothing.** No import a caller writes changes, no command path moves,
+  and no `--json` payload differs. What changes is where things live.
+
+  `protein.search.target` holds the four names that say where a search points, how it is tuned
+  and what the query is called. They lived in the MMseqs2 module because that is where they
+  were first needed, which left `Structure.search` naming MMseqs2 to describe a Foldseek
+  search.
+
+  `protein.msa` is a package of four modules — the `MSA` class, the MMseqs2 recipe, the MUSCLE
+  recipe, and the commands — matching `protein.search`. The suite already crossed those four
+  seams; only the module had none. `import protein` no longer pulls in a command-line
+  framework or biotite's MUSCLE layer.
+
+  `MmseqsLikeTool` goes from ten verbs to seven. `createindex`, `convertalis` and `cluster`
+  had no caller and were held alive by their own tests.
+
+  `protein.prepared` holds the half both prepared sets repeated: the status read off the
+  completion marker, the cached table read, and the prepare and status commands. SIFTS and the
+  SAE feature descriptions each declare only what differs — a source, a field list, a reader.
+  `SiftsStatus` and `SaeFeaturesStatus` are one `PreparedStatus`.
+
 ### Fixed
+
+- **`main` was red, and the site published from it anyway.** ruff formats Python inside
+  Markdown, and `docs/research/` is the one directory whose contract is verbatim quotation;
+  four other gates already exempt it and the formatter now does too. The site was also
+  deployed from a commit the gate had rejected, because both workflows listened on the same
+  push and neither can order itself after the other. The site now waits for the gate, and
+  publishes only when it concluded green.
+
+- **CI built a wheel that could not import.** `liulab-genome` is a git dependency, which PyPI
+  metadata cannot carry, so it is declared to pixi alone and the wheel raised on its first
+  import. The job was green and proved only that hatchling ran. Nothing here is published, so
+  the job is gone rather than propped up.
 
 - **The guard on biotite's converters did not name the alignment ones.** A module reading an
   alignment through biotite would have passed every check while turning each selenocysteine

@@ -1,0 +1,33 @@
+# Proving the `esm` environment still resolves.
+#
+# Two model-marked test files sit behind `-m model` and no runner has a GPU, so nothing in
+# the pull-request path ever installs `esm`. What breaks there is not the model code: it is
+# the solve — a PyPI-only `esm`, torch from conda-forge rather than PyPI, the CUDA runtime
+# headers that Triton's kernel build needs, and the activation that points at them. This
+# workflow installs that environment and stops, which is exactly the half a GPU is not
+# needed for.
+#
+# Its own trigger, never the pull request: an expensive check that fails for reasons a
+# branch did not cause must not be able to turn a pull request red.
+name: esm-solve
+
+on:
+  schedule:
+    # Weekly. The breakage this catches arrives with an upstream release, not with a commit.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  solve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          environments: esm
+          # The whole point. `locked: true` fails if the lock no longer answers
+          # `pyproject.toml`, so a green run means these pins still resolve together.
+          locked: true
