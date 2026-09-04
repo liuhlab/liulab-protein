@@ -57,6 +57,28 @@ Foldseek vendors MMseqs2, so the two share a command grammar and a database form
 shared half is `MmseqsLikeTool`; what genuinely differs — Foldseek's `fident` against
 MMseqs2's `pident`, and Foldseek's extra columns — is named on the subclasses.
 
+### MSA
+
+A multiple sequence alignment, held as `(header, row)` pairs of plain text with row 0 the
+query. **A3M is the only format read or written.**
+
+**Case is the match state.** In A3M an uppercase residue or a `-` occupies a column, and a
+lowercase residue is an insertion that occupies none. An alignment that has been uppercased
+has lost the one thing separating A3M from aligned FASTA, which is why an `MSA` holds strings
+and never biotite's `Alignment`.
+
+**Query-anchored**, and checked at construction: row 0 carries no lowercase, and every row
+shares a match-state count. At construction rather than in the reader, so a parsed alignment
+and a generated one meet the same rule. The check is shape and never residues — a row
+spelling `U` is well-formed A3M, whatever this package's own alphabet says.
+
+A header is carried byte-for-byte because a `key=<taxon>` field in it is what pairs the chains
+of a complex downstream; a row without one folds as if related to nothing. A leading `#` line
+is carried for the same reason: it can encode a complex's chain layout, and biotite's FASTA
+reader drops it.
+
+See `protein.msa` and `protein.io.a3m`.
+
 ### Protein
 
 **Identified by a UniProt accession.** It holds a biotite `ProteinSequence` and its metadata,

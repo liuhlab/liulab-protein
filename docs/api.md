@@ -22,6 +22,12 @@ and the error you catch when a sequence carries something that is not a residue.
 
 ::: protein.seq
 
+## Alignments
+
+An `MSA` is one alignment, anchored on the query in its first row and held as text.
+
+::: protein.msa
+
 ## Structures
 
 A `Structure` is one PDB entry, and a `Chain` is one polymer in it. They are peers of
@@ -88,6 +94,8 @@ Each block below lists only what its own module writes, so nothing here is docum
 ::: protein.xref
 
 ## Files
+
+::: protein.io.a3m
 
 ::: protein.io.fasta
 

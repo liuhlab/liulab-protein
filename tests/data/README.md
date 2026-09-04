@@ -31,6 +31,36 @@ converters would write `C` there, and this package writes `X`.
 Neither file is subsampled. A Swiss-Prot record is a few hundred residues, so the whole entry
 is smaller than an excerpt plus the note explaining what was cut.
 
+## A3M
+
+`hhblits_5ahw_slice.a3m` is cut from an alignment the ESM repository ships as an example. Its
+source is `examples/data/hhblits_uniclust_2017_10_5ahw_1_A.a3m` at
+`https://github.com/facebookresearch/esm.git`, commit `2b369911`, 431,289 bytes,
+`md5:82dc2a32808707ecbffdf33f9d657257`. HHblits wrote it against uniclust30_2017_10, so the
+headers, the gaps and the lowercase insert columns are a real tool's output:
+
+```bash
+head -10 examples/data/hhblits_uniclust_2017_10_5ahw_1_A.a3m > hhblits_5ahw_slice.a3m
+```
+
+`colabfold_pair.a3m` is **hand-written**, and it is the one made-up fixture here. ColabFold's
+paired output is produced by its MSA server, which no test may reach, and the two things this
+fixture exists for are the two things nothing else in the tree carries: a leading `#` line,
+and `key=<taxon>` headers.
+
+| File | What it is | Departs from the source |
+| --- | --- | --- |
+| `hhblits_5ahw_slice.a3m` | the query `5ahw_1_A` and four hits, 125 match states each | only the first five records kept |
+| `colabfold_pair.a3m` | a two-chain paired alignment, three rows, 22 match states | hand-written |
+
+Both files are why `MSA` can be tested on the three things a naive reader loses. The HHblits
+slice carries lowercase insert columns and real UniProt headers; the hand-written one carries
+the `#12,10` chain layout and the `key=` fields that pair chains. The query row of each is
+uppercase throughout, which is the A3M invariant `MSA` checks at construction.
+
+The slice is five records because the invariant is per-row: five rows are enough for a ragged
+one to be visible, and 1,631 would only make the fixture 431 kB.
+
 ## Search hits
 
 Run on GPU71FM, 2026-09-03, against the real databases under
