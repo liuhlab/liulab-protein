@@ -109,6 +109,19 @@ esm = ">=3.4,<4"
 # runs first, and without it the PyPI solve has no torch left to pick.
 [tool.pixi.feature.esm.dependencies]
 pytorch = ">=2.11,<2.12"
+# The CUDA headers, without which the fused kernel backend only looks unavailable. Triton
+# compiles a small C extension against `cuda.h` before it runs any kernel, and the conda
+# `triton` depends on the cudart runtime and not on its headers, so the build fails and the
+# real message is swallowed. Unpinned: on the cuda platform variant `cuda-version` follows
+# the torch build above, and this has to match it rather than lead it.
+cuda-cudart-dev = "*"
+
+# Where those headers are, for every compiler this environment runs and not only Triton's own
+# builder. `$CONDA_PREFIX` is expanded on activation, so the value is the environment's own
+# path and never a machine's. `targets/<arch>-linux/include` is the conda-forge CUDA layout,
+# and `linux-64` is the only platform this repo resolves for.
+[tool.pixi.feature.esm.activation.env]
+CPATH = "$CONDA_PREFIX/targets/x86_64-linux/include"
 
 # `default` takes `test` so pyright can resolve pytest, and not `docs`, which exists so that
 # exactly one CI job installs it.

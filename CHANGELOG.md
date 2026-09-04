@@ -43,3 +43,11 @@ sets one.
   **SIFTS is still the only join.** An accession here is an input the file was written from,
   never a cross-reference read back out of a file — nothing reads `_struct_ref`. Provenance
   does not survive being written, so a prediction reopened from disk answers `()` again.
+
+### Fixed
+
+- **The `esm` environment now carries the CUDA headers, so the fused GPU kernels build.**
+  They are compiled the first time one runs, against a header the environment did not have,
+  and the failure hid its own error — so the fast path looked unavailable and everything ran
+  an order of magnitude slower. The environment declares the headers and points the compiler
+  at them, by a path inside the environment rather than one belonging to a machine.

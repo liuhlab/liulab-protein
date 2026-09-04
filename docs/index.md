@@ -35,6 +35,12 @@ pixi install -e esm
 pixi run -e esm protein esm embed query.fasta
 ```
 
+That environment also brings in the CUDA header files and tells the compiler where to find
+them. The fast GPU code is built the first time you run it, and without those headers the
+build fails, the real error is hidden, and you are left on a path many times slower. The
+path it sets points inside the environment itself, so it reads the same on every machine
+and there is nothing to set by hand.
+
 ## Use it
 
 ```python
