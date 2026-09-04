@@ -207,12 +207,12 @@ quoted:
 > The AlphaFold 3 model parameters and output are **only** available for non-commercial use by,
 > or on behalf of, non-commercial organizations (*i.e.*, universities, non-profit organizations
 > and research institutes, educational, journalism and government bodies).
-
+>
 > You **must not** use nor allow others to use: … AlphaFold 3 model parameters or output in
 > connection with **any commercial activities, including research** **on behalf of commercial
 > organizations;** or … AlphaFold 3 output to **train machine learning models** … similar to
 > AlphaFold 3.
-
+>
 > You ***must not* publish or share AlphaFold 3 model parameters**, except sharing these within
 > your organization in accordance with these Terms.
 
