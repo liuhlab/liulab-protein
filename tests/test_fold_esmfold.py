@@ -15,10 +15,17 @@ from pathlib import Path
 
 import pytest
 
+from protein import Structure
 from protein.fold import CHECKPOINTS, ESMFold2
 from protein.fold.esmfold import DEFAULT_CHECKPOINT, DEFAULT_KERNEL_BACKEND, warn_about_esmc
+from protein.fold.predictions import prediction_path
+from protein.io.structure import read_atoms, write_atoms
 
 _SOURCE = Path(__file__).resolve().parents[1] / "src" / "protein" / "fold" / "esmfold.py"
+_FIXTURE = Path(__file__).resolve().parent / "data" / "1ubq.cif.gz"
+
+#: The residues the fixture holds, so a request over them answers from the file.
+UBIQUITIN = str(Structure.from_file(_FIXTURE)["A"].sequence)
 
 
 def test_the_table_names_every_checkpoint_this_package_claims_to_know() -> None:
@@ -73,6 +80,17 @@ def test_the_output_directory_is_required_and_defaults_nowhere() -> None:
     assert parameters["out"].default is inspect.Parameter.empty
     assert parameters["name"].default is None
     assert parameters["overwrite"].default is False
+
+
+def test_fold_builds_the_request_itself_from_plain_python(tmp_path: Path) -> None:
+    # Down the cache-hit path, which answers from the file and reaches neither the weights
+    # nor `esm`. `object.__new__` because construction is eager and this test wants none of
+    # it; what is under test is that `fold` coerces before it looks anything up.
+    write_atoms(prediction_path(tmp_path, "P0CG48"), read_atoms(_FIXTURE))
+    model = object.__new__(ESMFold2)
+    held = model.fold([{"kind": "protein", "sequence": UBIQUITIN, "accession": "P0CG48"}], tmp_path)
+    assert held.id == "P0CG48"
+    assert held.accessions == {"A": ("P0CG48",)}
 
 
 def test_the_upstream_schema_is_reachable_rather_than_curated() -> None:

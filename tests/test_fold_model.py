@@ -217,6 +217,17 @@ def test_folding_the_same_request_again_returns_what_is_there(
     assert again.confidence is None
 
 
+def test_the_plain_form_reaches_the_same_fold(
+    esmfold: ESMFold2, folds: Path, prediction: Structure
+) -> None:
+    # Costs no card time: the same residues under the same name answer from the file.
+    again = esmfold.fold(
+        [{"kind": "protein", "sequence": ubiquitin(), "accession": ACCESSION}], folds
+    )
+    assert again.path == prediction.path
+    assert again.accessions == prediction.accessions
+
+
 def test_a_different_sequence_under_a_held_name_is_refused(
     esmfold: ESMFold2, folds: Path, prediction: Structure
 ) -> None:

@@ -40,9 +40,16 @@ sets one.
   and `foldseek` as a required tool, and `doctor()` reports all three.
 
 - **Structure prediction, with ESMFold2.** `ESMFold2` loads the weights once and keeps them.
-  `fold()` takes a `FoldingRequest` and a directory you name, and hands back a `Structure` — so
+  `fold()` takes what to fold and a directory you name, and hands back a `Structure` — so
   everything already built on that class works on a prediction with no conversion. Protein, DNA
   and RNA chains fold together. `protein fold` does the same from the command line.
+
+  **What you fold is plain Python.** A chain is a dictionary of its kind, its sequence and the
+  accession it came from. It can also be a `Protein`, or just the residues, and one chain needs
+  no list around it. So a hundred folds are a hundred dictionaries you read from a JSON file,
+  and nothing you write imports a class. `FoldingRequest` and `ChainRequest` are still there for
+  anyone who wants them. A dictionary has to say which kind it is: `ACGT` is a valid protein
+  sequence, so nothing here guesses.
 
   **A prediction is named for the molecule, not for the model.** A name you give wins; failing
   that the accession; failing that a short hash of the sequence. Fold the same thing twice and

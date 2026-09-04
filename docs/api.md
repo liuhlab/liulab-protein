@@ -69,8 +69,9 @@ fired and how strongly.
 
 ## Folding
 
-`ESMFold2` holds the weights, a `FoldingRequest` is what goes in, and a `Structure` written
-into a directory you named is what comes back.
+`ESMFold2` holds the weights, what goes in is a chain or a list of them — as plain
+dictionaries, if that is what you have — and a `Structure` written into a directory you
+named is what comes back.
 
 ::: protein.fold
     options:

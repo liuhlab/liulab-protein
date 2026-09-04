@@ -20,11 +20,25 @@ and dropped without a word. It is refused here instead.
 own sequence is built here, which is what upstream would have built one level down — after
 warning once per chain, which ``filterwarnings = ["error"]`` would turn into an exception.
 
+**A caller writes plain Python and imports nothing.** :class:`FoldingRequest` takes a
+:data:`RequestSpec`: a chain as a mapping of :class:`ChainRequest`'s own fields, as a
+:class:`~protein.core.Protein`, as a built :class:`ChainRequest` or as the residues, and one
+chain needs no list around it. So a batch is data — read from JSON, built in a loop — and the
+call site names no class. Its alignment may be the path to an A3M file, since JSON is the
+reason the mapping form exists and an :class:`~protein.msa.MSA` does not fit in one.
+
+**A mapping names its kind.** ``"ACGT"`` is a valid protein sequence, so residues do not say
+which of the three they are, and a mapping that leaves the field out is refused rather than
+guessed at — the same silently wrong answer the checks above refuse. Residues written on
+their own are not that omission but a different spelling, one with no room for a kind: like
+:class:`~protein.core.Protein`, they say protein by the way they are written. A
+``NucleotideSequence`` says neither DNA nor RNA and so is refused.
+
 Examples
 --------
 >>> from protein import MSA
 >>> from protein.fold import ChainRequest, FoldingRequest
->>> request = FoldingRequest([ChainRequest("protein", "MKTAY", accession="P12345")])
+>>> request = FoldingRequest({"kind": "protein", "sequence": "MKTAY", "accession": "P12345"})
 >>> request
 FoldingRequest(1 chain, 5 residues)
 >>> request.chain_ids
@@ -41,19 +55,29 @@ ValueError: a dna chain takes no alignment: upstream drops it without a word.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, get_args
+from collections.abc import Iterable, Mapping
+from inspect import signature
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast, get_args
+
+from biotite.sequence import ProteinSequence, Sequence
 
 from protein import seq
+from protein.core import Protein
 from protein.msa import MSA
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from biotite.sequence import NucleotideSequence
 
-    from biotite.sequence import NucleotideSequence, ProteinSequence
-
-    from protein.core import Protein
-
-__all__ = ["POLYMERS", "ChainRequest", "FoldingRequest", "PolymerKind"]
+__all__ = [
+    "CHAIN_FIELDS",
+    "POLYMERS",
+    "ChainRequest",
+    "ChainSpec",
+    "FoldingRequest",
+    "PolymerKind",
+    "RequestSpec",
+]
 
 #: What a chain of a request can be. Three and not :data:`protein.structure.chain.KINDS`'
 #: three: DNA and RNA are one kind to a solved structure and two different inputs to the
@@ -62,6 +86,17 @@ PolymerKind = Literal["protein", "dna", "rna"]
 
 #: The three kinds, in one place so a caller can test membership without spelling them.
 POLYMERS: tuple[PolymerKind, ...] = get_args(PolymerKind)
+
+#: The ways one chain can be written: a built :class:`ChainRequest`, a
+#: :class:`~protein.core.Protein`, a mapping of :data:`CHAIN_FIELDS`, or the residues — as
+#: text or as biotite's ``ProteinSequence``, both of which are a protein chain, those
+#: spellings holding no room for a kind. A ``NucleotideSequence`` is refused for that reason.
+type ChainSpec = ChainRequest | Protein | Mapping[str, Any] | str | ProteinSequence
+
+#: What :class:`FoldingRequest` takes: a request already built, one chain, or an iterable of
+#: them. Coercion is idempotent, which is what lets :meth:`protein.fold.ESMFold2.fold` take
+#: the same thing without a second code path.
+type RequestSpec = FoldingRequest | ChainSpec | Iterable[ChainSpec]
 
 #: What the header of a derived depth-1 alignment says when the chain has no accession.
 _ANONYMOUS = "query"
@@ -237,28 +272,51 @@ class ChainRequest:
         return f"{type(self).__name__}({self.kind!r}, {len(self)} residues)"
 
 
+#: What a mapping chain may name, read off :class:`ChainRequest` rather than written out
+#: here, so a parameter added there is a field the mapping form takes with no edit. A field
+#: outside them is refused rather than dropped: silently, a misspelt ``accession`` loses the
+#: provenance the prediction is written with.
+CHAIN_FIELDS: tuple[str, ...] = tuple(signature(ChainRequest).parameters)
+
+
 class FoldingRequest:
     """One structure prediction's input: its chains, and the labels they will carry.
 
     Parameters
     ----------
-    chains : iterable of ChainRequest
-        One entry per chain, in the order the complex is built. At least one.
+    chains : RequestSpec
+        One entry per chain, in the order the complex is built, and at least one. Each is a
+        :class:`ChainRequest`, a :class:`~protein.core.Protein`, a mapping of
+        :data:`CHAIN_FIELDS` or the residues themselves; a lone chain needs no list around
+        it, and a :class:`FoldingRequest` is its own spec. **A mapping names its** ``kind``:
+        ``"ACGT"`` reads as protein, DNA or RNA, and nothing here guesses which. Its
+        ``alignment`` is an :class:`~protein.msa.MSA` **or the path to an A3M file**, which
+        is what lets a mapping come from JSON, where an ``MSA`` cannot be written down.
 
     Attributes
     ----------
     chains : tuple of ChainRequest
-        The entries, in order.
+        The entries, in order, whatever they were written as.
 
     Raises
     ------
     ValueError
-        If ``chains`` is empty.
+        If ``chains`` is empty, if a mapping names an unknown field, if it names no ``kind``
+        or no ``sequence``, or if a chain is a ``NucleotideSequence``, which says neither
+        DNA nor RNA.
+    TypeError
+        If an entry is none of the things a chain can be, or an ``alignment`` is neither an
+        :class:`~protein.msa.MSA` nor a path.
+    OSError or protein.msa.InvalidAlignmentError
+        If an ``alignment`` names a file that is not a readable query-anchored A3M.
 
     Examples
     --------
     >>> request = FoldingRequest(
-    ...     [ChainRequest("protein", "MKTAY", accession="P12345"), ChainRequest("dna", "ACGT")]
+    ...     [
+    ...         {"kind": "protein", "sequence": "MKTAY", "accession": "P12345"},
+    ...         {"kind": "dna", "sequence": "ACGT"},
+    ...     ]
     ... )
     >>> request
     FoldingRequest(2 chains, 9 residues)
@@ -266,10 +324,16 @@ class FoldingRequest:
     ('A', 'B')
     >>> request.accessions
     {'A': ('P12345',), 'B': ()}
+    >>> FoldingRequest("MKTAY")
+    FoldingRequest(1 chain, 5 residues)
+    >>> FoldingRequest([{"sequence": "ACGT"}])
+    Traceback (most recent call last):
+        ...
+    ValueError: a chain names its kind, one of protein, dna, rna — residues do not say which.
     """
 
-    def __init__(self, chains: Iterable[ChainRequest]) -> None:
-        self.chains: tuple[ChainRequest, ...] = tuple(chains)
+    def __init__(self, chains: RequestSpec) -> None:
+        self.chains: tuple[ChainRequest, ...] = _chains(chains)
         if not self.chains:
             raise ValueError("a folding request holds at least one chain, and this one holds none.")
 
@@ -335,6 +399,83 @@ class FoldingRequest:
         residues = sum(len(chain) for chain in self.chains)
         plural = "" if count == 1 else "s"
         return f"{type(self).__name__}({count} chain{plural}, {residues} residues)"
+
+
+def _chains(spec: RequestSpec) -> tuple[ChainRequest, ...]:
+    """Return the chains ``spec`` names — a request's own, several, or one."""
+    if isinstance(spec, FoldingRequest):
+        return spec.chains
+    if _is_several(spec):
+        return tuple(_chain(one) for one in spec)
+    # The cast says only that this is one chain; which one is `_chain`'s to decide, and
+    # anything that is no chain at all raises there.
+    return (_chain(cast("ChainSpec", spec)),)
+
+
+def _is_several(spec: RequestSpec) -> TypeGuard[Iterable[ChainSpec]]:
+    """Whether ``spec`` is several chains rather than one.
+
+    A string, a mapping and a biotite sequence all iterate, and none of them iterates into
+    chains — a sequence would shred into one chain per residue and fold that.
+    """
+    return isinstance(spec, Iterable) and not isinstance(
+        spec, ChainRequest | Protein | str | Mapping | Sequence
+    )
+
+
+def _chain(spec: ChainSpec) -> ChainRequest:
+    """Return the chain ``spec`` names, however it was written."""
+    if isinstance(spec, ChainRequest):
+        return spec
+    if isinstance(spec, Protein):
+        return ChainRequest.of(spec)
+    if isinstance(spec, str | ProteinSequence):
+        return ChainRequest("protein", spec)
+    if isinstance(spec, Mapping):
+        return _from_fields(spec)
+    if isinstance(spec, Sequence):
+        raise ValueError(
+            f"a {type(spec).__name__} is neither dna nor rna until something says so. "
+            f"Name the kind: {{'kind': 'dna', 'sequence': ...}}."
+        )
+    raise TypeError(
+        "a chain is a ChainRequest, a Protein, a mapping of "
+        f"({', '.join(CHAIN_FIELDS)}) or the residues, and this one is a "
+        f"{type(spec).__name__}."
+    )
+
+
+def _from_fields(fields: Mapping[str, Any]) -> ChainRequest:
+    """Return the chain a mapping names, refusing what would otherwise be dropped."""
+    unknown = [field for field in fields if field not in CHAIN_FIELDS]
+    if unknown:
+        raise ValueError(
+            f"unknown chain field {unknown[0]!r}. A chain names {', '.join(CHAIN_FIELDS)}, "
+            f"and an unread field is provenance or an alignment lost in silence."
+        )
+    if "kind" not in fields:
+        raise ValueError(
+            f"a chain names its kind, one of {', '.join(POLYMERS)} — residues do not say which."
+        )
+    if "sequence" not in fields:
+        raise ValueError("a chain names its sequence, and this one names none.")
+    # Unpacked rather than named one by one, so the fields stay whatever `ChainRequest`
+    # takes. Only the alignment is touched, because a mapping may name it as a path.
+    given = dict(fields)
+    given["alignment"] = _alignment(given.get("alignment"))
+    return ChainRequest(**given)
+
+
+def _alignment(alignment: Any) -> MSA | None:
+    """Return the alignment a mapping names: one already built, or the A3M file at a path."""
+    if alignment is None or isinstance(alignment, MSA):
+        return alignment
+    if isinstance(alignment, str | Path):
+        return MSA.from_a3m(alignment)
+    raise TypeError(
+        "an alignment is an MSA or the path to an A3M file, and this one is a "
+        f"{type(alignment).__name__}."
+    )
 
 
 def _label(index: int) -> str:
