@@ -1,0 +1,11 @@
+# Actions only. Every `uses:` here names a moving tag, and one of them runs in the job that
+# holds `contents: write`; a bump nobody reviewed is a bump nobody can attribute.
+#
+# Not `pip` and not `pixi`: dependencies are `pyproject.toml` plus `pixi.lock`, which
+# dependabot cannot re-solve. `lock-refresh.yml` owns that half.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

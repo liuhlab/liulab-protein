@@ -76,7 +76,6 @@ muscle = "5.3.*"
 ruff = "*"
 # Exact: Pylance is pyright, so the editor and CI must give one verdict.
 pyright = "==1.1.411"
-python-build = "*"
 # Exact: the rules in `styles/` are tuned to this version.
 vale = "3.19.0.*"
 markdownlint-cli2 = "*"
@@ -140,12 +139,14 @@ fmt = "ruff format ."
 fmt-check = "ruff format --check ."
 typecheck = "pyright"
 test = "pytest"
-build = "python -m build"
 # `.`, never an absolute path: an absolute path matches no `.vale.ini` section and exits 0.
 # The globs keep the walk out of trees pytest writes to while `check.sh` runs both steps.
 vale = "vale --glob='!{.pixi,site,dist,build}/**' ."
 markdownlint = "markdownlint-cli2"
 conformance = "python scripts/conformance.py"
+# For `lock-refresh.yml`, so the scheduled re-solve is spelled here like every other
+# command a workflow runs.
+relock = "pixi update"
 # The static step list lives here and nowhere else; `check.sh` takes it as arguments.
 check-static = "bash scripts/check.sh lint fmt-check typecheck vale markdownlint conformance"
 check = { depends-on = ["check-static", "test"] }

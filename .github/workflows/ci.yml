@@ -16,7 +16,9 @@
 #
 # Not shipped, deliberately: a `claude.yml`, because on a public repo anyone who can
 # comment could spend the API budget; container and benchmark workflows, because nothing
-# here needs them.
+# here needs them. Nor a wheel build: `liulab-genome` is a git dependency that PyPI
+# metadata cannot carry, so the wheel imports only under pixi, and an artifact nobody
+# installs is a claim nobody checks.
 name: ci
 
 on:
@@ -69,27 +71,6 @@ jobs:
       # `-e test` is load-bearing: the `test` task exists in every environment, and without
       # the flag pixi would run it in `default`, which this job did not install.
       - run: pixi run -e test test
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          # The one job that needs history. The version is dynamic and hatch-vcs reads the
-          # newest tag; a shallow clone carries no tags, so the wheel would be stamped as a
-          # dev build even on a released commit.
-          fetch-depth: 0
-      - uses: prefix-dev/setup-pixi@v0.10.2
-        with:
-          # No `environments`: `build` is a plain task, so the default environment has it.
-          locked: true
-      - run: pixi run build
-      - uses: actions/upload-artifact@v7
-        with:
-          name: dist
-          path: dist/
-          # An empty upload is a green job that proved nothing.
-          if-no-files-found: error
 
   docs:
     runs-on: ubuntu-latest
