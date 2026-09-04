@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import json
 import warnings
 from pathlib import Path
 
@@ -15,7 +16,7 @@ import pytest
 from biotite.sequence import NucleotideSequence, ProteinSequence
 
 from protein import MSA, Protein
-from protein.fold import POLYMERS, ChainRequest, FoldingRequest
+from protein.fold import CHAIN_FIELDS, POLYMERS, ChainRequest, FoldingRequest
 from protein.seq import InvalidResidueError, ResidueCoercionWarning
 
 _SOURCE = Path(__file__).resolve().parents[1] / "src" / "protein" / "fold" / "request.py"
@@ -172,6 +173,134 @@ def test_a_request_has_no_output_path_field() -> None:
     assert "out" not in inspect.signature(FoldingRequest.__init__).parameters
     with pytest.raises(TypeError):
         FoldingRequest([ChainRequest("protein", QUERY)], out="/tmp/somewhere")  # type: ignore[call-arg]
+
+
+def test_a_request_is_built_from_mappings_so_a_caller_imports_no_chain_class() -> None:
+    request = FoldingRequest(
+        [
+            {"kind": "protein", "sequence": QUERY, "accession": "P12345"},
+            {"kind": "dna", "sequence": "ACGT"},
+        ]
+    )
+    assert [chain.kind for chain in request.chains] == ["protein", "dna"]
+    assert request.accessions == {"A": ("P12345",), "B": ()}
+
+
+def test_the_fields_a_mapping_may_name_are_the_ones_a_chain_takes() -> None:
+    # Read off `ChainRequest` and not written out, so a parameter added there is a field
+    # the mapping form takes rather than one it refuses as unknown.
+    assert tuple(inspect.signature(ChainRequest).parameters) == CHAIN_FIELDS
+    assert CHAIN_FIELDS == ("kind", "sequence", "accession", "alignment")
+
+
+def test_a_mapping_names_its_kind_because_nothing_here_guesses_one() -> None:
+    # 'ACGT' is a valid protein sequence, so a guess is the silent wrong answer this lane
+    # exists to refuse.
+    with pytest.raises(ValueError, match=r"names its kind.*protein, dna, rna"):
+        FoldingRequest([{"sequence": "ACGT"}])
+
+
+def test_a_mapping_names_its_sequence() -> None:
+    with pytest.raises(ValueError, match=r"names its sequence"):
+        FoldingRequest([{"kind": "protein", "accession": "P12345"}])
+
+
+def test_a_misspelt_field_is_named_rather_than_dropped() -> None:
+    # Dropped, a typo'd accession loses the provenance a prediction is written with and
+    # says nothing about it.
+    with pytest.raises(ValueError, match=r"unknown chain field 'accesion'"):
+        FoldingRequest([{"kind": "protein", "sequence": QUERY, "accesion": "P12345"}])
+
+
+def test_a_mapping_carries_an_alignment_as_an_msa() -> None:
+    request = FoldingRequest([{"kind": "protein", "sequence": QUERY, "alignment": alignment()}])
+    held = request.chains[0].alignment
+    assert held is not None
+    assert held.depth == 3
+
+
+def test_a_mapping_carries_an_alignment_as_the_path_to_one(tmp_path: Path) -> None:
+    # The JSON-shaped spelling: a path is a string, and an alignment never is.
+    path = alignment().write(tmp_path / "query.a3m")
+    request = FoldingRequest([{"kind": "protein", "sequence": QUERY, "alignment": str(path)}])
+    held = request.chains[0].alignment
+    assert held is not None
+    assert held.rows == alignment().rows
+
+
+def test_the_checks_hold_whichever_way_the_chain_was_spelt() -> None:
+    with pytest.raises(ValueError, match=r"takes no alignment"):
+        FoldingRequest([{"kind": "dna", "sequence": "ACGT", "alignment": alignment()}])
+    with pytest.raises(ValueError, match=r"unknown chain kind 'nucleic'"):
+        FoldingRequest([{"kind": "nucleic", "sequence": "ACGT"}])
+
+
+def test_one_chain_needs_no_list_around_it() -> None:
+    assert len(FoldingRequest({"kind": "dna", "sequence": "ACGT"})) == 1
+    assert len(FoldingRequest(QUERY)) == 1
+    assert len(FoldingRequest(Protein(QUERY, id="P12345"))) == 1
+
+
+def test_bare_residues_are_a_protein_chain_since_that_spelling_holds_no_kind() -> None:
+    chain = FoldingRequest(QUERY).chains[0]
+    assert chain.kind == "protein"
+    assert str(chain.sequence) == QUERY
+    assert chain.accession is None
+
+
+def test_a_biotite_protein_sequence_is_one_chain_and_not_one_chain_per_residue() -> None:
+    # biotite's sequences iterate into single residues, so the iterable branch would shred
+    # one into five one-residue chains and fold that without a word.
+    request = FoldingRequest(ProteinSequence(QUERY))
+    assert len(request) == 1
+    assert str(request.chains[0].sequence) == QUERY
+
+
+def test_a_biotite_nucleotide_sequence_is_refused_since_it_says_neither_dna_nor_rna() -> None:
+    with pytest.raises(ValueError, match=r"neither dna nor rna"):
+        FoldingRequest(NucleotideSequence("ACGT"))
+
+
+def test_a_protein_given_as_a_chain_keeps_its_accession() -> None:
+    assert FoldingRequest([Protein(QUERY, id="P12345")]).accessions == {"A": ("P12345",)}
+
+
+def test_the_two_spellings_mix_in_one_request() -> None:
+    request = FoldingRequest(
+        [
+            ChainRequest("protein", QUERY, alignment=alignment()),
+            {"kind": "dna", "sequence": "ACGT"},
+            Protein(QUERY, id="P12345"),
+            QUERY,
+        ]
+    )
+    assert len(request) == 4
+    assert request.chain_ids == ("A", "B", "C", "D")
+
+
+def test_a_request_is_its_own_spec_so_coercing_one_twice_changes_nothing() -> None:
+    # What lets `fold` widen without a second code path: coercion is idempotent.
+    request = FoldingRequest([ChainRequest("protein", QUERY, accession="P12345")])
+    assert FoldingRequest(request).chains == request.chains
+
+
+def test_something_that_is_no_chain_says_what_a_chain_is() -> None:
+    with pytest.raises(TypeError, match=r"a chain is a ChainRequest, a Protein"):
+        FoldingRequest([42])  # type: ignore[list-item]
+
+
+def test_a_batch_of_requests_is_prepared_from_json_and_nothing_else() -> None:
+    # The point of the mapping form: a file of requests, no import, no call site per entry.
+    batch = json.loads(
+        """[
+            [{"kind": "protein", "sequence": "MKTAY", "accession": "P12345"},
+             {"kind": "dna", "sequence": "ACGT"}],
+            [{"kind": "protein", "sequence": "MKTAW"}]
+        ]"""
+    )
+    requests = [FoldingRequest(entry) for entry in batch]
+    assert [len(request) for request in requests] == [2, 1]
+    assert requests[0].accessions == {"A": ("P12345",), "B": ()}
 
 
 def test_the_module_body_imports_neither_torch_nor_esm() -> None:

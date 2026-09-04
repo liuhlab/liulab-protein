@@ -66,18 +66,21 @@ parsing.
 ### FoldingRequest
 
 **A class, not just a word.** What one structure prediction takes in: one entry per chain,
-each naming its kind — protein, DNA or RNA — its sequence, the accession it came from, and,
-for a protein chain, an **MSA**. Built at the call site and dropped after the fold, which is
-what separates it from a **Structure**: lifetime, not content.
+naming its kind — protein, DNA or RNA — its sequence, the accession it came from and, for a
+protein chain, an **MSA**. Built at the call site and dropped after the fold, which is what
+separates it from a **Structure**: lifetime, not content.
 
-It carries **no output path**. Where the answer is written is not an input, so one request
-folds to two destinations.
+It carries **no output path**: where the answer goes is not an input, so one request folds to
+two destinations.
+
+**It is built from plain Python**: a chain is a mapping of `kind`, `sequence`, `accession`
+and `alignment`, a **Protein**, a `ChainRequest` or the residues, alone or in a list. So a
+batch is data and imports nothing. A mapping names its `kind`; residues do not say which.
 
 **Every check the model does not make lives here**, because past its own sibling-row check
-the model degrades in silence: an alignment whose query row is not the chain's sequence, or
-whose length disagrees, is refused rather than cut or gap-filled. A nucleic chain refuses an
-alignment outright — the model accepts one there and drops it. A protein chain given none
-gets the depth-1 alignment on its own sequence.
+the model degrades in silence. An alignment whose query row or length disagrees with the
+chain is refused, not cut or gap-filled. A nucleic chain refuses one outright; a protein
+chain given none gets the depth-1 alignment on its own sequence.
 
 Chain labels are derived from position, since nobody named these chains. See `protein.fold`.
 

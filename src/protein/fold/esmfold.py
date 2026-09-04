@@ -22,15 +22,22 @@ length holding a wrong structure and says nothing.
 :meth:`ESMFold2.fold` forwards every other keyword to upstream's own ``fold``; and
 :attr:`ESMFold2.model` is the loaded model, for anything neither covers.
 
+**What goes in is plain Python.** :meth:`ESMFold2.fold` takes what
+:class:`~protein.fold.FoldingRequest` takes and builds the request itself, so a batch is
+data and a call site imports no class.
+
 Examples
 --------
->>> from protein.fold import ChainRequest, ESMFold2, FoldingRequest
+>>> from protein.fold import ESMFold2
 >>> from protein.fold.esmfold import CHECKPOINTS
 >>> CHECKPOINTS["ESMFold2-Fast"]
 'biohub/ESMFold2-Fast'
 >>> model = ESMFold2()                                    # doctest: +SKIP
->>> request = FoldingRequest([ChainRequest("protein", "MKTAY", accession="P12345")])
->>> model.fold(request, "/scratch/folds")                 # doctest: +SKIP
+>>> complexed = [
+...     {"kind": "protein", "sequence": "MKTAY", "accession": "P12345"},
+...     {"kind": "dna", "sequence": "ACGT"},
+... ]
+>>> model.fold(complexed, "/scratch/folds")               # doctest: +SKIP
 Structure('P12345')
 """
 
@@ -49,10 +56,11 @@ from protein.fold.predictions import (
     prediction_path,
     stored_prediction,
 )
+from protein.fold.request import FoldingRequest
 from protein.structure import Structure
 
 if TYPE_CHECKING:
-    from protein.fold.request import FoldingRequest
+    from protein.fold.request import RequestSpec
     from protein.msa import MSA
 
 __all__ = [
@@ -224,7 +232,7 @@ class ESMFold2:
 
     def fold(
         self,
-        request: FoldingRequest,
+        request: RequestSpec,
         out: str | Path,
         *,
         name: str | None = None,
@@ -235,8 +243,9 @@ class ESMFold2:
 
         Parameters
         ----------
-        request : protein.fold.FoldingRequest
-            What to fold. Every check it makes was made when it was built.
+        request : protein.fold.request.RequestSpec
+            What to fold: a :class:`~protein.fold.FoldingRequest`, or anything it takes.
+            The request is built here, so its checks are made here too.
         out : str or pathlib.Path
             The output directory. **Required and defaulting nowhere** — the lab **Data dir**
             holds reference and input data, never a user's outputs. It is created if it is
@@ -268,27 +277,31 @@ class ESMFold2:
         FileExistsError
             If ``out`` holds a prediction under this name whose residues are not this
             request's, and ``overwrite`` is not set.
+        ValueError or TypeError
+            If ``request`` is not a request and does not describe one — raised while it is
+            built, so before the card is touched. See :class:`~protein.fold.FoldingRequest`.
 
         Examples
         --------
         >>> model.fold(request, "/scratch/folds", name="the mutant")   # doctest: +SKIP
         Structure('the mutant')
         """
+        built = FoldingRequest(request)
         directory = Path(out)
         directory.mkdir(parents=True, exist_ok=True)
-        called = prediction_name(request, name)
+        called = prediction_name(built, name)
         path = prediction_path(directory, called)
-        held = stored_prediction(path, request, overwrite=overwrite)
+        held = stored_prediction(path, built, overwrite=overwrite)
         if held is not None:
             return held
 
-        answer = self.builder.fold(self.model, self._upstream(request), **kwargs)
+        answer = self.builder.fold(self.model, self._upstream(built), **kwargs)
         best = max(answer, key=_mean_plddt) if isinstance(answer, list) else answer
         path.write_text(best.complex.to_mmcif(), encoding="utf-8")
         return Structure(
             called,
             path=path,
-            accessions=request.accessions,
+            accessions=built.accessions,
             confidence=_confidence(best, directory, called),
         )
 

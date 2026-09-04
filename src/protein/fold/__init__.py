@@ -1,6 +1,7 @@
 """The folding lane: what goes in, and the model that turns it into coordinates.
 
-:class:`~protein.fold.request.FoldingRequest` is the input a caller builds and drops;
+:class:`~protein.fold.request.FoldingRequest` is the input a caller builds and drops — from
+plain Python, so a batch is data and nothing at the call site imports a class;
 :class:`~protein.fold.esmfold.ESMFold2` holds the weights, because *resident state gets an
 object; a subprocess does not*. What comes back is a
 :class:`~protein.structure.Structure` — a prediction is a structure like any other, carrying
@@ -21,18 +22,29 @@ from protein.fold.predictions import (
     prediction_path,
     stored_prediction,
 )
-from protein.fold.request import POLYMERS, ChainRequest, FoldingRequest, PolymerKind
+from protein.fold.request import (
+    CHAIN_FIELDS,
+    POLYMERS,
+    ChainRequest,
+    ChainSpec,
+    FoldingRequest,
+    PolymerKind,
+    RequestSpec,
+)
 
 __all__ = [
+    "CHAIN_FIELDS",
     "CHECKPOINTS",
     "PAIRWISE_SUFFIX",
     "POLYMERS",
     "PREDICTION_FORMAT",
     "ChainRequest",
+    "ChainSpec",
     "Confidence",
     "ESMFold2",
     "FoldingRequest",
     "PolymerKind",
+    "RequestSpec",
     "pairwise_path",
     "prediction_name",
     "prediction_path",

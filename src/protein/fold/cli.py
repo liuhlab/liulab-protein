@@ -31,7 +31,6 @@ from protein.core import Protein as _Protein
 from protein.fold.esmfold import CHECKPOINTS as _CHECKPOINTS
 from protein.fold.esmfold import DEFAULT_CHECKPOINT as _DEFAULT_CHECKPOINT
 from protein.fold.esmfold import ESMFold2 as _ESMFold2
-from protein.fold.request import ChainRequest as _ChainRequest
 from protein.fold.request import FoldingRequest as _FoldingRequest
 
 #: What this command catches. Each already carries its next action, so the command prints the
@@ -81,7 +80,7 @@ def fold_structure(
     record nor a protein sequence, or OUT already holds this name over a different sequence.
     """
     try:
-        request = _FoldingRequest([_ChainRequest.of(_read(query))])
+        request = _FoldingRequest(_read(query))
         model = _ESMFold2(checkpoint, device=device)
         structure = model.fold(request, out, name=name, overwrite=overwrite)
     except _FOLD_ERRORS as err:
