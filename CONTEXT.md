@@ -98,6 +98,25 @@ reader drops it.
 
 See `protein.msa` and `protein.io.a3m`.
 
+### Prediction
+
+A **Structure** a model produced rather than a crystallographer, written into a directory the
+caller names. **Never under the Data dir**, which holds reference and input data and no
+user's outputs, so the directory is a required argument that defaults nowhere.
+
+**Its name is a fact about the molecule**: user-given, else the one accession its
+**FoldingRequest** names, else a short hash of the sequences. The checkpoint and every
+sampler setting stay out — neither says what was folded.
+
+**A name already held is weighed against the residues on disk.** The same sequence is a cache
+hit and the GPU is never started; a different one raises, because a mutant can carry a
+reference accession and would otherwise overwrite the reference or silently reuse it.
+`overwrite=` is how a caller says they meant it. The residues, not a provenance record, are
+what make that survive the process. The accepted edge: settings are not in the path, so a
+re-fold with a different seed hits the cache.
+
+See `protein.fold.predictions`.
+
 ### Protein
 
 **Identified by a UniProt accession.** It holds a biotite `ProteinSequence` and its metadata,

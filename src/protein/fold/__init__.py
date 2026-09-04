@@ -11,6 +11,21 @@ No module's body imports torch, so ``import protein`` stays cheap.
 
 from __future__ import annotations
 
+from protein.fold.predictions import (
+    PREDICTION_FORMAT,
+    prediction_name,
+    prediction_path,
+    stored_prediction,
+)
 from protein.fold.request import POLYMERS, ChainRequest, FoldingRequest, PolymerKind
 
-__all__ = ["POLYMERS", "ChainRequest", "FoldingRequest", "PolymerKind"]
+__all__ = [
+    "POLYMERS",
+    "PREDICTION_FORMAT",
+    "ChainRequest",
+    "FoldingRequest",
+    "PolymerKind",
+    "prediction_name",
+    "prediction_path",
+    "stored_prediction",
+]
