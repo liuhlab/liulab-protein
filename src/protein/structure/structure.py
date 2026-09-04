@@ -15,7 +15,9 @@ answers against the AU, and many entries have more than one assembly, which woul
 **A structure may carry the accessions it was produced from**, one per chain, and
 ``Chain.uniprot`` answers from those rather than asking SIFTS. That is provenance and not a
 join (ADR-0005): it is an input the file was written from, never a cross-reference read back
-out of the file. Nothing here reads ``_struct_ref``.
+out of the file. Nothing here reads ``_struct_ref``. A prediction may carry its
+:class:`~protein.fold.predictions.Confidence` the same way, and for the same reason: it is
+what the model reported, not something read back out of what it wrote.
 
 **The path is held and the parse is lazy.** Foldseek needs a file on disk whatever else
 happens, so the file is what a structure *is*; :attr:`~Structure.atoms` and
@@ -58,6 +60,7 @@ if TYPE_CHECKING:
     import pandas as pd
     from biotite.structure import AtomArray, AtomArrayStack
 
+    from protein.fold.predictions import Confidence
     from protein.search.mmseqs import SearchTarget
     from protein.structure.chain import Chain
 
@@ -236,6 +239,9 @@ class Structure:
         Given, it is what :attr:`~protein.structure.chain.Chain.uniprot` answers with, for
         every chain and not only the ones it names, so SIFTS is never asked. Provenance and
         not a join (ADR-0005): nothing puts a deposited entry's own cross-reference here.
+    confidence : protein.fold.predictions.Confidence, optional
+        What the model reported about a prediction. ``None`` for a deposited entry and for
+        anything read off disk, which is the same limit the accession map has.
 
     Attributes
     ----------
@@ -244,6 +250,8 @@ class Structure:
     accessions : dict of str to tuple of str, or None
         The map, with each entry frozen into a tuple. ``None`` where none was given, which
         is what every structure read off disk carries.
+    confidence : protein.fold.predictions.Confidence or None
+        As given.
 
     Raises
     ------
@@ -271,10 +279,12 @@ class Structure:
         *,
         path: str | Path | None = None,
         accessions: Mapping[str, Iterable[str]] | None = None,
+        confidence: Confidence | None = None,
     ) -> None:
         self.id = id
         self._path = Path(path) if path is not None else None
         self.accessions = None if accessions is None else _frozen_accessions(accessions)
+        self.confidence = confidence
 
     @classmethod
     def from_file(cls, path: str | Path, *, id: str | None = None) -> Self:
@@ -296,8 +306,8 @@ class Structure:
         Returns
         -------
         Structure
-            Holding this file, and **carrying no** :attr:`accessions` **map**. Nothing is
-            parsed yet.
+            Holding this file, and **carrying neither an** :attr:`accessions` **map nor a**
+            :attr:`confidence`. Nothing is parsed yet.
 
             That is a limit rather than an oversight: provenance does not survive the file
             and nothing is built to make it, so a prediction reopened from disk answers

@@ -5,6 +5,7 @@ from importlib.metadata import version
 from protein.core import Protein
 from protein.embed import ESMC, Embedding
 from protein.external import ToolNotFoundError
+from protein.fold import ChainRequest, ESMFold2, FoldingRequest
 from protein.msa import MSA
 from protein.structure import Chain, Structure
 
@@ -15,7 +16,10 @@ __all__ = [
     "ESMC",
     "MSA",
     "Chain",
+    "ChainRequest",
+    "ESMFold2",
     "Embedding",
+    "FoldingRequest",
     "Protein",
     "Structure",
     "ToolNotFoundError",

@@ -63,6 +63,21 @@ rather than one of them.
 
 ::: protein.embed.esm.features
 
+## Folding
+
+`ESMFold2` holds the weights, a `FoldingRequest` is what goes in, and a `Structure` written
+into a directory you named is what comes back.
+
+::: protein.fold
+    options:
+      members: false
+
+::: protein.fold.request
+
+::: protein.fold.esmfold
+
+::: protein.fold.predictions
+
 ## Search
 
 One lane, two queries: a sequence goes to MMseqs2, coordinates go to Foldseek. Both answer
@@ -130,6 +145,8 @@ calls.
 ::: protein.db.cli
 
 ::: protein.embed.cli
+
+::: protein.fold.cli
 
 ::: protein.search.cli
 

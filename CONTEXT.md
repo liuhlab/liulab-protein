@@ -63,6 +63,24 @@ MUSCLE is the one this package never runs. biotite's `Muscle5App` takes a `bin_p
 `Muscle` answers where the binary is and biotite owns the temp files, the arguments and the
 parsing.
 
+### FoldingRequest
+
+**A class, not just a word.** What one structure prediction takes in: one entry per chain,
+each naming its kind — protein, DNA or RNA — its sequence, the accession it came from, and,
+for a protein chain, an **MSA**. Built at the call site and dropped after the fold, which is
+what separates it from a **Structure**: lifetime, not content.
+
+It carries **no output path**. Where the answer is written is not an input, so one request
+folds to two destinations.
+
+**Every check the model does not make lives here**, because past its own sibling-row check
+the model degrades in silence: an alignment whose query row is not the chain's sequence, or
+whose length disagrees, is refused rather than cut or gap-filled. A nucleic chain refuses an
+alignment outright — the model accepts one there and drops it. A protein chain given none
+gets the depth-1 alignment on its own sequence.
+
+Chain labels are derived from position, since nobody named these chains. See `protein.fold`.
+
 ### MSA
 
 A multiple sequence alignment, held as `(header, row)` pairs of plain text with row 0 the
@@ -84,6 +102,29 @@ is carried for the same reason: it can encode a complex's chain layout, and biot
 reader drops it.
 
 See `protein.msa` and `protein.io.a3m`.
+
+### Prediction
+
+A **Structure** a model produced rather than a crystallographer, written into a directory the
+caller names. **Never under the Data dir**, so the directory is a required argument that
+defaults nowhere.
+
+**Its name is a fact about the molecule**: user-given, else the one accession its
+**FoldingRequest** names, else a short hash of the sequences. The checkpoint and every
+sampler setting stay out.
+
+**A name already held is weighed against the residues on disk.** The same sequence is a cache
+hit and the card is never started; a different one raises, because a mutant can carry a
+reference accession and would otherwise overwrite the reference or silently reuse it.
+`overwrite=` is how a caller says they meant it. The residues, not a provenance record, are
+what make that survive the process. The accepted edge: settings are not in the path, so a
+re-fold with a different seed hits the cache.
+
+**What it reports sits in three places.** Per-residue confidence is the mmCIF's B-factor
+column, where every viewer looks; the scalars are a `Confidence` on the returned object; the
+pairwise matrix is a sibling file, read on request.
+
+See `protein.fold`.
 
 ### Protein
 
@@ -172,7 +213,8 @@ is the only join; a structure also holds nucleic acids and ligands with no prote
 
 A structure may carry the accessions it was **produced from**, one per chain, and
 `Chain.uniprot` answers from those rather than asking SIFTS. That is provenance, not a join —
-an input the file was written from, never a cross-reference read back out of it.
+an input the file was written from, never a cross-reference read back out of it. A
+**Prediction** also carries its confidence, and neither survives the file.
 
 ### Xref
 
