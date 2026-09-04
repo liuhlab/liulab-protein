@@ -17,9 +17,9 @@ from pathlib import Path
 import pytest
 
 from protein import MSA, Protein
-from protein import msa as lane
 from protein.external import ExternalTool
-from protein.msa import organism_id, with_organism_key
+from protein.msa import mmseqs as lane
+from protein.msa.mmseqs import organism_id, with_organism_key
 
 _INSULIN = "MALWMRLLPLLALLALWGPDPAAAFVNQHLCGSHLVEALYLVCGERGFFYTPKTRREAEDLQ"
 

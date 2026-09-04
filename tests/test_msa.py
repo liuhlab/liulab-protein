@@ -8,7 +8,7 @@ import pytest
 from biotite.sequence.align import Alignment
 
 from protein import MSA
-from protein.msa import InvalidAlignmentError, count_match_states
+from protein.msa.msa import InvalidAlignmentError, count_match_states
 
 _DATA = Path(__file__).resolve().parent / "data"
 

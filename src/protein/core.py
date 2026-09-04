@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from biotite.sequence import ProteinSequence
 
     from protein.msa import MSA
-    from protein.search.mmseqs import SearchTarget
+    from protein.search.target import SearchTarget
 
 __all__ = ["Protein"]
 
@@ -210,7 +210,7 @@ class Protein(SearchMixin):
 
         Parameters
         ----------
-        database : protein.search.mmseqs.SearchTarget or str
+        database : protein.search.target.SearchTarget or str
             What to search against: a **Database**, or the name of a registered one.
         **kwargs : Any
             Forwarded to :func:`protein.msa.search`. ``query_name`` is filled in from
@@ -239,9 +239,9 @@ class Protein(SearchMixin):
         1281
         """
         from protein import msa
-        from protein.search import mmseqs
+        from protein.search import target
 
-        kwargs.setdefault("query_name", self.id or mmseqs.DEFAULT_QUERY_NAME)
+        kwargs.setdefault("query_name", self.id or target.DEFAULT_QUERY_NAME)
         return msa.search(str(self.sequence), database, **kwargs)
 
     @property

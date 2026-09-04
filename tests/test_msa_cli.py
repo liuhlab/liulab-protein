@@ -16,7 +16,7 @@ from typer.testing import CliRunner
 
 import protein.cli
 from protein import MSA
-from protein.msa import app
+from protein.msa.cli import app
 
 from . import plain_text
 

@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     from biotite.structure import AtomArray
     from numpy.typing import NDArray
 
-    from protein.search.mmseqs import SearchTarget
+    from protein.search.target import SearchTarget
     from protein.structure.structure import Structure
 
 __all__ = ["KINDS", "Chain", "ChainKind"]
@@ -309,7 +309,7 @@ class Chain:
 
         Parameters
         ----------
-        database : protein.search.mmseqs.SearchTarget or str
+        database : protein.search.target.SearchTarget or str
             What to search against: a **Database**, or the name of a registered one.
         **kwargs : Any
             Forwarded to :func:`protein.search.foldseek.search` — ``sensitivity``,
