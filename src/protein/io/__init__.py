@@ -14,6 +14,6 @@ module inside ``protein/`` that wants the standard library's ``io`` still gets i
 
 from __future__ import annotations
 
-from protein.io import fasta, structure
+from protein.io import a3m, fasta, structure
 
-__all__ = ["fasta", "structure"]
+__all__ = ["a3m", "fasta", "structure"]
