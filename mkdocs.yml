@@ -18,9 +18,21 @@ site_description: "Handling protein sequence related tasks."
 # rule `agent-docs-unpublished` fails the build if you do.
 nav:
   - Home: index.md
+  - Getting started: start.md
+  - How it fits together: concepts.md
+  - Setting up:
+      - Install: install.md
+      - Set up your data: data.md
   - Guides:
       - Work with structures: guides/structures.md
-  - API reference: api.md
+      - Search a database: guides/search.md
+      - Build an alignment: guides/alignments.md
+      - Embed a sequence: guides/embedding.md
+      - Predict a structure: guides/folding.md
+  - Reference:
+      - Commands: reference/commands.md
+      - Python API: api.md
+  - Contributing: contributing.md
 
 # What `--strict` catches. Every row was built against the pinned zensical and watched, not
 # taken from what a strict mkdocs build used to do:

@@ -116,6 +116,24 @@ sets one.
 
 ### Changed
 
+- **The docs site is twelve pages rather than two.** Home carried five jobs at once — the
+  classes, the install, a full alignment tutorial, every command and the gate — so a reader
+  after one of them scrolled past the other four. It is now a landing page, and each job has
+  a page a reader can be sent to.
+
+  **Three things that already shipped had nothing on the site a person could read**: folding,
+  sparse features, and the accession-to-gene hop. Folding now has a guide, and the way in is a
+  worked example: fold the bZIP domains of FOS and JUN against the AP-1 site as a duplex, then
+  check the answer against `1FOS`. The check is the point — `crystal["E"].sequence` comes back
+  as the same residues the trim cut out of Swiss-Prot, so the page proves its own arithmetic
+  instead of asserting it, and SIFTS is on screen doing its job in the first ten minutes.
+
+  Nothing under `docs/adr/`, `docs/agents/` or `docs/research/` moved, and none of it entered
+  the menu.
+
+  **`ruff format` reformats python blocks inside markdown**, which nothing said out loud
+  before. A guide with a hand-wrapped call in it fails `fmt-check` like any module would.
+
 - **Four moves that widen nothing.** No import a caller writes changes, no command path moves,
   and no `--json` payload differs. What changes is where things live.
 
