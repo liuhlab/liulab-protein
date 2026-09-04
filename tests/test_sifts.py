@@ -353,7 +353,7 @@ def test_status_reads_the_marker_and_not_the_slice(
     def refuse(*args: Any, **kwargs: Any) -> None:
         raise AssertionError("status must not read the table")
 
-    monkeypatch.setattr(sifts, "_read_table", refuse)
+    monkeypatch.setattr("protein.prepared._read_table", refuse)
     assert sifts.status().rows == 91
 
 

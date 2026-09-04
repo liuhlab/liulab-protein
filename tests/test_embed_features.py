@@ -329,7 +329,7 @@ def test_status_reads_the_marker_and_not_the_table(
     def refuse(*args: Any, **kwargs: Any) -> None:
         raise AssertionError("status must not read the table")
 
-    monkeypatch.setattr(features, "_read_table", refuse)
+    monkeypatch.setattr("protein.prepared._read_table", refuse)
     assert features.status().rows == len(_KEPT)
 
 
