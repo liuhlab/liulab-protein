@@ -19,7 +19,7 @@ site_description: "Handling protein sequence related tasks."
 nav:
   - Home: index.md
   - Getting started: start.md
-  - How it fits together: concepts.md
+  - The three things you work with: concepts.md
   - Setting up:
       - Install: install.md
       - Set up your data: data.md

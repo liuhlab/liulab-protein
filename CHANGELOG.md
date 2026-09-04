@@ -116,6 +116,30 @@ sets one.
 
 ### Changed
 
+- **The docs site says how to use the package, and stops there.** Every reference to a
+  decision record is gone from the published pages, along with the passages that explained
+  why a method sits on one class and not another, why a model is an object you keep, and why
+  this package holds the types it does. A reader of the site has never heard of an ADR. What
+  replaced all of it is what the call returns and what it refuses.
+
+  `How it fits together` became **The three things you work with**, and is now about moving
+  between a protein, a structure and a chain rather than about the reasoning behind them.
+  `Contributing` lost the tour of the gate's internals: run the checks, and the failing check
+  will tell you the rest.
+
+  Facts that change what a reader does all survived, including the ones that read like
+  rationale and are not: `chain.uniprot` answers from SIFTS and the file's own
+  cross-reference can differ; pair the wrong autoencoder with an embedding and `encode`
+  raises; fold one strand of a duplex and you get an answer that looks fine and means nothing.
+
+- **The getting-started page shows the structure it just predicted.** The AP-1 complex is
+  folded, committed as a fixture, and drawn in a viewer you can turn and zoom, coloured by the
+  model's own per-residue confidence.
+
+  **The two confidence scales differ and now say so.** `Confidence.plddt` runs 0 to 1, while
+  the B-factor column holding the same per-residue measure runs 0 to 100. A viewer style
+  written for the first range against the second one paints everything the same colour.
+
 - **The docs site is twelve pages rather than two.** Home carried five jobs at once — the
   classes, the install, a full alignment tutorial, every command and the gate — so a reader
   after one of them scrolled past the other four. It is now a landing page, and each job has

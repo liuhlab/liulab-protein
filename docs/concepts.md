@@ -1,97 +1,168 @@
-# How it fits together
+# The three things you work with
 
-This page is the shape of the package, so the guides make sense. Read it once, start to
-finish.
+`Protein`, `Structure` and `Chain`. A protein is a sequence. A structure is a set of
+coordinates. A chain is one polymer inside a structure.
 
-## Three peers, not a hierarchy
+A protein turns up in many structures, and a structure holds many proteins. This page says
+how you make each one and how you get from one to another.
 
-A `Protein` is one UniProt accession's sequence. A `Structure` is one PDB entry. A `Chain`
-is one polymer inside a structure.
+## A protein
 
-The three are peers. A protein turns up in many structures. A structure holds many
-proteins. Neither one owns the other, and there is no tree to walk down.
+A `Protein` is one UniProt accession's sequence. It carries no coordinates.
 
-A chain is not a protein wearing a different hat. It carries coordinates, and a protein
-carries none. It may be DNA or RNA. It may be a ligand with no accession at all. It may
-also carry several accessions at once. Ask `chain.kind` before you ask for a sequence, and
-it will tell you which of those you are holding.
+Build one from residues and an accession:
 
-## SIFTS is the only join
+```python
+from protein import Protein
 
-A structure file makes its own claim about where a chain came from. The claim sits in
-`_struct_ref_seq`, and **this package never reads it**. Not in any code path.
+p = Protein("MKTAYIAKQRQISFVKSHFSRQ", id="P12345")
+p.length  # 22
+```
 
-The join comes from SIFTS instead. SIFTS is the EBI's map between PDB chains and UniProt
-accessions. It is kept apart from the coordinate files and worked out again against current
-UniProt.
+Or read one out of a local database:
 
-The two disagree, and here is the case to remember. For `1UBQ` chain A the file says
-`P62988`. SIFTS says `P0CG48`. This package answers with SIFTS.
+```python
+from protein.db import SwissProt
 
-The reason is the depositor's record. It was frozen on the day of deposition, and it
-describes somebody else's entry as that entry stood back then. UniProt has moved since.
+p = SwissProt()["P0CG48"]
+```
 
-The map runs many-to-many both ways. One chain may carry several accessions, and one
-accession may show up in many entries.
+That reads the files on disk and touches no network.
 
-One exception is worth naming. A predicted structure can carry the accession it was folded
-from. That is provenance: the input the file was written from, not a cross-reference read
-back out of it. ADR-0005 has the reasoning.
+`p.sequence` is a biotite sequence, not a string. So `p.sequence == "MKT"` is `False`, and
+`str(p.sequence)` is how you get the letters. A slice such as `p[10:20]` is a plain string.
 
-## Methods and objects you keep
+## A structure
 
-Two rules decide whether you call a method or build something first.
+A `Structure` is one set of coordinates. Name it by its PDB id:
 
-The first rule: a method goes on the class the tool takes directly. Foldseek takes
-coordinates. So the search by shape lives on `Structure` and on `Chain`, and never on
-`Protein`. A protein would have to go and find coordinates first, and this package hides no
-step like that. See [Search a database](guides/search.md).
+```python
+from protein import Structure
 
-The second rule: anything holding a lot of state in memory is a class you build and keep.
-`ESMC()` and `ESMFold2()` hold model weights, so you make one and use it many times. mmseqs
-holds nothing between calls, so `search()` stays a method.
+s = Structure("1UBQ")
+```
 
-That is why `p.search(db)` and `ESMC().embed(p)` do not look alike. It is the rule at work,
-not an oversight.
+Nothing is read until you ask a question. The first question that needs the file takes it
+from the local cache, or downloads it once from RCSB. On a machine with no network you get
+`CoordinatesNotDownloadedError`, and the message names the command that fills the cache.
 
-## What a database is here
+You can also open a file you already have:
 
-A database is a directory of files that an outside tool searches. mmseqs searches a
-sequence database. Foldseek searches a structure database.
+```python
+s = Structure.from_file("1ubq.cif.gz")
+```
 
-A directory on disk with a completion record beside it **is** the registration. There is no
-central list and nothing is written down elsewhere. The directory name is the name you
-type.
+`s.chain_ids` lists the labels in the file. `s.atoms` is every atom of the first model:
+protein, nucleic acid, ligand and water alike. `s.models` holds all the models of an NMR
+entry.
 
-There are two ways to get one. `adopt` writes a record beside files that are already there,
-which is the usual case on a cluster. `download` hands the job to the tool's own downloader
-and then records what it left behind.
+## A chain
 
-These databases are immutable, and that word is literal. The index holds byte offsets into
-the data file. Change a byte and every offset after it is wrong. So a change makes a new
-database rather than an edit, and no verb here will modify one.
-[Set up your data](data.md) walks through both routes.
+Reach a chain through its structure, by label:
 
-## Prepared sets are the other big files
+```python
+chain = Structure("1UBQ")["A"]
+chain.id  # '1UBQ_A'
+```
 
-Two large sets do not come from a search tool at all. The SIFTS map comes from the EBI. The
-SAE feature descriptions come from the ESM project.
+Case is part of a label, so `"a"` and `"A"` are two different chains. Ask for a label that
+is not there and you get a `KeyError` listing the ones that are. `s.chains` gives you all of
+them.
 
-Nothing searches either one, so neither is a database. They are prepared sets. You prepare
-one once, and then it is read many times. Each has a fixed home and a status you can ask
-for, and [Set up your data](data.md) covers both.
+## Moving between them
 
-## Where the types come from
+Three calls do most of the work.
 
-This package holds biotite's types and never subclasses them. A `Protein` holds a biotite
-`ProteinSequence`. A `Structure` parses into a biotite `AtomArray`.
+| From | To | Call |
+| --- | --- | --- |
+| a structure | one of its chains | `structure["A"]` |
+| a chain | the accessions it belongs to | `chain.uniprot` |
+| a protein | the entries it appears in | `protein.structures` |
 
-It calls biotite's file and array layer, and it stays away from the convenience converters
-next door. The reason is worth stating plainly. `fasta.get_sequence` and
-`structure.to_sequence` rewrite `U` to `C` and `O` to `K` without a word. Selenocysteine
-comes back as cysteine, and nothing tells you. A silent rewrite of a residue is a wrong
-answer nobody sees.
+`chain.uniprot` is a tuple of accessions.
 
-This package folds letters as well. `U`, `O` and `J` all become `X`, which means unknown.
-The difference is that it warns you each time and names what it changed. ADR-0002 has the
-full argument.
+`protein.structures` is a pandas `DataFrame`, one row per mapped segment. The columns are
+`pdb`, `chain`, `accession`, then the residue range the segment covers in the chain
+(`res_beg`, `res_end`) and in the UniProt sequence (`sp_beg`, `sp_end`). Take both `pdb` and
+`chain` from a row: an entry id alone does not say which chain to open.
+
+Here is the walk from an accession to a structure and back:
+
+```python
+from protein import Protein, Structure
+
+p = Protein("MQIFVKTLTG", id="P0CG48")
+row = p.structures.iloc[0]
+chain = Structure(row["pdb"])[row["chain"]]
+chain.uniprot  # ('P0CG48',)
+```
+
+An empty frame means no structure has been solved for that accession. A `Protein` you built
+without an `id` raises `ValueError` instead, because there is nothing to look up.
+
+## What a chain gives you that a protein does not
+
+Coordinates. `chain.atoms` holds them, and `len(chain)` counts atoms.
+
+A chain is also not always a protein. Ask `chain.kind` before you ask for a sequence:
+
+- `"protein"` — `chain.sequence` is an amino-acid sequence.
+- `"nucleic"` — the chain is DNA or RNA, and `chain.sequence` is a nucleotide sequence.
+- `"other"` — ligand or water only. `chain.sequence` raises `ValueError`, and `chain.atoms`
+  is all there is.
+
+The sequence is what was solved for. A residue with no coordinates is not in it, so a
+disordered loop is missing rather than filled in.
+
+`chain.uniprot` can hand back none, one or several accessions:
+
+- `()` for a nucleic acid chain, a ligand chain, or an entry the map does not cover. That is
+  a real answer and not a missing one.
+- One accession in the ordinary case.
+- Several for a chain built from more than one protein. You get all of them.
+
+## Where the accession answer comes from
+
+`chain.uniprot` answers from SIFTS, the EBI's map from PDB chains to UniProt accessions. The
+map is kept apart from the coordinate files and worked out again against current UniProt.
+
+The structure file carries a cross-reference of its own, and the two can disagree. For
+`1UBQ` chain A the file says `P62988`. This package answers `P0CG48`.
+
+Prepare the map before you ask for an accession:
+
+```bash
+protein sifts prepare
+```
+
+Until you do, `chain.uniprot` and `protein.structures` raise `SiftsNotDownloadedError`.
+[Set up your data](data.md) covers the command.
+
+One case skips the map. A structure you folded yourself carries the accessions you handed
+the model, and its chains answer with those.
+
+## Databases
+
+A database is a directory on disk that MMseqs2 or Foldseek searches. You register it under a
+name, and the name is what you pass:
+
+```python
+p.search("swissprot")
+p.msa("uniref30")
+Structure("1UBQ").search("pdb")
+```
+
+There are two ways to register one. Use `adopt` when the files are already on disk, and
+`download` when they are not:
+
+```bash
+protein db adopt swissprot /path/to/swissprot
+protein db download pdb
+```
+
+[Set up your data](data.md) walks through both.
+
+## Next
+
+- [Search a database](guides/search.md) — hit tables, and what the columns mean.
+- [Work with structures](guides/structures.md) — chains, coordinates and 3D views.

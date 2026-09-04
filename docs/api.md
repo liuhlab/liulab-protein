@@ -1,17 +1,9 @@
 # API reference
 
-Built from the docstrings in `src/protein/`, so this page and the code cannot drift apart.
-Write the docstring; this page follows.
+Every class, function and argument in the package, built from the code itself.
 
-## The examples are tests
-
-`pixi run check` runs the `Examples` blocks in `src/protein/`, so an example that no longer
-matches its code fails the tests. Write one where it makes the object easier to use, and
-leave it out where it would not. An example nobody keeps up to date is worse than none.
-
-Keep an example cheap, offline and deterministic: it has to give the same answer on any
-machine, with no network. A line that cannot do that needs `# doctest: +SKIP` at the end of
-that line, and the marker covers only its own line.
+Looking for how to do something rather than what a call takes? Start with
+[Getting started](start.md) or one of the guides.
 
 ## The protein
 
@@ -55,9 +47,9 @@ A `Structure` is one PDB entry, and a `Chain` is one polymer in it. They are pee
 
 ## Embedding
 
-`ESMC` holds the weights, and `Embedding` is what one call over them gives back. A sparse
-autoencoder over one of those gives back a `SaeActivation`, which is a peer of `Embedding`
-rather than one of them.
+`ESMC` holds the weights, and `Embedding` is what one call over them gives back. Running a
+sparse autoencoder over an embedding gives back a `SaeActivation`, which holds which features
+fired and how strongly.
 
 ::: protein.embed
     options:
