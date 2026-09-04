@@ -24,10 +24,10 @@ nav:
       - Install: install.md
       - Set up your data: data.md
   - Guides:
-      - Work with structures: guides/structures.md
       - Search a database: guides/search.md
       - Build an alignment: guides/alignments.md
       - Embed a sequence: guides/embedding.md
+      - Work with structures: guides/structures.md
       - Predict a structure: guides/folding.md
   - Reference:
       - Commands: reference/commands.md
