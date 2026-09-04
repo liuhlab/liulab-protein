@@ -34,3 +34,12 @@ sets one.
   `Chain.sequence` now answers for a nucleic chain instead of refusing, and refuses only a
   chain that is neither — a ligand or the solvent. `Chain.kind` is unchanged and still says
   which type will come back. The guard that kept DNA away from ESM-C moved to `ESMC.embed`.
+
+- **A structure can say what it was produced from.** `Structure` takes an optional
+  `accessions` map, one entry per chain, and `Chain.uniprot` answers from it rather than
+  asking SIFTS. A structure folded from a known accession used to answer `()`, which is what
+  a deposited entry SIFTS maps nothing to also answers.
+
+  **SIFTS is still the only join.** An accession here is an input the file was written from,
+  never a cross-reference read back out of a file — nothing reads `_struct_ref`. Provenance
+  does not survive being written, so a prediction reopened from disk answers `()` again.

@@ -108,6 +108,31 @@ def test_from_file_refuses_a_path_that_is_not_there(tmp_path: Path) -> None:
         Structure.from_file(tmp_path / "nothing.cif")
 
 
+# --- the accessions a structure was produced from ------------------------------
+
+
+def test_a_structure_carries_no_accessions_unless_it_is_given_some() -> None:
+    assert Structure("1UBQ").accessions is None
+
+
+def test_a_structure_read_off_disk_carries_no_accession_map() -> None:
+    # A documented limit and not an oversight: provenance does not survive the file, so a
+    # reopened prediction falls back to SIFTS like any other entry (ADR-0005).
+    structure = Structure.from_file(_UBQ)
+    assert structure.accessions is None
+    assert structure.id == "1ubq"
+
+
+def test_the_accessions_a_structure_was_produced_from_are_frozen_into_tuples() -> None:
+    structure = Structure("folded", accessions={"A": ["P12345", "P67890"], "B": []})
+    assert structure.accessions == {"A": ("P12345", "P67890"), "B": ()}
+
+
+def test_a_chain_mapped_to_a_bare_string_is_refused_rather_than_read_letter_by_letter() -> None:
+    with pytest.raises(TypeError, match=r"\['A'\] map to a str"):
+        Structure("folded", accessions={"A": "P12345"})
+
+
 # --- the coordinate cache ------------------------------------------------------
 
 

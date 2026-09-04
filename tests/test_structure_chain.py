@@ -249,6 +249,32 @@ def test_a_structure_sifts_does_not_carry_answers_with_an_empty_tuple_too(
     assert Structure.from_file(_UBQ, id="not-an-entry")["A"].uniprot == ()
 
 
+def test_a_chain_answers_with_the_accession_its_structure_was_produced_from() -> None:
+    # No `prepared_sifts`, deliberately: SIFTS is not prepared here, so an implementation
+    # that asked it would raise instead of answering.
+    folded = Structure("folded", path=_UBQ, accessions={"A": ("P12345",)})
+    assert folded["A"].uniprot == ("P12345",)
+
+
+def test_a_chain_the_map_does_not_name_answers_nothing_and_still_never_asks_sifts() -> None:
+    # A folded complex holds chains with no accession. Falling through for those would send
+    # an id that is no PDB entry to a map this machine has not prepared.
+    folded = Structure("folded", path=_BNA, accessions={"A": ("P12345",)})
+    assert folded["B"].uniprot == ()
+
+
+def test_a_reopened_prediction_answers_nothing_because_provenance_does_not_survive_the_file(
+    prepared_sifts: None, tmp_path: Path
+) -> None:
+    # The copied file carries `P62988` in its own `_struct_ref_seq`, so any answer but `()`
+    # would mean something read a cross-reference back out of the file.
+    written = tmp_path / "folded.cif.gz"
+    written.write_bytes(_UBQ.read_bytes())
+    reopened = Structure.from_file(written)
+    assert reopened.accessions is None
+    assert reopened["A"].uniprot == ()
+
+
 def test_a_map_nobody_prepared_raises_rather_than_answering_nothing(ubq: Structure) -> None:
     # Distinct from `()`, and deliberately: one means nobody built the map here, the other
     # means this chain has no protein.

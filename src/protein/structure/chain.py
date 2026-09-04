@@ -3,8 +3,8 @@
 A **Chain** is identified by a structure and a label, and it is reached through
 ``structure["A"]`` rather than built by hand. It is where the two namespaces meet:
 :attr:`~Chain.sequence` and :attr:`~Chain.atoms` come from the structure file,
-:attr:`~Chain.uniprot` comes from SIFTS, and :attr:`~Chain.kind` says whether either of the
-first two means anything.
+:attr:`~Chain.uniprot` comes from SIFTS or from what the structure was produced from, and
+:attr:`~Chain.kind` says whether either of the first two means anything.
 
 **The sequence is built here, over ``res_name``.** ``structure.to_sequence`` is banned by
 ADR-0002 and would not work anyway: it raises ``BadStructureError`` on an entry whose water
@@ -246,35 +246,47 @@ class Chain:
 
     @property
     def uniprot(self) -> tuple[str, ...]:
-        """The UniProt accessions SIFTS maps this chain to.
+        """The UniProt accessions this chain belongs to: its structure's, else SIFTS'.
 
-        **SIFTS and never the structure file.** Every mmCIF carries its own
+        **Where the structure was produced from an accession, that is the answer.** A
+        prediction carries the accessions it was folded from, and returning them is what
+        keeps it from reading like a deposited entry SIFTS maps nothing to. The map is
+        read whole: a structure that carries one answers every chain from it and never asks
+        SIFTS, so a folded complex's DNA chains do not send the id of something that is no
+        PDB entry off to a map that may not be prepared.
+
+        **Otherwise SIFTS, and never the structure file.** Every mmCIF carries its own
         ``_struct_ref_seq`` and the two disagree — ``1UBQ`` chain A is ``P62988`` in the file
         and ``P0CG48`` here — because the file holds the depositor's reference frozen at
         deposition and SIFTS holds PDBe's re-curated one. Reading the file would break the
-        round trip with :attr:`protein.core.Protein.structures`.
+        round trip with :attr:`protein.core.Protein.structures`, which is why a written
+        prediction's accessions are not read back either (ADR-0005).
 
         Returns
         -------
         tuple of str
-            The accessions, in accession order. A tuple and never a scalar, because a chain
-            may carry more than one. ``()`` is a real answer and is **not** ``None`` — a
-            nucleic-acid chain, a ligand chain, an entry SIFTS never curated, and any id
-            SIFTS does not carry, which is what a chain of a :meth:`Structure.from_file`
-            that is no PDB entry gets.
+            The accessions, in accession order from SIFTS and as given from a structure's
+            own map. A tuple and never a scalar, because a chain may carry more than one.
+            ``()`` is a real answer and is **not** ``None`` — a nucleic-acid chain, a ligand
+            chain, an entry SIFTS never curated, any id SIFTS does not carry, and a chain its
+            structure's map does not name.
 
         Raises
         ------
         protein.sifts.SiftsNotDownloadedError
-            If the map is not prepared on this machine. Distinct from ``()``, and not caught
-            into it: one means *nobody built the map here* and the other means *this chain
-            has no protein*.
+            If SIFTS was asked and the map is not prepared on this machine. Distinct from
+            ``()``, and not caught into it: one means *nobody built the map here* and the
+            other means *this chain has no protein*.
 
         Examples
         --------
         >>> Structure("1UBQ")["A"].uniprot                # doctest: +SKIP
         ('P0CG48',)
         """
+        produced_from = self.structure.accessions
+        if produced_from is not None:
+            return produced_from.get(self.chain_id, ())
+
         # The module and not the function, so one `monkeypatch.setattr(sifts, ...)` reaches
         # every caller. Deferred as well: `protein.sifts` imports pandas.
         from protein import sifts
