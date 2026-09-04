@@ -124,6 +124,12 @@ sets one.
 
 ### Fixed
 
+- **The gate was advisory, and most of `main` never met it.** A direct push was accepted, so a
+  commit could land without ever being tested as the merge commit CI exists to test. A ruleset
+  now requires a pull request with `check`, `test` and `docs` green, and exempts nobody. It
+  asks for no approval: nobody can approve their own pull request, so requiring one would
+  deadlock a repository with a single maintainer.
+
 - **`main` was red, and the site published from it anyway.** ruff formats Python inside
   Markdown, and `docs/research/` is the one directory whose contract is verbatim quotation;
   four other gates already exempt it and the formatter now does too. The site was also
