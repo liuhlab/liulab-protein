@@ -31,6 +31,36 @@ converters would write `C` there, and this package writes `X`.
 Neither file is subsampled. A Swiss-Prot record is a few hundred residues, so the whole entry
 is smaller than an excerpt plus the note explaining what was cut.
 
+## A3M
+
+`hhblits_5ahw_slice.a3m` is cut from an alignment the ESM repository ships as an example. Its
+source is `examples/data/hhblits_uniclust_2017_10_5ahw_1_A.a3m` at
+`https://github.com/facebookresearch/esm.git`, commit `2b369911`, 431,289 bytes,
+`md5:82dc2a32808707ecbffdf33f9d657257`. HHblits wrote it against uniclust30_2017_10, so the
+headers, the gaps and the lowercase insert columns are a real tool's output:
+
+```bash
+head -10 examples/data/hhblits_uniclust_2017_10_5ahw_1_A.a3m > hhblits_5ahw_slice.a3m
+```
+
+`colabfold_pair.a3m` is **hand-written**, and it is the one made-up fixture here. ColabFold's
+paired output is produced by its MSA server, which no test may reach, and the two things this
+fixture exists for are the two things nothing else in the tree carries: a leading `#` line,
+and `key=<taxon>` headers.
+
+| File | What it is | Departs from the source |
+| --- | --- | --- |
+| `hhblits_5ahw_slice.a3m` | the query `5ahw_1_A` and four hits, 125 match states each | only the first five records kept |
+| `colabfold_pair.a3m` | a two-chain paired alignment, three rows, 22 match states | hand-written |
+
+Both files are why `MSA` can be tested on the three things a naive reader loses. The HHblits
+slice carries lowercase insert columns and real UniProt headers; the hand-written one carries
+the `#12,10` chain layout and the `key=` fields that pair chains. The query row of each is
+uppercase throughout, which is the A3M invariant `MSA` checks at construction.
+
+The slice is five records because the invariant is per-row: five rows are enough for a ragged
+one to be visible, and 1,631 would only make the fixture 431 kB.
+
 ## Search hits
 
 Run on GPU71FM, 2026-09-03, against the real databases under
@@ -140,3 +170,35 @@ reader and the two verbs have to answer for:
 | `1ubq` | chain A is `P0CG48` here and `P62988` in the mmCIF — the round trip |
 | `8uqe` | chain B carries four accessions, the most any chain does |
 | `9on4` | has a chain **labelled `NA`**, between chains `MA` and `OA` |
+
+## SAE feature descriptions
+
+Fetched on GPU71FM, 2026-09-03, from the publisher's bulk endpoint, which serves every
+feature of the `ESMC-6B-sae-layer60-k64-codebook16384` codebook in one unauthenticated
+request:
+
+```bash
+curl -sS https://biohub.ai/esm/protein/api/v1alpha1/features
+```
+
+The response was 7,290,131 bytes, `md5:2b7eb3fe1d52b79a09797e7698c9ebe2`, one line, and held
+16,384 records under `data`, indices `0` to `16383` with none missing and none repeated. The
+publisher calls this an alpha interface and keeps no archive, so the digest records what was
+cut rather than pinning what can be fetched again.
+
+| File | What it is | Departs from the source |
+| --- | --- | --- |
+| `esm_sae_features_slice.json` | 4 of 16,384 records | only those four records kept |
+
+Each kept record is the publisher's own bytes, spliced out of the response and joined with
+the envelope it arrived in, so the escaping and the field order are untouched and the file is
+still one line.
+
+The four are each in it for a reason:
+
+| Feature | Why |
+| --- | --- |
+| `0` | the first index, and the ordinary case |
+| `19` | a description carrying non-ASCII letters, so a mis-declared encoding fails |
+| `10425` | the record the research note quotes, so a reader can check the fixture against it |
+| `16383` | the last index the codebook holds, so `uint16` is exercised at its top end — and its description carries double quotes and an em dash, which is the tab-separated round trip's hardest case |

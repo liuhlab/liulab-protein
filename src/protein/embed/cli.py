@@ -1,7 +1,9 @@
 """The ``protein esm`` sub-app — one FASTA record in, one embedding out.
 
-A thin Typer wrapper over :class:`protein.embed.ESMC`: it reads the record, constructs the
-model, makes one call and renders.
+``embed`` is a thin Typer wrapper over :class:`protein.embed.ESMC`: it reads the record,
+constructs the model, makes one call and renders. Everything the lane keeps on disk ships
+from the module that owns it, mounted here — :mod:`protein.embed.esm.features` under
+``features``.
 
 The input is a FASTA file holding **exactly one** record, because
 :meth:`protein.core.Protein.from_fasta` refuses a file holding more — which is how the
@@ -12,6 +14,8 @@ Examples
 >>> from protein.embed.cli import app
 >>> [command.name for command in app.registered_commands]
 ['embed']
+>>> [group.name for group in app.registered_groups]
+['features']
 """
 
 from __future__ import annotations
@@ -24,8 +28,9 @@ import numpy as _np
 import typer
 
 from protein.core import Protein as _Protein
-from protein.embed.esm import CHECKPOINTS as _CHECKPOINTS
-from protein.embed.esm import ESMC as _ESMC
+from protein.embed.esm import features as _features
+from protein.embed.esm.esmc import CHECKPOINTS as _CHECKPOINTS
+from protein.embed.esm.esmc import ESMC as _ESMC
 
 #: What this sub-app catches. Each already carries its next action, so the command prints the
 #: message and exits 1. What the hub raises for a checkpoint it cannot serve is neither shape
@@ -81,3 +86,10 @@ def embed(
         return
     for key, value in written.items():
         typer.echo(f"{key}: {value}")
+
+
+# --- what the lane keeps on disk ---------------------------------------------
+#
+# One `add_typer` per set, mounted here and nowhere else.
+#
+app.add_typer(_features.app, name="features")

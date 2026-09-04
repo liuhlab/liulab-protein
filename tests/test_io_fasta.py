@@ -18,9 +18,18 @@ _SOURCE_ROOT = Path(__file__).resolve().parents[1] / "src" / "protein"
 _INSULIN_HEADER = "sp|P01308|INS_HUMAN Insulin OS=Homo sapiens OX=9606 GN=INS PE=1 SV=1"
 _INSULIN_LENGTH = 110
 
-#: What ADR-0002 bans: each substitutes a different residue without a word.
+#: What ADR-0002 bans. The first four substitute a residue without a word; the last two are
+#: the alignment round trip, which cannot carry A3M's case. `get_alignment` is deliberately
+#: absent — the ADR says why.
 _BANNED_CONVERTERS = frozenset(
-    {"get_sequence", "get_sequences", "to_sequence", "convert_letter_3to1"}
+    {
+        "get_sequence",
+        "get_sequences",
+        "to_sequence",
+        "convert_letter_3to1",
+        "get_a3m_alignments",
+        "set_alignment",
+    }
 )
 
 
@@ -149,8 +158,8 @@ def test_no_module_in_this_package_reaches_for_biotites_converters() -> None:
     ]
     assert offenders == [], (
         f"{offenders} name a biotite converter. Every name in {sorted(_BANNED_CONVERTERS)} "
-        f"substitutes a residue silently (ADR-0002); the one string-to-sequence step in "
-        f"this package is protein.seq.to_protein_sequence."
+        f"is banned by ADR-0002; the one string-to-sequence step in this package is "
+        f"protein.seq.to_protein_sequence."
     )
 
 
@@ -174,6 +183,14 @@ def _converter_references(module: Path) -> list[tuple[str, int]]:
                 if alias.name in _BANNED_CONVERTERS
             ]
     return found
+
+
+def test_get_alignment_is_left_out_of_the_ban_on_purpose() -> None:
+    # The guard walks bare names, and `Muscle5App.get_alignment()` is a safe accessor over
+    # sequences this package built. Banning the name would fire on correct work, which
+    # ADR-0002 records as the reason it is narrowed to the other two.
+    assert "get_alignment" not in _BANNED_CONVERTERS
+    assert {"get_a3m_alignments", "set_alignment"} <= _BANNED_CONVERTERS
 
 
 def test_the_guard_would_catch_a_module_that_did_reach_for_one(tmp_path: Path) -> None:

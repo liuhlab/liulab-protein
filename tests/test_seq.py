@@ -1,24 +1,32 @@
-"""The alphabet guard: what it accepts, what it folds, and what it refuses."""
+"""The alphabet guards: what they accept, what they fold, and what they refuse."""
 
 import string
 import warnings
 
 import pytest
-from biotite.sequence import ProteinSequence
+from biotite.sequence import NucleotideSequence, ProteinSequence
 
 from protein.seq import (
     ALPHABET,
     AMBIGUOUS,
     COERCED,
+    NUCLEIC_ALPHABET,
+    NUCLEIC_AMBIGUOUS,
+    NUCLEIC_COERCED,
+    NUCLEIC_STANDARD,
+    NUCLEIC_STORED,
     STANDARD,
     STORED,
+    THYMINE,
     UNKNOWN,
     InvalidResidueError,
     ResidueCoercionWarning,
+    _biotite_nucleotide_symbols,
     _biotite_symbols,
     check_alphabet,
     offending_positions,
     outside_alphabet,
+    to_nucleotide_sequence,
     to_protein_sequence,
 )
 
@@ -137,3 +145,93 @@ def test_the_codes_biotite_can_store_reach_it_unfolded() -> None:
 def test_lowercase_input_comes_back_uppercase() -> None:
     with pytest.warns(ResidueCoercionWarning):
         assert str(to_protein_sequence("mku")) == "MKX"
+
+
+# --- the nucleic alphabet ------------------------------------------------------
+
+
+def test_the_nucleic_alphabet_is_the_four_bases_the_eleven_codes_and_uracil() -> None:
+    assert len(NUCLEIC_STANDARD) == 4
+    assert len(NUCLEIC_AMBIGUOUS) == 11
+    assert frozenset("ACGTU") | NUCLEIC_AMBIGUOUS == NUCLEIC_ALPHABET
+
+
+def test_what_biotite_stores_is_read_from_biotite_and_holds_no_uracil() -> None:
+    assert _biotite_nucleotide_symbols() == NUCLEIC_STORED
+    assert NUCLEIC_STORED == NUCLEIC_STANDARD | NUCLEIC_AMBIGUOUS
+    assert "U" not in NUCLEIC_STORED
+
+
+def test_uracil_is_the_one_code_that_is_coerced() -> None:
+    assert frozenset("U") == NUCLEIC_COERCED
+    assert THYMINE in NUCLEIC_STORED
+
+
+def test_the_four_bases_and_every_ambiguity_code_are_accepted() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert str(to_nucleotide_sequence("ACGTRYWSMKHBVDN")) == "ACGTRYWSMKHBVDN"
+
+
+def test_a_nucleic_sequence_comes_back_as_biotites_type_and_not_a_string() -> None:
+    sequence = to_nucleotide_sequence("ACGT")
+    assert isinstance(sequence, NucleotideSequence)
+    assert sequence != "ACGT"
+    assert str(sequence) == "ACGT"
+
+
+def test_lowercase_nucleic_input_comes_back_uppercase() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert str(to_nucleotide_sequence("acgn")) == "ACGN"
+
+
+def test_uracil_folds_to_thymine_and_warns() -> None:
+    with pytest.warns(ResidueCoercionWarning):
+        sequence = to_nucleotide_sequence("ACGU")
+    assert str(sequence) == "ACGT"
+
+
+def test_the_nucleic_coercion_warning_names_the_sequence_and_counts_what_it_folded() -> None:
+    with pytest.warns(ResidueCoercionWarning, match=r"a transcript: coerced 2 U to T"):
+        assert str(to_nucleotide_sequence("UACGU", name="a transcript")) == "TACGT"
+
+
+def test_the_nucleic_coercion_warning_names_the_alphabet_that_cannot_store_it() -> None:
+    with pytest.warns(ResidueCoercionWarning, match=r"biotite's nucleic alphabet"):
+        to_nucleotide_sequence("acgu")
+
+
+@pytest.mark.parametrize("offender", ["-", " ", "1", ".", "\n", "X", "E"])
+def test_the_nucleic_check_refuses_gaps_whitespace_digits_and_every_other_letter(
+    offender: str,
+) -> None:
+    with pytest.raises(InvalidResidueError):
+        to_nucleotide_sequence(f"AC{offender}GT")
+
+
+def test_the_nucleic_error_carries_its_offenders_as_data_exactly_as_the_protein_one_does() -> None:
+    with pytest.raises(InvalidResidueError) as raised:
+        to_nucleotide_sequence("AC-GT1", name="a transcript")
+    assert raised.value.offenders == [(2, "-"), (5, "1")]
+    assert raised.value.name == "a transcript"
+    assert isinstance(raised.value, ValueError)
+
+
+def test_the_error_says_which_alphabet_refused_the_sequence() -> None:
+    with pytest.raises(InvalidResidueError, match=r"not in the nucleic alphabet") as nucleic:
+        to_nucleotide_sequence("AC-GT")
+    assert nucleic.value.alphabet == "nucleic"
+    with pytest.raises(InvalidResidueError, match=r"not in the protein alphabet") as protein:
+        check_alphabet("MK-T")
+    assert protein.value.alphabet == "protein"
+
+
+def test_an_empty_nucleic_sequence_offends_nothing() -> None:
+    assert str(to_nucleotide_sequence("")) == ""
+
+
+def test_biotite_picks_the_alphabet_and_a_caller_never_does() -> None:
+    # The four-letter alphabet where four letters suffice, the fifteen-letter one otherwise.
+    assert to_nucleotide_sequence("ACGT").get_alphabet() == NucleotideSequence.alphabet_unamb
+    assert to_nucleotide_sequence("ACGN").get_alphabet() == NucleotideSequence.alphabet_amb

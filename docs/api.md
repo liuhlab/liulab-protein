@@ -22,6 +22,12 @@ and the error you catch when a sequence carries something that is not a residue.
 
 ::: protein.seq
 
+## Alignments
+
+An `MSA` is one alignment, anchored on the query in its first row and held as text.
+
+::: protein.msa
+
 ## Structures
 
 A `Structure` is one PDB entry, and a `Chain` is one polymer in it. They are peers of
@@ -37,15 +43,40 @@ A `Structure` is one PDB entry, and a `Chain` is one polymer in it. They are pee
 
 ## Embedding
 
-`ESMC` holds the weights, and `Embedding` is what one call over them gives back.
+`ESMC` holds the weights, and `Embedding` is what one call over them gives back. A sparse
+autoencoder over one of those gives back a `SaeActivation`, which is a peer of `Embedding`
+rather than one of them.
 
 ::: protein.embed
     options:
       members: false
 
 ::: protein.embed.esm
+    options:
+      members: false
+
+::: protein.embed.esm.esmc
 
 ::: protein.embed.embedding
+
+::: protein.embed.esm.sae
+
+::: protein.embed.esm.features
+
+## Folding
+
+`ESMFold2` holds the weights, a `FoldingRequest` is what goes in, and a `Structure` written
+into a directory you named is what comes back.
+
+::: protein.fold
+    options:
+      members: false
+
+::: protein.fold.request
+
+::: protein.fold.esmfold
+
+::: protein.fold.predictions
 
 ## Search
 
@@ -89,6 +120,8 @@ Each block below lists only what its own module writes, so nothing here is docum
 
 ## Files
 
+::: protein.io.a3m
+
 ::: protein.io.fasta
 
 ::: protein.io.structure
@@ -112,6 +145,8 @@ calls.
 ::: protein.db.cli
 
 ::: protein.embed.cli
+
+::: protein.fold.cli
 
 ::: protein.search.cli
 

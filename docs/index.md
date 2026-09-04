@@ -20,8 +20,8 @@ pixi install
 ```
 
 That reads `pyproject.toml` and builds the environment from the lock file, so you get the
-same versions the tests ran on. It also installs `mmseqs` and `foldseek`, so there is
-nothing to go and fetch by hand. Ask the package whether it can see them:
+same versions the tests ran on. It also installs `mmseqs`, `foldseek` and `muscle`, so there
+is nothing to go and fetch by hand. Ask the package whether it can see them:
 
 ```bash
 pixi run protein doctor
@@ -34,6 +34,12 @@ its own environment:
 pixi install -e esm
 pixi run -e esm protein esm embed query.fasta
 ```
+
+That environment also brings in the CUDA header files and tells the compiler where to find
+them. The fast GPU code is built the first time you run it, and without those headers the
+build fails, the real error is hidden, and you are left on a path many times slower. The
+path it sets points inside the environment itself, so it reads the same on every machine
+and there is nothing to set by hand.
 
 ## Use it
 
@@ -50,6 +56,54 @@ s["A"].uniprot  # ('P0CG48',) — from SIFTS, not from the file
 s["A"].search("pdb")  # a DataFrame of Foldseek hits
 ```
 
+## Build an alignment for one protein
+
+`p.msa(db)` searches a database and gives back the alignment, the way `p.search(db)` gives
+back a table of hits:
+
+```python
+msa = p.msa("uniref30")
+msa.depth  # how many rows the search found
+msa.write("p12345.a3m")  # keep it, at a path you choose
+```
+
+You name the database on every call. Nothing ships with this package and nothing is picked
+for you, because a shallow set standing in for a deep one is a wrong answer that looks
+right. Nothing durable is written either: the run happens in scratch space and cleans up
+after itself, and what you get is a value in memory.
+
+### How deep does it need to be?
+
+Deep enough, not as deep as you can get. The folding tools that read one of these throw away
+everything past about 16,000 rows, and past 1,024 rows they take a sample of what is left
+rather than the top of the list. So a few thousand rows is a floor to clear, and going far
+past it buys nothing.
+
+If you are folding two chains together, the header of each row matters as much as the count.
+This package copies the organism the database named into a `key=` field, which is how the
+folding tools tell that a row from one chain and a row from another came from the same
+species. Rows with no key still fold — but each chain folds as though nothing related it to
+the others, and nothing warns you.
+
+## Line up a set of sequences
+
+You may already hold the homologues — from a paper, from a colleague, from an earlier
+search. `align` lines them up with MUSCLE and gives back an alignment anchored on the one
+you name:
+
+```python
+from protein.msa import align
+
+msa = align({"P01308": "MKTAYIAK", "Q6YK33": "MKTAWIAK"}, query="P01308")
+msa.depth  # 2
+msa.to_a3m()  # the alignment as text
+msa.write("insulin.a3m")  # or as a file, at a path you choose
+```
+
+The query goes in the first row, and the columns where it has a gap become lowercase
+insertions. That is what the folding tools expect. Nothing is written unless you call
+`write` and say where.
+
 Embedding is a class you build and keep, because the weights are large and somebody has to
 own them:
 
@@ -65,7 +119,8 @@ Everything above has a command as well:
 ```text
 protein version | doctor
 protein db        list | adopt | download | status
-protein esm       embed
+protein esm       embed | features prepare | features status
+protein msa       search | align
 protein search    seq | struct
 protein sifts     prepare | status
 protein structure fetch | show
@@ -92,6 +147,7 @@ Everything this package writes lands under `$LIULAB_DATA/protein/`:
 | Path | What it holds |
 | --- | --- |
 | `db/<name>/` | one registered database |
+| `esm/sae-features/` | what each of an SAE's features means |
 | `sifts/` | the PDB to UniProt map |
 | `structures/` | coordinate files, cached as you ask for them |
 | `.work/` | scratch space a search makes and then removes |
@@ -115,13 +171,15 @@ protein db download swissprot
 protein db list
 ```
 
-The SIFTS map is smaller and comes from the EBI rather than from either tool:
+Two smaller sets come from their own publishers rather than from either tool. The SIFTS map
+comes from the EBI, and the SAE feature descriptions from the ESM project:
 
 ```bash
 protein sifts prepare
+protein esm features prepare
 ```
 
-Both of those need the network, so run them on a login node. The lab's compute nodes have
+All of those need the network, so run them on a login node. The lab's compute nodes have
 none, and a job that dies for a file you could have fetched in a second is a wasted job.
 
 ## Check your work

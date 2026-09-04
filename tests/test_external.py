@@ -25,6 +25,7 @@ from protein.external import (
     InstalledTool,
     Mmseqs,
     MmseqsLikeTool,
+    Muscle,
     RecordingTool,
     ToolNotFoundError,
     clear_version_cache,
@@ -333,7 +334,12 @@ def test_doctor_reports_a_version_for_each_required_tool(
 ) -> None:
     on_path("mmseqs", "echo 18.8cc5c")
     on_path("foldseek", "echo 10.941cd33")
-    assert doctor() == {"mmseqs": "18.8cc5c", "foldseek": "10.941cd33"}
+    on_path("muscle", "echo muscle 5.3.linux64")
+    assert doctor() == {
+        "mmseqs": "18.8cc5c",
+        "foldseek": "10.941cd33",
+        "muscle": "muscle 5.3.linux64",
+    }
 
 
 def test_doctor_lists_a_tool_that_is_present_but_will_not_say_what_it_is(
@@ -341,6 +347,7 @@ def test_doctor_lists_a_tool_that_is_present_but_will_not_say_what_it_is(
 ) -> None:
     on_path("mmseqs", "echo 18.8cc5c")
     on_path("foldseek", "exit 1")
+    on_path("muscle", "echo muscle 5.3.linux64")
     assert doctor()["foldseek"] == NO_VERSION_REPORTED
 
 
@@ -352,8 +359,30 @@ def test_doctor_raises_when_a_required_tool_is_missing(
         doctor()
 
 
-def test_the_required_tools_are_the_two_this_package_searches_with() -> None:
-    assert REQUIRED_TOOLS == ("mmseqs", "foldseek")
+def test_the_required_tools_are_the_three_this_package_drives() -> None:
+    assert REQUIRED_TOOLS == ("mmseqs", "foldseek", "muscle")
+
+
+def test_a_missing_muscle_fails_doctor_like_any_other_required_tool(
+    on_path: Callable[[str, str], Path],
+) -> None:
+    # There is no optional tier: the aligner is installed and checked like the searchers.
+    on_path("mmseqs", "echo 18.8cc5c")
+    on_path("foldseek", "echo 10.941cd33")
+    with pytest.raises(ToolNotFoundError, match="pixi add muscle"):
+        doctor()
+
+
+def test_muscle_is_asked_for_its_version_the_way_muscle_spells_it() -> None:
+    assert Muscle().version_args == ("-version",)
+    assert Mmseqs().version_args == ("version",)
+
+
+def test_muscle_reports_the_version_line_its_binary_prints(
+    on_path: Callable[[str, str], Path],
+) -> None:
+    on_path("muscle", "echo muscle 5.3.linux64")
+    assert Muscle().version == "muscle 5.3.linux64"
 
 
 # --- the shared command grammar ----------------------------------------------
@@ -430,6 +459,58 @@ def test_convertalis_renders_an_alignment_database_as_the_same_columns(
     Mmseqs().convertalis(Path("q"), Path("sp"), Path("aln"), Path("hits.tsv"))
     assert run_calls[0][:5] == ["convertalis", "q", "sp", "aln", "hits.tsv"]
     assert run_calls[0][5:7] == ["--format-output", Mmseqs().format_output]
+
+
+def test_search_takes_databases_and_a_scratch_directory(
+    data_root: Path, run_calls: list[list[str]]
+) -> None:
+    assert Mmseqs().search(Path("q"), Path("sp"), Path("res")) == Path("res")
+    verb, query_db, target_db, result_db, work = run_calls[0]
+    assert (verb, query_db, target_db, result_db) == ("search", "q", "sp", "res")
+    assert Path(work).parent == data_root / ".work"
+
+
+def test_search_passes_its_extra_arguments_through_after_the_scratch_directory(
+    data_root: Path, run_calls: list[list[str]]
+) -> None:
+    Mmseqs().search(Path("q"), Path("sp"), Path("res"), extra=["-s", "7.5", "--threads", "4"])
+    assert run_calls[0][-4:] == ["-s", "7.5", "--threads", "4"]
+
+
+def test_result2msa_names_the_two_databases_the_result_and_the_output(
+    run_calls: list[list[str]],
+) -> None:
+    assert Mmseqs().result2msa(Path("q"), Path("sp"), Path("res"), Path("msa")) == Path("msa")
+    assert run_calls[0] == ["result2msa", "q", "sp", "res", "msa"]
+
+
+def test_result2msa_asks_for_a_format_mode_only_when_it_was_given(
+    run_calls: list[list[str]],
+) -> None:
+    Mmseqs().result2msa(Path("q"), Path("sp"), Path("res"), Path("msa"), format_mode=2)
+    assert run_calls[0][5:] == ["--msa-format-mode", "2"]
+    Mmseqs().result2msa(Path("q"), Path("sp"), Path("res"), Path("msa2"))
+    assert "--msa-format-mode" not in run_calls[1]
+
+
+def test_unpackdb_writes_into_the_directory_it_was_given(run_calls: list[list[str]]) -> None:
+    assert Mmseqs().unpackdb(Path("msa"), Path("out")) == Path("out")
+    assert run_calls[0] == ["unpackdb", "msa", "out"]
+
+
+def test_unpackdb_names_and_suffixes_its_files_only_when_asked(
+    run_calls: list[list[str]],
+) -> None:
+    Mmseqs().unpackdb(Path("msa"), Path("out"), suffix=".a3m", name_mode=0)
+    assert run_calls[0][3:] == ["--unpack-suffix", ".a3m", "--unpack-name-mode", "0"]
+
+
+def test_each_new_verb_is_one_invocation(run_calls: list[list[str]]) -> None:
+    # What keeps the alignment chain recordable and testable with no binary present.
+    Mmseqs().search(Path("q"), Path("sp"), Path("res"))
+    Mmseqs().result2msa(Path("q"), Path("sp"), Path("res"), Path("msa"))
+    Mmseqs().unpackdb(Path("msa"), Path("out"))
+    assert [call[0] for call in run_calls] == ["search", "result2msa", "unpackdb"]
 
 
 def test_cluster_takes_a_scratch_directory(data_root: Path, run_calls: list[list[str]]) -> None:

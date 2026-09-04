@@ -1,14 +1,23 @@
-"""The :class:`Structure` class — one PDB entry's coordinates, and where they came from.
+"""The :class:`Structure` class — one set of coordinates, and where they came from.
 
-A **Structure** is addressed by a **PDB id** and holds the **asymmetric unit**. It is not
+A **Structure** is named by an id its constructor does not police, and a **PDB id** is the
+ordinary case: give one and the coordinates arrive from the cache or RCSB. It is not
 protein-specific and it is not owned by a protein: an entry also carries nucleic acids,
 ligands and water, none of which has a :class:`~protein.core.Protein` at all. The join to
 that namespace is SIFTS, it is chain-level, and it therefore attaches to
 :class:`~protein.structure.chain.Chain` rather than here.
 
-**The asymmetric unit, and not a biological assembly** — a consequence rather than a taste.
-SIFTS keys on AU author chains, so ``Chain.uniprot`` only answers against the AU, and many
-entries have more than one assembly, which would leave ``Structure("1UBQ")`` undefined.
+**A deposited entry holds its asymmetric unit, and not a biological assembly** — a
+consequence rather than a taste. SIFTS keys on AU author chains, so ``Chain.uniprot`` only
+answers against the AU, and many entries have more than one assembly, which would leave
+``Structure("1UBQ")`` undefined.
+
+**A structure may carry the accessions it was produced from**, one per chain, and
+``Chain.uniprot`` answers from those rather than asking SIFTS. That is provenance and not a
+join (ADR-0005): it is an input the file was written from, never a cross-reference read back
+out of the file. Nothing here reads ``_struct_ref``. A prediction may carry its
+:class:`~protein.fold.predictions.Confidence` the same way, and for the same reason: it is
+what the model reported, not something read back out of what it wrote.
 
 **The path is held and the parse is lazy.** Foldseek needs a file on disk whatever else
 happens, so the file is what a structure *is*; :attr:`~Structure.atoms` and
@@ -46,9 +55,12 @@ from typing import TYPE_CHECKING, Any, Self, cast
 from protein.io import structure as _io
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+
     import pandas as pd
     from biotite.structure import AtomArray, AtomArrayStack
 
+    from protein.fold.predictions import Confidence
     from protein.search.mmseqs import SearchTarget
     from protein.structure.chain import Chain
 
@@ -194,23 +206,58 @@ def fetch(pdb_id: str) -> Path:
         ) from error
 
 
+def _frozen_accessions(accessions: Mapping[str, Iterable[str]]) -> dict[str, tuple[str, ...]]:
+    """Freeze a per-chain accession map, refusing a bare string where a sequence belongs.
+
+    ``{"A": "P12345"}`` is the mistake worth catching: a ``str`` is an iterable of ``str``,
+    so it satisfies the annotation and would be read one character per accession.
+    """
+    loose = sorted(label for label, value in accessions.items() if isinstance(value, str))
+    if loose:
+        raise TypeError(
+            f"accessions maps a chain label to a sequence of accessions, and {loose} map to "
+            f"a str, which would be read one character per accession. Wrap each in a tuple."
+        )
+    return {label: tuple(value) for label, value in accessions.items()}
+
+
 class Structure:
-    """One PDB entry's asymmetric unit: its file, its atoms and its chains.
+    """One set of coordinates: its file, its atoms and its chains.
 
     Parameters
     ----------
     id : str
-        The PDB entry id, e.g. ``"1UBQ"`` — what this structure is addressed by, in either
-        case. It is **not folded**: it is what :meth:`__repr__` and every chain key spell,
-        and the coordinate cache and SIFTS lower-case it themselves.
+        What this structure is called — a PDB entry id, e.g. ``"1UBQ"``, in the ordinary
+        case and in either case. It is **not folded** and **not checked**: it is what
+        :meth:`__repr__` and every chain key spell, and the coordinate cache and SIFTS
+        lower-case it themselves.
     path : str or pathlib.Path, optional
         The coordinate file, when it is already known. Omitted, it is resolved on first use
         by :func:`fetch` — the cache, then RCSB.
+    accessions : mapping of str to iterable of str, optional
+        The UniProt accessions this structure was **produced from**, keyed by chain label.
+        Given, it is what :attr:`~protein.structure.chain.Chain.uniprot` answers with, for
+        every chain and not only the ones it names, so SIFTS is never asked. Provenance and
+        not a join (ADR-0005): nothing puts a deposited entry's own cross-reference here.
+    confidence : protein.fold.predictions.Confidence, optional
+        What the model reported about a prediction. ``None`` for a deposited entry and for
+        anything read off disk, which is the same limit the accession map has.
 
     Attributes
     ----------
     id : str
-        The PDB entry id, as it was given.
+        The id, as it was given.
+    accessions : dict of str to tuple of str, or None
+        The map, with each entry frozen into a tuple. ``None`` where none was given, which
+        is what every structure read off disk carries.
+    confidence : protein.fold.predictions.Confidence or None
+        As given.
+
+    Raises
+    ------
+    TypeError
+        If ``accessions`` maps a chain to a bare :class:`str`, which would be read one
+        character per accession.
 
     Examples
     --------
@@ -222,11 +269,22 @@ class Structure:
     ('A',)
     >>> s["A"].sequence[:5]                               # doctest: +SKIP
     ProteinSequence("MQIFV")
+    >>> Structure("folded", accessions={"A": ["P12345"]}).accessions
+    {'A': ('P12345',)}
     """
 
-    def __init__(self, id: str, *, path: str | Path | None = None) -> None:
+    def __init__(
+        self,
+        id: str,
+        *,
+        path: str | Path | None = None,
+        accessions: Mapping[str, Iterable[str]] | None = None,
+        confidence: Confidence | None = None,
+    ) -> None:
         self.id = id
         self._path = Path(path) if path is not None else None
+        self.accessions = None if accessions is None else _frozen_accessions(accessions)
+        self.confidence = confidence
 
     @classmethod
     def from_file(cls, path: str | Path, *, id: str | None = None) -> Self:
@@ -248,7 +306,12 @@ class Structure:
         Returns
         -------
         Structure
-            Holding this file. Nothing is parsed yet.
+            Holding this file, and **carrying neither an** :attr:`accessions` **map nor a**
+            :attr:`confidence`. Nothing is parsed yet.
+
+            That is a limit rather than an oversight: provenance does not survive the file
+            and nothing is built to make it, so a prediction reopened from disk answers
+            ``()`` for its accessions like any other uncurated entry (ADR-0005).
 
         Raises
         ------

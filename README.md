@@ -16,7 +16,7 @@ Clone it, then:
 pixi install
 ```
 
-`mmseqs` and `foldseek` come with it. Ask the package whether it can see them:
+`mmseqs`, `foldseek` and `muscle` come with it. Ask the package whether it can see them:
 
 ```bash
 pixi run protein doctor

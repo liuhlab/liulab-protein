@@ -20,7 +20,8 @@ This package never computes a 3Di string and never reads one.
 
 One polymer inside a **Structure**, addressed by its author chain id — `structure["A"]`. It
 holds `.atoms` filtered from the parent's array, `.kind` (protein, nucleic or other),
-`.sequence` read from residue names, and `.uniprot`, the accessions **SIFTS** gives it.
+`.sequence` read from residue names, and `.uniprot`, the accessions **SIFTS** gives it — or
+the ones its structure was produced from, where it carries them.
 
 A chain is not a **Protein**. It carries coordinates, it may be nucleic acid or ligand with
 no accession at all, and it may carry several. Foldseek takes coordinates, so `search()`
@@ -49,13 +50,81 @@ It is what `ESMC.embed` returns, and the only thing in the embedding lane a call
 
 ### External tool
 
-A native binary this package drives rather than reimplements: `mmseqs` and `foldseek`.
-`protein.external` is the one module that touches `subprocess`, and it is where a tool's
-location, version, freshness rule and install instructions live.
+A native binary this package drives rather than reimplements: `mmseqs`, `foldseek` and
+`muscle`. `protein.external` is the one module that touches `subprocess`, and it is where a
+tool's location, version, freshness rule and install instructions live. **All three are
+required**; there is no optional tier.
 
 Foldseek vendors MMseqs2, so the two share a command grammar and a database format. That
 shared half is `MmseqsLikeTool`; what genuinely differs — Foldseek's `fident` against
 MMseqs2's `pident`, and Foldseek's extra columns — is named on the subclasses.
+
+MUSCLE is the one this package never runs. biotite's `Muscle5App` takes a `bin_path`, so
+`Muscle` answers where the binary is and biotite owns the temp files, the arguments and the
+parsing.
+
+### FoldingRequest
+
+**A class, not just a word.** What one structure prediction takes in: one entry per chain,
+each naming its kind — protein, DNA or RNA — its sequence, the accession it came from, and,
+for a protein chain, an **MSA**. Built at the call site and dropped after the fold, which is
+what separates it from a **Structure**: lifetime, not content.
+
+It carries **no output path**. Where the answer is written is not an input, so one request
+folds to two destinations.
+
+**Every check the model does not make lives here**, because past its own sibling-row check
+the model degrades in silence: an alignment whose query row is not the chain's sequence, or
+whose length disagrees, is refused rather than cut or gap-filled. A nucleic chain refuses an
+alignment outright — the model accepts one there and drops it. A protein chain given none
+gets the depth-1 alignment on its own sequence.
+
+Chain labels are derived from position, since nobody named these chains. See `protein.fold`.
+
+### MSA
+
+A multiple sequence alignment, held as `(header, row)` pairs of plain text with row 0 the
+query. **A3M is the only format read or written.**
+
+**Case is the match state.** In A3M an uppercase residue or a `-` occupies a column, and a
+lowercase residue is an insertion that occupies none. An alignment that has been uppercased
+has lost the one thing separating A3M from aligned FASTA, which is why an `MSA` holds strings
+and never biotite's `Alignment`.
+
+**Query-anchored**, and checked at construction: row 0 carries no lowercase, and every row
+shares a match-state count. At construction rather than in the reader, so a parsed alignment
+and a generated one meet the same rule. The check is shape and never residues — a row
+spelling `U` is well-formed A3M, whatever this package's own alphabet says.
+
+A header is carried byte-for-byte because a `key=<taxon>` field in it is what pairs the chains
+of a complex downstream; a row without one folds as if related to nothing. A leading `#` line
+is carried for the same reason: it can encode a complex's chain layout, and biotite's FASTA
+reader drops it.
+
+See `protein.msa` and `protein.io.a3m`.
+
+### Prediction
+
+A **Structure** a model produced rather than a crystallographer, written into a directory the
+caller names. **Never under the Data dir**, so the directory is a required argument that
+defaults nowhere.
+
+**Its name is a fact about the molecule**: user-given, else the one accession its
+**FoldingRequest** names, else a short hash of the sequences. The checkpoint and every
+sampler setting stay out.
+
+**A name already held is weighed against the residues on disk.** The same sequence is a cache
+hit and the card is never started; a different one raises, because a mutant can carry a
+reference accession and would otherwise overwrite the reference or silently reuse it.
+`overwrite=` is how a caller says they meant it. The residues, not a provenance record, are
+what make that survive the process. The accepted edge: settings are not in the path, so a
+re-fold with a different seed hits the cache.
+
+**What it reports sits in three places.** Per-residue confidence is the mmCIF's B-factor
+column, where every viewer looks; the scalars are a `Confidence` on the returned object; the
+pairwise matrix is a sibling file, read on request.
+
+See `protein.fold`.
 
 ### Protein
 
@@ -68,6 +137,46 @@ It has no `embed()` either, and that is a second rule: **resident state gets an 
 subprocess does not.** ESM-C holds its weights across calls, so they became the `ESMC` object
 you construct and keep; mmseqs holds nothing between calls, so `search()` stays a method. The
 asymmetry between `p.search(db)` and `ESMC().embed(p)` is this rule, not an oversight.
+
+### SAE
+
+A sparse autoencoder over one **Embedding**, and **a class you construct and keep**: the
+weights are resident, the rule that made `ESMC` an object.
+
+**A slug names one repository forever, and there is no default.** `ESMC()` defaults to its
+smallest checkpoint, so an `SAE()` defaulting to the largest would raise on every naive first
+pairing. Three are known, one per backbone, each layer-specific: the all-layer families fetch
+orders of magnitude more. The table adds one fact, the parent — the checkpoint's config
+carries the layers, the width, `k` and the codebook.
+
+**The identity check is total.** A wrong parent, a layer the checkpoint does not cover and a
+wrong width all multiply fine and give plausible numbers, so `encode` refuses each by name.
+Every one reads a recorded fact rather than a tensor, so all of them run with no GPU. The
+reconstruction loss is the empirical backstop.
+
+**Normalisation is off by default and refuses to do nothing.** The statistics are buffers
+that default to ones, so asking for them where a checkpoint ships none raises rather than
+scaling by one.
+
+See `protein.embed.esm.sae`.
+
+### SAE activation
+
+**A class, not just a word.** What one sparse-autoencoder call over an **Embedding** gives
+back: two `(L, k)` arrays — which codebook features fired at each residue, and how hard —
+plus one reconstruction loss per residue.
+
+A peer of **Embedding**, never one of them. It is sparse over a codebook far wider than
+`d_model`, so that width would be a lie here, and `.mean()` would divide a feature's presence
+by protein length. `.max()` is the per-sequence vector and there is no `.mean()` at all. See
+ADR-0007.
+
+The pair is lossless: top-k fills exactly `k` slots per row whether or not all `k` are
+non-zero. `.dense()` materialises the whole codebook on request and nothing holds it.
+Indices are stored in the narrowest unsigned type the codebook needs, values in float16.
+
+It carries which SAE, which parent, which layer, which codebook and whether normalisation
+happened, so two activation sets are comparable or provably not.
 
 ### SIFTS
 
@@ -89,15 +198,23 @@ A prepared set under the **Data dir**, not a **Database**. See `protein.sifts`.
 
 ### Structure
 
-One PDB entry's asymmetric unit, **addressed by a PDB id**. It holds the path to a
-coordinate file, parsed into biotite's `AtomArray` on first use and cached, and the
-**Chain**s in it.
+One set of coordinates and the **Chain**s in it, named by an id the constructor does not
+police. A PDB entry is the ordinary case: give the entry id and the file comes from the local
+cache, filled from RCSB on a miss — never from `pdb100`, which is C-alpha only and renumbers
+residues. `from_file` takes any coordinate file and names it after the file, so a prediction
+is a `Structure` like any other. The path is held and parsed into biotite's `AtomArray` on
+first use.
 
-A peer of **Protein**, never a part of one. The two are many-to-many in both directions and
-**SIFTS** is the only join; a structure also holds nucleic acids and ligands that have no
-protein at all. The asymmetric unit is forced, because SIFTS keys on its author chains.
-Coordinates come from the local cache, filled from RCSB on a miss — never from `pdb100`,
-which is C-alpha only and renumbers residues.
+A deposited entry holds its **asymmetric unit**, forced rather than chosen: SIFTS keys on AU
+author chains, and many entries have several assemblies.
+
+A peer of **Protein**, never a part of one. The two are many-to-many both ways and **SIFTS**
+is the only join; a structure also holds nucleic acids and ligands with no protein at all.
+
+A structure may carry the accessions it was **produced from**, one per chain, and
+`Chain.uniprot` answers from those rather than asking SIFTS. That is provenance, not a join —
+an input the file was written from, never a cross-reference read back out of it. A
+**Prediction** also carries its confidence, and neither survives the file.
 
 ### Xref
 

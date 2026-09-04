@@ -16,13 +16,15 @@ survives deletion without loss, delete it. The caps below are ceilings, not targ
 
 | Files | Cap |
 | --- | --- |
-| `AGENTS.md`, `CONTEXT.md`, `docs/agents/*`, `skills/*/SKILL.md` | 1000 (`Lab.LengthDoc`) |
+| `AGENTS.md`, `docs/agents/*`, `skills/*/SKILL.md` | 1000 (`Lab.LengthDoc`) |
+| `CONTEXT.md` | 2000 (`Lab.LengthContext`) |
 | `docs/adr/*` | 400 (`Lab.LengthAdr`) |
 | `docs/research/*` | none — research notes are long by nature |
 
-`CONTEXT.md` is capped a second way: **200 words per glossary entry**, checked by
-`conformance`, not by vale. A glossary grows one term at a time, so the file is the wrong
-unit to measure.
+`CONTEXT.md` is capped a second way, and it is the one that matters: **200 words per
+glossary entry**, checked by `conformance`, not by vale. A glossary grows one term at a
+time, so the file is the wrong unit to measure, which is why its file cap is a backstop set
+looser than the rest.
 
 **Measure with the gate, not with `wc`.** `wc -w` counts table pipes, link targets and
 shell flags as words; vale does not, and vale is what enforces the cap. The gap scales with

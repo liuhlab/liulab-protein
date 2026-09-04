@@ -1,4 +1,4 @@
-"""The model lane: one real ESM-C forward pass, in the `esm` environment.
+"""The model lane: one real ESM-C forward pass and one real SAE over it, in `esm`.
 
     pixi run -e esm pytest -m model
 
@@ -17,6 +17,7 @@ client's import, so it is set here at collection and not in a fixture.
 
 from __future__ import annotations
 
+import dataclasses
 import importlib.util
 import os
 
@@ -24,7 +25,7 @@ import numpy as np
 import pytest
 
 from protein import ESMC, Protein
-from protein.embed import CHECKPOINTS
+from protein.embed import CHECKPOINTS, SAE, SAE_CHECKPOINTS, Embedding
 
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
@@ -167,3 +168,119 @@ def test_the_per_sequence_vector_is_one_row_per_model_dimension(esmc: ESMC) -> N
 def test_a_bare_string_is_refused_because_it_carries_no_identity(esmc: ESMC) -> None:
     with pytest.raises(TypeError, match=r"takes a Protein or a Chain"):
         esmc.embed(SEQUENCE)  # type: ignore
+
+
+# --- the sparse autoencoder over one of those embeddings ------------------------------
+
+#: The SAE trained on the 300M backbone: the cheapest correct pairing there is.
+SAE_SLUG = "300m-layer23-k64-cb16384"
+SAE_LAYER = 23
+CODEBOOK_SIZE = 16384
+K = 64
+
+#: The wrong layer worth testing: `embed` returns this one by default, so pairing it with a
+#: layer-23 SAE is the mistake someone actually makes.
+WRONG_LAYER = N_LAYERS
+
+
+def _require_the_sae_checkpoint() -> None:
+    """Fail, never skip, when the SAE weights this lane needs are not in the cache."""
+    from huggingface_hub import (  # pyright: ignore[reportMissingImports]
+        try_to_load_from_cache,
+    )
+
+    hf_id = SAE_CHECKPOINTS[SAE_SLUG][0]
+    if not isinstance(try_to_load_from_cache(hf_id, "config.json"), str):
+        pytest.fail(
+            f"model lane: {hf_id} is not in the Hugging Face cache this process can see. "
+            f"Point HF_HOME at a cache holding it, or fetch it there once: this lane itself "
+            f"never downloads.\n\n{_RECIPE}"
+        )
+
+
+@pytest.fixture(scope="session")
+def sae() -> SAE:
+    """One SAE over ESMC-300M layer 23, loaded once for the whole lane."""
+    _require_the_esm_environment()
+    _require_the_sae_checkpoint()
+    return SAE(SAE_SLUG)
+
+
+@pytest.fixture(scope="session")
+def embedding(esmc: ESMC) -> Embedding:
+    """The layer that SAE was trained on, embedded once."""
+    return esmc.embed(Protein(SEQUENCE, id="P12345"), layer=SAE_LAYER)
+
+
+def test_the_sae_reports_what_its_own_config_says_it_is(sae: SAE) -> None:
+    # Read off the checkpoint, not off the table: the table adds the parent and nothing else.
+    assert sae.parent == "300m"
+    assert sae.layers == (SAE_LAYER,)
+    assert sae.d_model == D_MODEL
+    assert sae.codebook_size == CODEBOOK_SIZE
+    assert sae.k == K
+
+
+def test_one_real_encode_fills_k_slots_per_residue_over_the_whole_codebook(
+    sae: SAE, embedding: Embedding
+) -> None:
+    activation = sae.encode(embedding)
+    assert activation.shape == (len(SEQUENCE), CODEBOOK_SIZE)
+    assert activation.indices.shape == activation.values.shape == (len(SEQUENCE), K)
+    assert activation.reconstruction_loss.shape == (len(SEQUENCE),)
+
+
+def test_no_row_is_added_or_lost_because_bos_and_eos_never_enter_this_path(
+    sae: SAE, embedding: Embedding
+) -> None:
+    # The standalone layer applies no token mask and no flattening reshape, so there is no
+    # `L + 2` to strip here: one row in, one row out.
+    assert len(sae.encode(embedding)) == len(embedding) == len(SEQUENCE)
+
+
+def test_the_stored_dtypes_and_bounds_survive_a_real_forward_pass(
+    sae: SAE, embedding: Embedding
+) -> None:
+    activation = sae.encode(embedding)
+    assert activation.indices.dtype == np.dtype(np.uint16)
+    assert activation.values.dtype == np.dtype(np.float16)
+    assert int(activation.indices.max()) < CODEBOOK_SIZE
+    # The encoder is a ReLU followed by a top-k, so nothing that comes back is negative.
+    assert (activation.values >= 0).all()
+    assert np.isfinite(activation.reconstruction_loss).all()
+
+
+def test_the_activation_records_the_pairing_it_came_out_of(sae: SAE, embedding: Embedding) -> None:
+    activation = sae.encode(embedding)
+    assert activation.source == "P12345"
+    assert activation.parent == "300m"
+    assert activation.layer == SAE_LAYER
+    assert activation.sae == SAE_SLUG
+    assert activation.normalized is False
+
+
+def test_asking_to_normalise_a_checkpoint_that_ships_no_statistics_raises(
+    sae: SAE, embedding: Embedding
+) -> None:
+    # Off the loaded buffers, not off the table: these three checkpoints ship ones, so the
+    # request would otherwise scale by one and report success.
+    with pytest.raises(ValueError, match="ships no per-feature statistics"):
+        sae.encode(embedding, normalize=True)
+
+
+def test_the_reconstruction_loss_betrays_a_layer_the_identity_check_cannot(
+    esmc: ESMC, sae: SAE, embedding: Embedding, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # THE assertion, and why this lane exists. The mislabelled embedding passes every check
+    # `encode` makes — its recorded facts say layer 23 — and only the reconstruction says
+    # otherwise.
+    mislabelled = dataclasses.replace(
+        esmc.embed(Protein(SEQUENCE, id="P12345"), layer=WRONG_LAYER), layer=SAE_LAYER
+    )
+    right = float(sae.encode(embedding).reconstruction_loss.mean())
+    wrong = float(sae.encode(mislabelled).reconstruction_loss.mean())
+    with capsys.disabled():
+        print(
+            f"\nreconstruction loss: layer {SAE_LAYER} {right:.4f}, layer {WRONG_LAYER} {wrong:.4f}"
+        )
+    assert wrong > 5 * right

@@ -17,11 +17,12 @@ from typing import Any, cast
 
 import numpy as np
 import pytest
+from biotite.sequence import NucleotideSequence, ProteinSequence
 from biotite.structure import AtomArray
 from genome.store import fetch as genome_fetch
 
 from protein import Structure, sifts
-from protein.embed.esm import Embeddable
+from protein.embed.esm.esmc import Embeddable, _residues
 from protein.external import ExternalTool
 from protein.io import structure as io
 from protein.sifts import SiftsNotDownloadedError
@@ -45,6 +46,16 @@ def ubq() -> Structure:
 def bna() -> Structure:
     """`1BNA`, two chains of DNA."""
     return Structure.from_file(_BNA, id="1BNA")
+
+
+@pytest.fixture
+def water_only(ubq: Structure, tmp_path: Path) -> Structure:
+    """`1UBQ`'s waters alone, which is a chain of neither kind."""
+    atoms = ubq.atoms
+    waters = cast("AtomArray", atoms[atoms.res_name == "HOH"])
+    written = tmp_path / "water.cif"
+    io.write_atoms(written, waters)
+    return Structure.from_file(written)
 
 
 @pytest.fixture
@@ -150,12 +161,8 @@ def test_the_kind_is_the_majority_and_not_a_demand_for_purity(bna: Structure) ->
     assert chain.kind == "nucleic"
 
 
-def test_a_chain_of_neither_kind_is_other(ubq: Structure, tmp_path: Path) -> None:
-    atoms = ubq.atoms
-    waters = cast("AtomArray", atoms[atoms.res_name == "HOH"])
-    only_water = tmp_path / "water.cif"
-    io.write_atoms(only_water, waters)
-    assert Structure.from_file(only_water)["A"].kind == "other"
+def test_a_chain_of_neither_kind_is_other(water_only: Structure) -> None:
+    assert water_only["A"].kind == "other"
 
 
 # --- sequence ------------------------------------------------------------------
@@ -177,16 +184,24 @@ def test_the_sequence_is_a_biotite_protein_sequence_and_not_a_string(ubq: Struct
     assert str(sequence) == _UBIQUITIN
 
 
-def test_a_chain_that_is_not_protein_refuses_rather_than_answering(bna: Structure) -> None:
-    # The `Embeddable` protocol knows nothing of `.kind`, so this refusal is what stops a
-    # DNA chain reaching the tokenizer.
-    with pytest.raises(ValueError, match="1BNA_A is nucleic, not protein"):
-        _ = bna["A"].sequence
+def test_a_dna_chain_answers_with_its_bases(bna: Structure) -> None:
+    # The Drew-Dickerson dodecamer, as `1BNA` was solved for it.
+    assert str(bna["A"].sequence) == "CGCGAATTCGCG"
 
 
-def test_the_refusal_names_the_attribute_that_would_have_said_so(bna: Structure) -> None:
+def test_each_kind_answers_with_its_own_biotite_type(bna: Structure, ubq: Structure) -> None:
+    assert isinstance(bna["A"].sequence, NucleotideSequence)
+    assert isinstance(ubq["A"].sequence, ProteinSequence)
+
+
+def test_a_chain_of_neither_kind_refuses_rather_than_answering(water_only: Structure) -> None:
+    with pytest.raises(ValueError, match="is other, so it is ligand or solvent"):
+        _ = water_only["A"].sequence
+
+
+def test_the_refusal_names_the_attribute_that_would_have_said_so(water_only: Structure) -> None:
     with pytest.raises(ValueError, match=r"\.kind"):
-        _ = bna["A"].sequence
+        _ = water_only["A"].sequence
 
 
 # --- the embedding protocol ----------------------------------------------------
@@ -196,15 +211,16 @@ def test_a_chain_is_embeddable(ubq: Structure) -> None:
     assert isinstance(ubq["A"], Embeddable)
 
 
-def test_a_non_protein_chain_still_looks_embeddable_and_fails_when_asked(
+def test_a_nucleic_chain_still_looks_embeddable_and_is_refused_at_the_tokenizer(
     bna: Structure,
 ) -> None:
     # `isinstance` against a runtime-checkable protocol reads the class and never calls the
-    # property, so the refusal has to come from the property itself.
+    # property, so a DNA chain looks embeddable. What stops it is `ESMC.embed`'s own check,
+    # since `.sequence` now answers for it.
     chain = bna["A"]
     assert isinstance(chain, Embeddable)
-    with pytest.raises(ValueError, match="not protein"):
-        _ = chain.sequence
+    with pytest.raises(TypeError, match="ESM-C is a protein model"):
+        _residues(chain)
 
 
 # --- uniprot -------------------------------------------------------------------
@@ -231,6 +247,32 @@ def test_a_structure_sifts_does_not_carry_answers_with_an_empty_tuple_too(
     prepared_sifts: None,
 ) -> None:
     assert Structure.from_file(_UBQ, id="not-an-entry")["A"].uniprot == ()
+
+
+def test_a_chain_answers_with_the_accession_its_structure_was_produced_from() -> None:
+    # No `prepared_sifts`, deliberately: SIFTS is not prepared here, so an implementation
+    # that asked it would raise instead of answering.
+    folded = Structure("folded", path=_UBQ, accessions={"A": ("P12345",)})
+    assert folded["A"].uniprot == ("P12345",)
+
+
+def test_a_chain_the_map_does_not_name_answers_nothing_and_still_never_asks_sifts() -> None:
+    # A folded complex holds chains with no accession. Falling through for those would send
+    # an id that is no PDB entry to a map this machine has not prepared.
+    folded = Structure("folded", path=_BNA, accessions={"A": ("P12345",)})
+    assert folded["B"].uniprot == ()
+
+
+def test_a_reopened_prediction_answers_nothing_because_provenance_does_not_survive_the_file(
+    prepared_sifts: None, tmp_path: Path
+) -> None:
+    # The copied file carries `P62988` in its own `_struct_ref_seq`, so any answer but `()`
+    # would mean something read a cross-reference back out of the file.
+    written = tmp_path / "folded.cif.gz"
+    written.write_bytes(_UBQ.read_bytes())
+    reopened = Structure.from_file(written)
+    assert reopened.accessions is None
+    assert reopened["A"].uniprot == ()
 
 
 def test_a_map_nobody_prepared_raises_rather_than_answering_nothing(ubq: Structure) -> None:
