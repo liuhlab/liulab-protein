@@ -37,7 +37,9 @@ A `Structure` is one PDB entry, and a `Chain` is one polymer in it. They are pee
 
 ## Embedding
 
-`ESMC` holds the weights, and `Embedding` is what one call over them gives back.
+`ESMC` holds the weights, and `Embedding` is what one call over them gives back. A sparse
+autoencoder over one of those gives back a `SaeActivation`, which is a peer of `Embedding`
+rather than one of them.
 
 ::: protein.embed
     options:
@@ -50,6 +52,8 @@ A `Structure` is one PDB entry, and a `Chain` is one polymer in it. They are pee
 ::: protein.embed.esm.esmc
 
 ::: protein.embed.embedding
+
+::: protein.embed.esm.sae
 
 ## Search
 
