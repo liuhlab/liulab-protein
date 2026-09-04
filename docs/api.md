@@ -146,6 +146,8 @@ calls.
 
 ::: protein.embed.cli
 
+::: protein.fold.cli
+
 ::: protein.search.cli
 
 ::: protein.structure.cli

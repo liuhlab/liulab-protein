@@ -23,6 +23,7 @@ from protein.db import cli as _db_cli
 from protein.embed import cli as _esm_cli
 from protein.external import ToolNotFoundError as _ToolNotFoundError
 from protein.external import doctor as _doctor
+from protein.fold import cli as _fold_cli
 from protein.search import cli as _search_cli
 from protein.structure import cli as _structure_cli
 
@@ -68,6 +69,7 @@ def doctor(
 #
 app.add_typer(_db_cli.app, name="db")
 app.add_typer(_esm_cli.app, name="esm")
+app.add_typer(_fold_cli.app, name="fold")
 app.add_typer(_search_cli.app, name="search")
 app.add_typer(_sifts_cli.app, name="sifts")
 app.add_typer(_structure_cli.app, name="structure")
