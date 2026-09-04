@@ -110,6 +110,13 @@ Each block below lists only what its own module writes, so nothing here is docum
 
 ::: protein.db.swissprot
 
+## Prepared sets
+
+A `PreparedSet` is the half of a prepared set a caller meets after it is built: its status,
+its cached read, and the two commands that prepare it and say what is here.
+
+::: protein.prepared
+
 ## The PDB to UniProt map
 
 ::: protein.sifts

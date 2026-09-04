@@ -36,17 +36,14 @@ Examples
 
 from __future__ import annotations
 
-import functools
-import json as _json
 import re
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import pandas as pd
-import typer
-from genome.store import completion, prepared
+from genome.store import prepared
 
+from protein.prepared import PreparedSet, PreparedStatus
 from protein.store import protein_data_dir
 
 if TYPE_CHECKING:
@@ -66,7 +63,6 @@ __all__ = [
     "STORED_NAME",
     "SiftsFormatError",
     "SiftsNotDownloadedError",
-    "SiftsStatus",
     "accessions_for",
     "app",
     "clear_cache",
@@ -139,11 +135,6 @@ READ_DTYPES: dict[Hashable, Any] = {
 _HEADER_RE = re.compile(
     r"^#\s*(?P<released>.+?)\s*\|\s*PDB:\s*(?P<pdb>\S+)\s*\|\s*UniProt:\s*(?P<uniprot>\S+)\s*$"
 )
-
-#: What a failed SIFTS call raises: a set that is not here or an interrupted run is a
-#: ``RuntimeError``, a file this reader cannot slice a ``ValueError``, and a file that went
-#: away under the read an ``OSError``.
-_SIFTS_ERRORS = (ValueError, OSError, RuntimeError)
 
 
 class SiftsNotDownloadedError(prepared.PreparedSetNotDownloadedError):
@@ -325,75 +316,10 @@ def prepare(*, progressbar: bool = True) -> prepared.Prepared:
     >>> prepare(progressbar=False)                       # doctest: +SKIP
     Prepared(path=PosixPath('/scratch/liulab/protein/sifts/pdb_chain_uniprot.tsv.gz'), ...)
     """
-    result = prepared.prepare(source(), progressbar=progressbar)
-    # The stored file may have just been replaced, and a cache outliving the bytes it read
-    # would answer from a release that is gone.
-    clear_cache()
-    return result
+    return _SIFTS.prepare(progressbar=progressbar)
 
 
-@dataclass(frozen=True)
-class SiftsStatus:
-    """What :func:`status` found, without touching the network.
-
-    Attributes
-    ----------
-    path : pathlib.Path
-        Where the stored slice is, whether or not it exists.
-    prepared : bool
-        Whether the set is finished here — a marker beside a file that is present.
-    released : str or None
-        When the publisher cut this release, as its own first line spells it.
-    pdb_release : str or None
-        The PDB release the map was built against.
-    uniprot_release : str or None
-        The UniProt release.
-    rows : int or None
-        How many mapping rows were stored.
-    completed_at : str or None
-        When this machine finished preparing it, ISO-8601 in UTC.
-
-    Examples
-    --------
-    >>> from pathlib import Path
-    >>> SiftsStatus(path=Path("/tmp/x.tsv.gz"), prepared=False).rows is None
-    True
-    """
-
-    path: Path
-    prepared: bool
-    released: str | None = None
-    pdb_release: str | None = None
-    uniprot_release: str | None = None
-    rows: int | None = None
-    completed_at: str | None = None
-
-    def as_json(self) -> dict[str, Any]:
-        """Return this status as the mapping ``--json`` prints.
-
-        Returns
-        -------
-        dict
-            One key per attribute, with :attr:`path` as a string so the result is JSON.
-
-        Examples
-        --------
-        >>> from pathlib import Path
-        >>> SiftsStatus(path=Path("/tmp/x.tsv.gz"), prepared=False).as_json()["prepared"]
-        False
-        """
-        return {
-            "path": str(self.path),
-            "prepared": self.prepared,
-            "released": self.released,
-            "pdb_release": self.pdb_release,
-            "uniprot_release": self.uniprot_release,
-            "rows": self.rows,
-            "completed_at": self.completed_at,
-        }
-
-
-def status() -> SiftsStatus:
+def status() -> PreparedStatus:
     """Report what is on disk here, reading the marker and nothing else.
 
     **Offline, and it stays offline.** There is no archive to compare against and the lab's
@@ -402,31 +328,17 @@ def status() -> SiftsStatus:
 
     Returns
     -------
-    SiftsStatus
-        The recorded release, or a status with :attr:`~SiftsStatus.prepared` ``False`` when
-        nothing is prepared. A directory an interrupted run left behind reads as not
-        prepared here; :func:`prepare` is where that becomes an error.
+    protein.prepared.PreparedStatus
+        The recorded release under the names :data:`_STATUS_FIELDS` gives it, or those names
+        all ``None`` when nothing is prepared. A directory an interrupted run left behind
+        reads as not prepared here; :func:`prepare` is where that becomes an error.
 
     Examples
     --------
-    >>> status()                                         # doctest: +SKIP
-    SiftsStatus(path=PosixPath('...'), prepared=True, released='2026/08/30 - 13:24', ...)
+    >>> status().released                                # doctest: +SKIP
+    '2026/08/30 - 13:24'
     """
-    directory = sifts_data_dir()
-    path = directory / STORED_NAME
-    record = completion.read_record(directory)
-    if record is None or not path.exists():
-        return SiftsStatus(path=path, prepared=False)
-    details = record.details
-    return SiftsStatus(
-        path=path,
-        prepared=True,
-        released=details.get("sifts_released"),
-        pdb_release=details.get("pdb_release"),
-        uniprot_release=details.get("uniprot_release"),
-        rows=details.get("rows"),
-        completed_at=record.completed_at,
-    )
+    return _SIFTS.status()
 
 
 def table() -> pd.DataFrame:
@@ -456,7 +368,7 @@ def table() -> pd.DataFrame:
             f"{DESCRIPTION} is not prepared here: {path} does not exist. "
             f"{prepared.login_node_help(PREPARE_COMMAND)}"
         )
-    return _read_table(path)
+    return _SIFTS.read(path)
 
 
 def clear_cache() -> None:
@@ -466,7 +378,7 @@ def clear_cache() -> None:
     --------
     >>> clear_cache()
     """
-    _read_table.cache_clear()
+    _SIFTS.clear_cache()
 
 
 def structures_for(accession: str) -> pd.DataFrame:
@@ -544,12 +456,8 @@ def accessions_for(pdb: str, chain: str) -> tuple[str, ...]:
     return tuple(str(value) for value in dict.fromkeys(rows["accession"]))
 
 
-@functools.cache
-def _read_table(path: Path) -> pd.DataFrame:
-    """Read one stored slice, keyed by the file it read.
-
-    Keyed by the path rather than cached on a nullary call, so a process that re-points the
-    **Data dir** reads the set it now names instead of the one it read first.
+def _read_slice(path: Path) -> pd.DataFrame:
+    """Read one stored slice, which :meth:`~protein.prepared.PreparedSet.read` then holds.
 
     ``keep_default_na=False`` is load-bearing: **``NA`` is a real chain label**, which pandas'
     default missing-value list would read as a missing value and lose. Spelled this way and
@@ -638,49 +546,36 @@ def _as_int(value: str, *, column: str, number: int, origin: str) -> int:
         ) from error
 
 
-app = typer.Typer(
-    help="The SIFTS PDB-UniProt map: prepare it, and say which release is here.",
-    no_args_is_help=True,
+#: What :func:`status` reports, in the order ``--json`` prints it: the key the **Completion
+#: marker** recorded, then the key the JSON carries. The reader records the release date
+#: under ``sifts_released``, beside the header line it was cut from, and the JSON has always
+#: called it ``released``.
+_STATUS_FIELDS: tuple[tuple[str, str], ...] = (
+    ("sifts_released", "released"),
+    ("pdb_release", "pdb_release"),
+    ("uniprot_release", "uniprot_release"),
+    ("rows", "rows"),
 )
 
-
-@app.command("prepare")
-def prepare_command(
-    json: bool = typer.Option(False, "--json", help="Emit JSON instead of plain text."),
-) -> None:
-    """Download the SIFTS map and store it under the lab data dir.
+#: Everything this set declares beyond its source: what its status says, how the slice is
+#: read back, and the words its two commands print.
+_SIFTS = PreparedSet(
+    source=source,
+    status_fields=_STATUS_FIELDS,
+    read_table=_read_slice,
+    app_help="The SIFTS PDB-UniProt map: prepare it, and say which release is here.",
+    prepare_help="""\
+    Download the SIFTS map and store it under the lab data dir.
 
     The one step in this lane that needs the network, so it runs on a login node. Already
     prepared, it fetches nothing and reports what is there.
-    """
-    try:
-        prepare(progressbar=not json)
-    except _SIFTS_ERRORS as err:
-        typer.echo(f"error: {err}", err=True)
-        raise typer.Exit(code=1) from err
-    _render(status(), json=json)
-
-
-@app.command("status")
-def status_command(
-    json: bool = typer.Option(False, "--json", help="Emit JSON instead of plain text."),
-) -> None:
-    """Say which SIFTS release is prepared here, without touching the network.
+    """,
+    status_help="""\
+    Say which SIFTS release is prepared here, without touching the network.
 
     Nothing is checked against the publisher, which keeps no archive to compare with.
-    """
-    try:
-        found = status()
-    except _SIFTS_ERRORS as err:
-        typer.echo(f"error: {err}", err=True)
-        raise typer.Exit(code=1) from err
-    _render(found, json=json)
+    """,
+)
 
-
-def _render(found: SiftsStatus, *, json: bool) -> None:
-    """Print one status, as JSON or as one ``key: value`` line each."""
-    if json:
-        typer.echo(_json.dumps(found.as_json()))
-        return
-    for key, value in found.as_json().items():
-        typer.echo(f"{key}: {value}")
+#: This lane's two commands. Bound here because the root CLI mounts the module's attribute.
+app = _SIFTS.app
