@@ -97,6 +97,28 @@ subprocess does not.** ESM-C holds its weights across calls, so they became the 
 you construct and keep; mmseqs holds nothing between calls, so `search()` stays a method. The
 asymmetry between `p.search(db)` and `ESMC().embed(p)` is this rule, not an oversight.
 
+### SAE
+
+A sparse autoencoder over one **Embedding**, and **a class you construct and keep**: the
+weights are resident, the rule that made `ESMC` an object.
+
+**A slug names one repository forever, and there is no default.** `ESMC()` defaults to its
+smallest checkpoint, so an `SAE()` defaulting to the largest would raise on every naive first
+pairing. Three are known, one per backbone, each layer-specific: the all-layer families fetch
+orders of magnitude more. The table adds one fact, the parent — the checkpoint's config
+carries the layers, the width, `k` and the codebook.
+
+**The identity check is total.** A wrong parent, a layer the checkpoint does not cover and a
+wrong width all multiply fine and give plausible numbers, so `encode` refuses each by name.
+Every one reads a recorded fact rather than a tensor, so all of them run with no GPU. The
+reconstruction loss is the empirical backstop.
+
+**Normalisation is off by default and refuses to do nothing.** The statistics are buffers
+that default to ones, so asking for them where a checkpoint ships none raises rather than
+scaling by one.
+
+See `protein.embed.esm.sae`.
+
 ### SAE activation
 
 **A class, not just a word.** What one sparse-autoencoder call over an **Embedding** gives

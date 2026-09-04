@@ -1,14 +1,17 @@
-"""Tests for `SaeActivation` — the value object, which is pure numpy and needs no weights.
+"""Tests for `protein.embed.esm.sae` that need no weights — the value object and the checks.
 
 Every test here runs in the gate. That is the point of a peer type with nothing behind it:
 what a caller actually holds is testable with no checkpoint anywhere, so the two arrays, the
-dtypes, the reductions and the refusals are all pinned before a GPU is involved.
+dtypes, the reductions and the refusals are all pinned before a GPU is involved. `SAE`'s
+identity check is here for the same reason: it reads what the two objects recorded, never a
+tensor. The one real encode lives in `tests/test_embed_model.py` behind the `model` marker.
 """
 
 from __future__ import annotations
 
 import ast
 import dataclasses
+import sys
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -16,7 +19,10 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from protein.embed import Embedding, SaeActivation
+from protein.embed import SAE, SAE_CHECKPOINTS, Embedding, SaeActivation
+from protein.embed.esm.esmc import CHECKPOINTS
+from protein.embed.esm.features import DESCRIBED_SAE
+from protein.embed.esm.sae import _checked, _require_statistics
 
 _SOURCE = Path(__file__).resolve().parents[1] / "src" / "protein" / "embed" / "esm" / "sae.py"
 
@@ -388,3 +394,126 @@ def test_nothing_inside_the_value_object_reaches_for_torch_or_scipy() -> None:
     ]
     assert len(found) == 1
     assert not _banned_imports(ast.walk(found[0]))
+
+
+# --- the checkpoint table -----------------------------------------------------------
+
+
+def test_the_table_names_every_sae_checkpoint_this_package_claims_to_know() -> None:
+    assert SAE_CHECKPOINTS == {
+        "300m-layer23-k64-cb16384": ("biohub/ESMC-300M-sae-layer23-k64-codebook16384", "300m"),
+        "600m-layer27-k64-cb16384": ("biohub/ESMC-600M-sae-layer27-k64-codebook16384", "600m"),
+        "6b-layer60-k64-cb16384": ("biohub/ESMC-6B-sae-layer60-k64-codebook16384", "6b"),
+    }
+
+
+def test_every_entry_names_a_parent_the_backbone_table_knows() -> None:
+    # What stops the two tables drifting apart: a parent this package cannot construct names
+    # a pairing nobody can make.
+    for hf_id, parent in SAE_CHECKPOINTS.values():
+        assert parent in CHECKPOINTS, hf_id
+
+
+def test_every_repository_in_the_table_is_layer_specific() -> None:
+    # The whole-snapshot download trap closes by construction: a layer-specific repository is
+    # one shard, and the all-layer families are orders of magnitude larger.
+    for slug, (hf_id, _) in SAE_CHECKPOINTS.items():
+        layer = slug.split("-")[1]
+        assert layer.startswith("layer")
+        assert f"-sae-{layer}-" in hf_id
+
+
+def test_the_checkpoint_the_feature_descriptions_describe_is_one_the_table_holds() -> None:
+    # The last gap between the two modules: a described slug this cannot load, or the same
+    # checkpoint spelled two ways, would join nothing to nothing.
+    assert DESCRIBED_SAE in SAE_CHECKPOINTS
+
+
+# --- constructing one ---------------------------------------------------------------
+
+
+def test_a_sae_takes_a_slug_and_has_no_default() -> None:
+    # `ESMC()` defaults to its smallest checkpoint, so an `SAE()` defaulting to the 6B one
+    # would raise on every naive first pairing. Naming it removes the trap.
+    with pytest.raises(TypeError, match="checkpoint"):
+        SAE()  # type: ignore[call-arg]
+
+
+def test_an_unknown_slug_fails_by_name_and_lists_what_is_known() -> None:
+    # `6b` is the backbone's slug, which is the typo worth catching: an SAE slug names the
+    # full variant, so it can mean one repository forever.
+    with pytest.raises(ValueError, match=r"unknown SAE checkpoint '6b'") as raised:
+        SAE("6b")
+    assert "6b-layer60-k64-cb16384" in str(raised.value)
+
+
+def test_an_unknown_slug_fails_before_anything_heavy_is_imported() -> None:
+    # The check is the first statement in `__init__`, ahead of `import torch`, which is what
+    # makes a slug better than an HF id.
+    with pytest.raises(ValueError, match="unknown SAE checkpoint"):
+        SAE("biohub/ESMC-6B-sae-layer60-k64-codebook16384")
+    assert "torch" not in sys.modules
+
+
+# --- the identity check, which is total and needs no weights -------------------------
+
+#: What the 300M SAE records about itself, and what `encode` checks an embedding against.
+_PARENT = "300m"
+_LAYERS = (23,)
+_D_MODEL = 960
+
+
+def _embedding(*, checkpoint: str = _PARENT, layer: int = 23, width: int = _D_MODEL) -> Embedding:
+    return Embedding(np.zeros((5, width), dtype=np.float32), "P12345", checkpoint, layer)
+
+
+def _check(embedding: object) -> Embedding:
+    """Run the check `encode` runs, against what the 300M checkpoint records."""
+    return _checked(embedding, sae=_SLUG, parent=_PARENT, layers=_LAYERS, d_model=_D_MODEL)
+
+
+def test_the_embedding_a_sae_was_trained_on_passes_every_check() -> None:
+    embedding = _embedding()
+    assert _check(embedding) is embedding
+
+
+def test_an_embedding_from_another_backbone_is_refused_naming_both_models() -> None:
+    with pytest.raises(ValueError, match=r"trained on 300m and this embedding came from 600m"):
+        _check(_embedding(checkpoint="600m", width=1152))
+
+
+def test_an_embedding_from_an_uncovered_layer_is_refused_naming_both_layers() -> None:
+    # The commonest silent mistake: a wrong layer multiplies fine and reconstructs badly.
+    with pytest.raises(ValueError, match=r"covers 300m layer 23 and this embedding is layer 30"):
+        _check(_embedding(layer=30))
+
+
+def test_an_embedding_of_the_wrong_width_is_refused_naming_both_widths() -> None:
+    # Reachable only from a stale table, which is exactly when a wrong answer looks right.
+    with pytest.raises(ValueError, match=r"takes 960-wide rows and this embedding is 1152 wide"):
+        _check(_embedding(width=1152))
+
+
+@pytest.mark.parametrize("item", [np.zeros((5, 960), dtype=np.float32), "MKTAY", None])
+def test_a_bare_array_carries_nothing_to_check_itself_against(item: object) -> None:
+    with pytest.raises(TypeError, match=r"takes an Embedding"):
+        _check(item)
+
+
+# --- normalisation refuses to do nothing ---------------------------------------------
+
+
+def test_a_checkpoint_shipping_no_statistics_refuses_to_normalise() -> None:
+    # Read off the buffers and not off a table: they default to ones, so the request would
+    # otherwise scale every feature by one and report success.
+    with pytest.raises(ValueError, match="ships no per-feature statistics"):
+        _require_statistics(np.ones(4), np.ones(4), sae=_SLUG)
+
+
+@pytest.mark.parametrize(
+    ("idf", "maximum"),
+    [(np.array([1.0, 2.0]), np.ones(2)), (np.ones(2), np.array([1.0, 0.5]))],
+)
+def test_a_checkpoint_that_ships_them_normalises(idf: np.ndarray, maximum: np.ndarray) -> None:
+    # Detected at the buffers, so a checkpoint gaining statistics later needs no test edited.
+    assert _require_statistics(idf, maximum, sae=_SLUG) is None
