@@ -1,17 +1,19 @@
-"""The alphabet this package accepts, and the guard in front of biotite's.
+"""The two alphabets this package accepts, and the guard in front of biotite's.
 
 Pure: no I/O, no subprocess, no network.
 
 :class:`biotite.sequence.ProteinSequence` cannot store ``U``, ``O`` or ``J``, and does store
-``*``, which no protein carries. This module is the two-sided guard that mismatch needs:
-:func:`check_alphabet` rejects what neither alphabet should hold, and
-:func:`to_protein_sequence` folds the three to ``X``, loudly, rather than letting biotite's
-own converters write a different residue in silence (ADR-0002).
+``*``, which no protein carries; :class:`biotite.sequence.NucleotideSequence` cannot store
+``U`` either. This module is the two-sided guard those mismatches need: the check rejects
+what neither alphabet should hold, and :func:`to_protein_sequence` and
+:func:`to_nucleotide_sequence` fold what biotite cannot store, loudly, rather than letting
+biotite's own converters write a different residue in silence (ADR-0002).
 
-**Know what the check is worth.** :data:`ALPHABET` is every ASCII letter, because the six
-ambiguity codes fill exactly the six gaps the twenty leave. So the check catches gaps, stops,
-digits, whitespace and punctuation — a stray ``*`` reaching a tokenizer fails far from its
-cause — and it **cannot** catch a misspelled residue.
+**Know what the protein check is worth.** :data:`ALPHABET` is every ASCII letter, because the
+six ambiguity codes fill exactly the six gaps the twenty leave. So the check catches gaps,
+stops, digits, whitespace and punctuation — a stray ``*`` reaching a tokenizer fails far from
+its cause — and it **cannot** catch a misspelled residue. :data:`NUCLEIC_ALPHABET` is sixteen
+letters, so the nucleic check refuses the other ten as well.
 
 Examples
 --------
@@ -21,6 +23,8 @@ Examples
 [(3, '-'), (5, '*')]
 >>> str(to_protein_sequence("MUOJK"))
 'MXXXK'
+>>> str(to_nucleotide_sequence("ACGU"))
+'ACGT'
 """
 
 from __future__ import annotations
@@ -30,20 +34,27 @@ from collections import Counter
 from collections.abc import Mapping
 from typing import cast
 
-from biotite.sequence import Alphabet, ProteinSequence
+from biotite.sequence import Alphabet, NucleotideSequence, ProteinSequence
 
 __all__ = [
     "ALPHABET",
     "AMBIGUOUS",
     "COERCED",
+    "NUCLEIC_ALPHABET",
+    "NUCLEIC_AMBIGUOUS",
+    "NUCLEIC_COERCED",
+    "NUCLEIC_STANDARD",
+    "NUCLEIC_STORED",
     "STANDARD",
     "STORED",
+    "THYMINE",
     "UNKNOWN",
     "InvalidResidueError",
     "ResidueCoercionWarning",
     "check_alphabet",
     "offending_positions",
     "outside_alphabet",
+    "to_nucleotide_sequence",
     "to_protein_sequence",
 ]
 
@@ -55,8 +66,8 @@ STANDARD: frozenset[str] = frozenset("ACDEFGHIKLMNPQRSTVWY")
 #: selenocysteine, ``O`` pyrrolysine.
 AMBIGUOUS: frozenset[str] = frozenset("XBZJUO")
 
-#: **What this package accepts as input** — every ASCII letter. Wider than what biotite
-#: stores, which is what :data:`COERCED` exists to bridge.
+#: **What this package accepts as a protein sequence** — every ASCII letter. Wider than what
+#: biotite stores, which is what :data:`COERCED` exists to bridge.
 ALPHABET: frozenset[str] = STANDARD | AMBIGUOUS
 
 
@@ -90,6 +101,41 @@ _MAX_LISTED = 5
 
 _COERCION = str.maketrans(dict.fromkeys(COERCED, UNKNOWN))
 
+#: The four bases, one letter each.
+NUCLEIC_STANDARD: frozenset[str] = frozenset("ACGT")
+
+#: The eleven IUPAC codes for a base that is not fully determined: ``N`` any base, ``R``
+#: purine, ``Y`` pyrimidine, and the eight naming two or three bases.
+NUCLEIC_AMBIGUOUS: frozenset[str] = frozenset("RYWSMKHBVDN")
+
+#: **What this package accepts as a nucleic sequence** — the four bases, the eleven codes,
+#: and ``U``, which :data:`NUCLEIC_COERCED` exists to bridge.
+NUCLEIC_ALPHABET: frozenset[str] = NUCLEIC_STANDARD | NUCLEIC_AMBIGUOUS | {"U"}
+
+
+def _biotite_nucleotide_symbols() -> frozenset[str]:
+    """Return every symbol biotite's ambiguous nucleotide alphabet holds.
+
+    The ambiguous one of the two, because it is the wider, and because a caller never picks
+    between them: ``NucleotideSequence`` does that from the symbols it is given.
+    """
+    return frozenset(str(symbol) for symbol in NucleotideSequence.alphabet_amb.get_symbols())
+
+
+#: **What biotite stores**, read from biotite rather than written out here, so an upgrade
+#: cannot silently disagree with us.
+NUCLEIC_STORED: frozenset[str] = _biotite_nucleotide_symbols()
+
+#: Accepted here, unstorable there: ``U``, which :func:`to_nucleotide_sequence` folds to
+#: :data:`THYMINE`. Derived rather than listed, so whatever biotite gains, this loses.
+NUCLEIC_COERCED: frozenset[str] = NUCLEIC_ALPHABET - NUCLEIC_STORED
+
+#: What ``U`` becomes. Thymine sits where uracil does, so the base survives and only the
+#: spelling is lost — which is why the fold warns.
+THYMINE = "T"
+
+_NUCLEIC_COERCION = str.maketrans(dict.fromkeys(NUCLEIC_COERCED, THYMINE))
+
 
 class ResidueCoercionWarning(UserWarning):
     """Warns that codes biotite cannot store were replaced by ``X``.
@@ -100,7 +146,7 @@ class ResidueCoercionWarning(UserWarning):
 
 
 class InvalidResidueError(ValueError):
-    """Raised when a sequence holds characters :data:`ALPHABET` excludes.
+    """Raised when a sequence holds characters its alphabet excludes.
 
     A :class:`ValueError`, unlike biotite's ``AlphabetError``, and carrying the offenders as
     data so a caller repairing input never has to parse the message.
@@ -112,13 +158,31 @@ class InvalidResidueError(ValueError):
         Uncapped, where the message lists five.
     name : str or None
         The accession or identifier the caller named the sequence by, if any.
+    alphabet : str
+        Which alphabet refused it — ``"protein"`` or ``"nucleic"``.
     """
 
-    def __init__(self, offenders: list[tuple[int, str]], *, name: str | None = None) -> None:
-        """Build the error from the offending positions and, if known, whose they are."""
+    def __init__(
+        self,
+        offenders: list[tuple[int, str]],
+        *,
+        name: str | None = None,
+        alphabet: str = "protein",
+    ) -> None:
+        """Build the error from the offending positions, whose they are, and which alphabet."""
         self.offenders = offenders
         self.name = name
-        super().__init__(_invalid_message(offenders, name))
+        self.alphabet = alphabet
+        super().__init__(_invalid_message(offenders, name, alphabet))
+
+
+def _offenders(sequence: str, accepted: frozenset[str]) -> list[tuple[int, str]]:
+    """Return every ``(index, character)`` of ``sequence`` that ``accepted`` excludes."""
+    return [
+        (index, character)
+        for index, character in enumerate(sequence)
+        if character.upper() not in accepted
+    ]
 
 
 def outside_alphabet(sequence: str) -> list[str]:
@@ -147,7 +211,7 @@ def outside_alphabet(sequence: str) -> list[str]:
     >>> outside_alphabet("MK*T-*")
     ['*', '-']
     """
-    return sorted({character for character in sequence if character.upper() not in ALPHABET})
+    return sorted({character for _index, character in _offenders(sequence, ALPHABET)})
 
 
 def offending_positions(sequence: str) -> list[tuple[int, str]]:
@@ -173,11 +237,7 @@ def offending_positions(sequence: str) -> list[tuple[int, str]]:
     >>> offending_positions("MKTV")
     []
     """
-    return [
-        (index, character)
-        for index, character in enumerate(sequence)
-        if character.upper() not in ALPHABET
-    ]
+    return _offenders(sequence, ALPHABET)
 
 
 def check_alphabet(sequence: str, *, name: str | None = None) -> None:
@@ -255,8 +315,69 @@ def to_protein_sequence(sequence: str, *, name: str | None = None) -> ProteinSeq
     folded = upper.translate(_COERCION)
     if folded != upper:
         counts = Counter(character for character in upper if character in COERCED)
-        warnings.warn(_coercion_message(counts, name), ResidueCoercionWarning, stacklevel=2)
+        warnings.warn(
+            _coercion_message(counts, name, UNKNOWN, "protein"),
+            ResidueCoercionWarning,
+            stacklevel=2,
+        )
     return ProteinSequence(folded)
+
+
+def to_nucleotide_sequence(sequence: str, *, name: str | None = None) -> NucleotideSequence:
+    """Check ``sequence``, fold ``U`` to ``T``, and return biotite's type.
+
+    The one door from a :class:`str` to a :class:`~biotite.sequence.NucleotideSequence` in
+    this package, and the nucleic half of ADR-0002. There is no ``DNA`` class and no ``RNA``
+    class: neither has an accession to be identified by, and this package holds biotite's
+    types rather than wrapping them.
+
+    Which of biotite's two nucleotide alphabets the result carries is biotite's own choice —
+    the four-letter one where four letters suffice, the fifteen-letter one otherwise.
+
+    Parameters
+    ----------
+    sequence : str
+        The bases, in either case.
+    name : str, optional
+        The identifier this sequence belongs to, named in both the warning and the error.
+
+    Returns
+    -------
+    NucleotideSequence
+        Uppercase, with every ``U`` replaced by :data:`THYMINE`.
+
+    Warns
+    -----
+    ResidueCoercionWarning
+        When anything was folded.
+
+    Raises
+    ------
+    InvalidResidueError
+        If anything in ``sequence`` is outside :data:`NUCLEIC_ALPHABET`.
+
+    Examples
+    --------
+    >>> str(to_nucleotide_sequence("ACGT"))
+    'ACGT'
+    >>> str(to_nucleotide_sequence("acgn"))
+    'ACGN'
+    >>> str(to_nucleotide_sequence("ACGU", name="a transcript"))
+    'ACGT'
+    """
+    offenders = _offenders(sequence, NUCLEIC_ALPHABET)
+    if offenders:
+        raise InvalidResidueError(offenders, name=name, alphabet="nucleic")
+    upper = sequence.upper()
+    folded = upper.translate(_NUCLEIC_COERCION)
+    if folded != upper:
+        counts = Counter(character for character in upper if character in NUCLEIC_COERCED)
+        warnings.warn(
+            _coercion_message(counts, name, THYMINE, "nucleic"),
+            ResidueCoercionWarning,
+            stacklevel=2,
+        )
+    return NucleotideSequence(folded)
 
 
 def _prefix(name: str | None) -> str:
@@ -264,18 +385,20 @@ def _prefix(name: str | None) -> str:
     return f"{name}: " if name else ""
 
 
-def _invalid_message(offenders: list[tuple[int, str]], name: str | None) -> str:
+def _invalid_message(offenders: list[tuple[int, str]], name: str | None, alphabet: str) -> str:
     """Return the error text: up to five offending positions, then a count of the rest."""
     listed = ", ".join(f"{character!r} at {index}" for index, character in offenders[:_MAX_LISTED])
     hidden = len(offenders) - _MAX_LISTED
     rest = f", and {hidden} more ({len(offenders)} in total)" if hidden > 0 else ""
-    return f"{_prefix(name)}not in the protein alphabet: {listed}{rest}"
+    return f"{_prefix(name)}not in the {alphabet} alphabet: {listed}{rest}"
 
 
-def _coercion_message(counts: Mapping[str, int], name: str | None) -> str:
+def _coercion_message(
+    counts: Mapping[str, int], name: str | None, replacement: str, alphabet: str
+) -> str:
     """Return the warning text: which codes were folded, how many of each, and whose."""
     detail = ", ".join(f"{count} {code}" for code, count in sorted(counts.items()))
     return (
-        f"{_prefix(name)}coerced {detail} to {UNKNOWN}; "
-        "biotite's protein alphabet cannot store them"
+        f"{_prefix(name)}coerced {detail} to {replacement}; "
+        f"biotite's {alphabet} alphabet cannot store them"
     )

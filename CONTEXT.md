@@ -20,7 +20,8 @@ This package never computes a 3Di string and never reads one.
 
 One polymer inside a **Structure**, addressed by its author chain id — `structure["A"]`. It
 holds `.atoms` filtered from the parent's array, `.kind` (protein, nucleic or other),
-`.sequence` read from residue names, and `.uniprot`, the accessions **SIFTS** gives it.
+`.sequence` read from residue names, and `.uniprot`, the accessions **SIFTS** gives it — or
+the ones its structure was produced from, where it carries them.
 
 A chain is not a **Protein**. It carries coordinates, it may be nucleic acid or ligand with
 no accession at all, and it may carry several. Foldseek takes coordinates, so `search()`
@@ -111,15 +112,22 @@ A prepared set under the **Data dir**, not a **Database**. See `protein.sifts`.
 
 ### Structure
 
-One PDB entry's asymmetric unit, **addressed by a PDB id**. It holds the path to a
-coordinate file, parsed into biotite's `AtomArray` on first use and cached, and the
-**Chain**s in it.
+One set of coordinates and the **Chain**s in it, named by an id the constructor does not
+police. A PDB entry is the ordinary case: give the entry id and the file comes from the local
+cache, filled from RCSB on a miss — never from `pdb100`, which is C-alpha only and renumbers
+residues. `from_file` takes any coordinate file and names it after the file, so a prediction
+is a `Structure` like any other. The path is held and parsed into biotite's `AtomArray` on
+first use.
 
-A peer of **Protein**, never a part of one. The two are many-to-many in both directions and
-**SIFTS** is the only join; a structure also holds nucleic acids and ligands that have no
-protein at all. The asymmetric unit is forced, because SIFTS keys on its author chains.
-Coordinates come from the local cache, filled from RCSB on a miss — never from `pdb100`,
-which is C-alpha only and renumbers residues.
+A deposited entry holds its **asymmetric unit**, forced rather than chosen: SIFTS keys on AU
+author chains, and many entries have several assemblies.
+
+A peer of **Protein**, never a part of one. The two are many-to-many both ways and **SIFTS**
+is the only join; a structure also holds nucleic acids and ligands with no protein at all.
+
+A structure may carry the accessions it was **produced from**, one per chain, and
+`Chain.uniprot` answers from those rather than asking SIFTS. That is provenance, not a join —
+an input the file was written from, never a cross-reference read back out of it.
 
 ### Xref
 

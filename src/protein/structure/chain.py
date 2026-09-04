@@ -3,24 +3,26 @@
 A **Chain** is identified by a structure and a label, and it is reached through
 ``structure["A"]`` rather than built by hand. It is where the two namespaces meet:
 :attr:`~Chain.sequence` and :attr:`~Chain.atoms` come from the structure file,
-:attr:`~Chain.uniprot` comes from SIFTS, and :attr:`~Chain.kind` says whether either of the
-first two means anything.
+:attr:`~Chain.uniprot` comes from SIFTS or from what the structure was produced from, and
+:attr:`~Chain.kind` says whether either of the first two means anything.
 
 **The sequence is built here, over ``res_name``.** ``structure.to_sequence`` is banned by
 ADR-0002 and would not work anyway: it raises ``BadStructureError`` on an entry whose water
 block is its own chain segment. The residue-to-letter step is
 :func:`biotite.structure.info.one_letter_code`, which is CCD-backed and **truthful**, and the
-fold from there into what biotite can store is :func:`protein.seq.to_protein_sequence`, which
-writes ``X`` and warns. ``ProteinSequence.convert_letter_3to1`` is the other converter
-ADR-0002 rules out; do not reach for it.
+fold from there into what biotite can store is :func:`protein.seq.to_protein_sequence` or
+:func:`protein.seq.to_nucleotide_sequence`, which write ``X`` and ``T`` and warn.
+``ProteinSequence.convert_letter_3to1`` is the other converter ADR-0002 rules out; do not
+reach for it.
 
 **A sequence here is the observed one.** It is built from the residues that have
 coordinates, so a disordered loop is absent rather than filled in from ``SEQRES``. That is
 what Foldseek reads too, and what a residue-level SIFTS join is against.
 
 **A chain is not always a protein.** :attr:`~Chain.kind` is ``"protein"``, ``"nucleic"`` or
-``"other"``, and :attr:`~Chain.sequence` refuses on the last two rather than answering with
-something a tokenizer would accept.
+``"other"``, and it is what a caller checks first, because it says which of biotite's two
+sequence types :attr:`~Chain.sequence` will answer with. A ligand-only or water-only chain
+has neither, so it refuses.
 
 Examples
 --------
@@ -44,9 +46,11 @@ from protein import seq
 from protein.io import structure as _io
 
 if TYPE_CHECKING:
+    import numpy as np
     import pandas as pd
-    from biotite.sequence import ProteinSequence
+    from biotite.sequence import NucleotideSequence, ProteinSequence
     from biotite.structure import AtomArray
+    from numpy.typing import NDArray
 
     from protein.search.mmseqs import SearchTarget
     from protein.structure.structure import Structure
@@ -62,6 +66,9 @@ KINDS: tuple[ChainKind, ...] = ("protein", "nucleic", "other")
 #: What a residue with no one-letter code in the Chemical Component Dictionary becomes.
 #: ``X`` means unknown, which is true of it.
 _UNKNOWN_RESIDUE = "X"
+
+#: The same, for a nucleotide. ``N`` is the nucleic alphabet's unknown; ``X`` is not in it.
+_UNKNOWN_NUCLEOTIDE = "N"
 
 #: What a chain's query file is written as. mmCIF, because it is the format that can hold a
 #: chain label of more than one character and the only one this package writes.
@@ -183,86 +190,103 @@ class Chain:
         return "protein" if amino >= nucleic else "nucleic"
 
     @cached_property
-    def sequence(self) -> ProteinSequence:
-        """The residues this chain was solved for, as biotite's ``ProteinSequence``.
+    def sequence(self) -> ProteinSequence | NucleotideSequence:
+        """The residues this chain was solved for, as one of biotite's two sequence types.
 
-        Built from the amino-acid residues' ``res_name`` — see this module's docstring for
-        which converter does the three-letter step and ADR-0002 for which must not.
-        **Observed, not ``SEQRES``**: a residue with no coordinates is not in here.
+        Built from the polymer residues' ``res_name`` — see this module's docstring for which
+        converter does the three-letter step and ADR-0002 for which must not. **Observed, not
+        ``SEQRES``**: a residue with no coordinates is not in here.
 
         Returns
         -------
-        biotite.sequence.ProteinSequence
-            One symbol per residue, in file order. A residue the Chemical Component
-            Dictionary gives no one-letter code for becomes ``X``.
+        biotite.sequence.ProteinSequence or biotite.sequence.NucleotideSequence
+            One symbol per residue, in file order, and which type it is follows
+            :attr:`kind`. A residue the Chemical Component Dictionary gives no one-letter
+            code for becomes ``X`` in a protein and ``N`` in a nucleic acid.
 
         Raises
         ------
         ValueError
-            If :attr:`kind` is not ``"protein"``. The
-            :class:`~protein.embed.esm.esmc.Embeddable` protocol ``ESMC.embed`` checks knows
-            nothing of :attr:`kind`, so refusing here is what stops a DNA chain reaching the
-            tokenizer.
+            If :attr:`kind` is ``"other"`` — a ligand-only or water-only chain has no
+            polymer to read.
         protein.seq.InvalidResidueError
-            If a residue's one-letter code is outside :data:`protein.seq.ALPHABET`.
+            If a residue's one-letter code is outside the alphabet for its kind.
 
         Warns
         -----
         protein.seq.ResidueCoercionWarning
-            If the chain holds ``SEC`` or ``PYL``, whose truthful codes ``U`` and ``O``
-            biotite cannot store and this package folds to ``X`` — loudly, where ADR-0002's
-            banned converters are silent.
+            If a protein chain holds ``SEC`` or ``PYL``, or a nucleic one holds uracil.
+            biotite can store none of the three, and this package folds them loudly where
+            ADR-0002's banned converters are silent.
 
         Examples
         --------
         >>> str(Structure("1UBQ")["A"].sequence)[:5]      # doctest: +SKIP
         'MQIFV'
+        >>> str(Structure("1BNA")["A"].sequence)          # doctest: +SKIP
+        'CGCGAATTCGCG'
         """
-        if self.kind != "protein":
+        if self.kind == "other":
             raise ValueError(
-                f"chain {self.id} is {self.kind}, not protein, so it has no amino-acid "
-                f"sequence. Check `.kind` before asking; `.atoms` is what a non-protein "
-                f"chain answers with."
+                f"chain {self.id} is other, so it is ligand or solvent and has no polymer "
+                f"sequence. Check `.kind` before asking; `.atoms` is what such a chain "
+                f"answers with."
             )
         atoms = self.atoms
-        residues = atoms[struc.filter_amino_acids(atoms)]
-        _, names = struc.get_residues(residues)
-        letters = "".join(
-            struc_info.one_letter_code(str(name)) or _UNKNOWN_RESIDUE for name in names
-        )
-        return seq.to_protein_sequence(letters, name=self.id)
+        if self.kind == "protein":
+            letters = self._letters(struc.filter_amino_acids(atoms), _UNKNOWN_RESIDUE)
+            return seq.to_protein_sequence(letters, name=self.id)
+        letters = self._letters(struc.filter_nucleotides(atoms), _UNKNOWN_NUCLEOTIDE)
+        return seq.to_nucleotide_sequence(letters, name=self.id)
+
+    def _letters(self, mask: NDArray[np.bool_], unknown: str) -> str:
+        """Return one Chemical Component Dictionary letter per residue the mask keeps."""
+        _, names = struc.get_residues(self.atoms[mask])
+        return "".join(struc_info.one_letter_code(str(name)) or unknown for name in names)
 
     @property
     def uniprot(self) -> tuple[str, ...]:
-        """The UniProt accessions SIFTS maps this chain to.
+        """The UniProt accessions this chain belongs to: its structure's, else SIFTS'.
 
-        **SIFTS and never the structure file.** Every mmCIF carries its own
+        **Where the structure was produced from an accession, that is the answer.** A
+        prediction carries the accessions it was folded from, and returning them is what
+        keeps it from reading like a deposited entry SIFTS maps nothing to. The map is
+        read whole: a structure that carries one answers every chain from it and never asks
+        SIFTS, so a folded complex's DNA chains do not send the id of something that is no
+        PDB entry off to a map that may not be prepared.
+
+        **Otherwise SIFTS, and never the structure file.** Every mmCIF carries its own
         ``_struct_ref_seq`` and the two disagree — ``1UBQ`` chain A is ``P62988`` in the file
         and ``P0CG48`` here — because the file holds the depositor's reference frozen at
         deposition and SIFTS holds PDBe's re-curated one. Reading the file would break the
-        round trip with :attr:`protein.core.Protein.structures`.
+        round trip with :attr:`protein.core.Protein.structures`, which is why a written
+        prediction's accessions are not read back either (ADR-0005).
 
         Returns
         -------
         tuple of str
-            The accessions, in accession order. A tuple and never a scalar, because a chain
-            may carry more than one. ``()`` is a real answer and is **not** ``None`` — a
-            nucleic-acid chain, a ligand chain, an entry SIFTS never curated, and any id
-            SIFTS does not carry, which is what a chain of a :meth:`Structure.from_file`
-            that is no PDB entry gets.
+            The accessions, in accession order from SIFTS and as given from a structure's
+            own map. A tuple and never a scalar, because a chain may carry more than one.
+            ``()`` is a real answer and is **not** ``None`` — a nucleic-acid chain, a ligand
+            chain, an entry SIFTS never curated, any id SIFTS does not carry, and a chain its
+            structure's map does not name.
 
         Raises
         ------
         protein.sifts.SiftsNotDownloadedError
-            If the map is not prepared on this machine. Distinct from ``()``, and not caught
-            into it: one means *nobody built the map here* and the other means *this chain
-            has no protein*.
+            If SIFTS was asked and the map is not prepared on this machine. Distinct from
+            ``()``, and not caught into it: one means *nobody built the map here* and the
+            other means *this chain has no protein*.
 
         Examples
         --------
         >>> Structure("1UBQ")["A"].uniprot                # doctest: +SKIP
         ('P0CG48',)
         """
+        produced_from = self.structure.accessions
+        if produced_from is not None:
+            return produced_from.get(self.chain_id, ())
+
         # The module and not the function, so one `monkeypatch.setattr(sifts, ...)` reaches
         # every caller. Deferred as well: `protein.sifts` imports pandas.
         from protein import sifts

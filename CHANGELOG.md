@@ -25,3 +25,29 @@ sets one.
   release answered, so there is no new set to prepare, no cache and no new command. One
   direction lives here. Going from a gene to its proteins starts from a species rather than
   from a protein, so it stays a plain `genome.xref` call.
+
+- **A nucleic alphabet, so DNA and RNA get in.** `protein.seq.to_nucleotide_sequence` takes
+  the four bases, the eleven IUPAC ambiguity codes and `U`, in either case, and hands back
+  biotite's `NucleotideSequence`. `U` becomes `T` and says so; anything else raises the same
+  error a bad protein sequence does. There is no `DNA` class and no `RNA` class.
+
+  `Chain.sequence` now answers for a nucleic chain instead of refusing, and refuses only a
+  chain that is neither — a ligand or the solvent. `Chain.kind` is unchanged and still says
+  which type will come back. The guard that kept DNA away from ESM-C moved to `ESMC.embed`.
+
+- **A structure can say what it was produced from.** `Structure` takes an optional
+  `accessions` map, one entry per chain, and `Chain.uniprot` answers from it rather than
+  asking SIFTS. A structure folded from a known accession used to answer `()`, which is what
+  a deposited entry SIFTS maps nothing to also answers.
+
+  **SIFTS is still the only join.** An accession here is an input the file was written from,
+  never a cross-reference read back out of a file — nothing reads `_struct_ref`. Provenance
+  does not survive being written, so a prediction reopened from disk answers `()` again.
+
+### Fixed
+
+- **The `esm` environment now carries the CUDA headers, so the fused GPU kernels build.**
+  They are compiled the first time one runs, against a header the environment did not have,
+  and the failure hid its own error — so the fast path looked unavailable and everything ran
+  an order of magnitude slower. The environment declares the headers and points the compiler
+  at them, by a path inside the environment rather than one belonging to a machine.

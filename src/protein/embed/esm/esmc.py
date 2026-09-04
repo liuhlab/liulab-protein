@@ -29,10 +29,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
+from biotite.sequence import ProteinSequence
+
 from protein.embed.embedding import Embedding
 
 if TYPE_CHECKING:
-    from biotite.sequence import ProteinSequence
+    from biotite.sequence import NucleotideSequence
 
 __all__ = ["CHECKPOINTS", "ESMC", "Embeddable"]
 
@@ -72,10 +74,13 @@ class Embeddable(Protocol):
     :attr:`protein.embed.Embedding.source`, and it is why a bare ``str`` or
     :class:`~biotite.sequence.ProteinSequence` is refused: neither could say afterwards what
     was embedded.
+
+    ``sequence`` is typed as either of biotite's two because a ``Chain`` answers with either.
+    :meth:`ESMC.embed` refuses the nucleotide one.
     """
 
     @property
-    def sequence(self) -> ProteinSequence:
+    def sequence(self) -> ProteinSequence | NucleotideSequence:
         """The residues. ``str(...)`` of it is what reaches the tokenizer."""
         ...
 
@@ -83,6 +88,23 @@ class Embeddable(Protocol):
     def id(self) -> str | None:
         """The UniProt accession or chain key, recorded as the embedding's ``source``."""
         ...
+
+
+def _residues(item: Embeddable) -> str:
+    """Return what the tokenizer reads, or refuse a sequence that is not protein.
+
+    A function rather than a method, so the refusal is tested in the gate with no weights
+    anywhere. A ``Chain`` whose ``kind`` is ``"nucleic"`` answers with a nucleotide sequence,
+    and ``A``, ``C``, ``G``, ``T`` and ``N`` are all protein letters too, so an unguarded
+    tokenizer would return a confident embedding of the wrong molecule.
+    """
+    sequence = item.sequence
+    if not isinstance(sequence, ProteinSequence):
+        raise TypeError(
+            f"{item.id} carries a {type(sequence).__name__}, and ESM-C is a protein model. "
+            f"A chain says which it is in `.kind` before you ask for its sequence."
+        )
+    return str(sequence)
 
 
 class ESMC:
@@ -193,7 +215,8 @@ class ESMC:
         Raises
         ------
         TypeError
-            If ``item`` is not a :class:`Embeddable`.
+            If ``item`` is not a :class:`Embeddable`, or if its ``sequence`` is a
+            nucleotide sequence rather than a protein one.
         ValueError
             If ``layer`` is outside ``-(n_layers + 1) .. n_layers``.
 
@@ -216,7 +239,7 @@ class ESMC:
                 f"source; wrap one in Protein(sequence, id=...) first."
             )
         index = _layer_index(layer, self.n_layers, self.checkpoint)
-        batch = self._tokenizer([str(item.sequence)], return_tensors="pt")
+        batch = self._tokenizer([_residues(item)], return_tensors="pt")
         batch = {name: tensor.to(self.device) for name, tensor in batch.items()}
         # `last_hidden_state` is `hidden_states[-1]`, so the default layer need not ask the
         # model to materialise every one.
