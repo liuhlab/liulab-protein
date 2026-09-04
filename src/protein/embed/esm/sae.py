@@ -1,12 +1,23 @@
-"""The :class:`SaeActivation` value object — what one sparse-autoencoder call gives back.
+"""The sparse autoencoder over an **Embedding**, and the value one call gives back.
 
-**numpy only.** Nothing here imports torch or scipy: a frozen value object holds no weights
-and loads none, so everything it promises is checkable without a GPU.
+**This module's body imports torch nowhere.** Only :class:`SAE`'s method bodies do, so
+``import protein`` never pulls torch, and :class:`SaeActivation` reaches for it nowhere at
+all: a frozen value object holds no weights and loads none, so everything it promises is
+checkable without a GPU. Tests assert both.
 
-A **peer** of :class:`~protein.embed.embedding.Embedding` and not one of them. An embedding is
-dense and ``d_model`` wide; an activation is sparse over a codebook far wider than that, so
-``d_model`` would be a lie here and ``.mean()`` would dilute a feature's presence by protein
-length. That is ADR-0007.
+:class:`SAE` is a class you construct and keep, beside :class:`~protein.embed.esm.esmc.ESMC`
+and for the same reason — *resident state gets an object*. It takes a slug and **has no
+default**, so a first pairing names both halves or neither.
+
+**The identity check is total.** A wrong parent, a layer the checkpoint does not cover and a
+wrong width all multiply fine and give plausible numbers, so :meth:`SAE.encode` refuses each
+of them by name, reading recorded facts rather than tensors. The reconstruction loss it hands
+back is the empirical backstop on whether the pairing made sense.
+
+:class:`SaeActivation` is a **peer** of :class:`~protein.embed.embedding.Embedding` and not
+one of them. An embedding is dense and ``d_model`` wide; an activation is sparse over a
+codebook far wider than that, so ``d_model`` would be a lie here and ``.mean()`` would dilute
+a feature's presence by protein length. That is ADR-0007.
 
 The pair of ``(L, k)`` arrays is **lossless**: the top-k selection returns exactly ``k`` slots
 per row whether or not all ``k`` are non-zero, so the sparse form is a representation rather
@@ -16,7 +27,9 @@ nothing here holds it.
 Examples
 --------
 >>> import numpy as np
->>> from protein.embed import SaeActivation
+>>> from protein.embed import SAE_CHECKPOINTS, SaeActivation
+>>> SAE_CHECKPOINTS["300m-layer23-k64-cb16384"]
+('biohub/ESMC-300M-sae-layer23-k64-codebook16384', '300m')
 >>> activation = SaeActivation(
 ...     np.array([[2, 0], [1, 3]], dtype=np.uint8),
 ...     np.array([[0.5, 0.25], [1.0, 0.75]], dtype=np.float16),
@@ -43,10 +56,28 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from protein.embed.embedding import Embedding
+from protein.embed.esm.esmc import CHECKPOINTS
+
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-__all__ = ["SaeActivation"]
+__all__ = ["SAE", "SAE_CHECKPOINTS", "SaeActivation"]
+
+#: Every ESM-C SAE checkpoint this package knows, slug to ``(hf_id, parent)``. The parent is
+#: the one fact the table adds: the checkpoint's own config carries the layers it covers, its
+#: width, ``k`` and the codebook dimension, and :class:`SAE` cross-checks the width against
+#: the parent's the way :class:`~protein.embed.esm.esmc.ESMC` cross-checks its own.
+#:
+#: Every entry is a **layer-specific, single-shard** repository, which is what bounds the
+#: snapshot ``from_pretrained`` fetches. The all-layer and MLP families are orders of
+#: magnitude larger, and leaving them out is also what lets :meth:`SAE.encode` assume hidden
+#: states rather than MLP outputs.
+SAE_CHECKPOINTS: dict[str, tuple[str, str]] = {
+    "300m-layer23-k64-cb16384": ("biohub/ESMC-300M-sae-layer23-k64-codebook16384", "300m"),
+    "600m-layer27-k64-cb16384": ("biohub/ESMC-600M-sae-layer27-k64-codebook16384", "600m"),
+    "6b-layer60-k64-cb16384": ("biohub/ESMC-6B-sae-layer60-k64-codebook16384", "6b"),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -335,3 +366,229 @@ class SaeActivation:
         rows = np.arange(len(self), dtype=np.intp)[:, None]
         materialised[rows, self.indices] = self.values
         return materialised
+
+
+def _checked(
+    embedding: object, *, sae: str, parent: str, layers: tuple[int, ...], d_model: int
+) -> Embedding:
+    """Return the embedding this SAE can read, or name what the two disagree about.
+
+    A function rather than a method, so every refusal is tested in the gate with no weights
+    anywhere: each one reads a fact the two objects recorded, never a tensor.
+    """
+    if not isinstance(embedding, Embedding):
+        raise TypeError(
+            f"encode() takes an Embedding, not {type(embedding).__name__}. An array carries "
+            f"neither the checkpoint nor the layer it came from, so nothing about it could "
+            f"be checked against this SAE."
+        )
+    if embedding.checkpoint != parent:
+        raise ValueError(
+            f"{sae} was trained on {parent} and this embedding came from "
+            f"{embedding.checkpoint}. The features of one backbone name nothing in another, "
+            f"and the multiply would succeed anyway."
+        )
+    if embedding.layer not in layers:
+        covered = ", ".join(str(layer) for layer in layers)
+        raise ValueError(
+            f"{sae} covers {parent} layer {covered} and this embedding is layer "
+            f"{embedding.layer}. A wrong layer multiplies fine and reconstructs badly, which "
+            f"is the commonest silent mistake here."
+        )
+    width = embedding.array.shape[1]
+    if width != d_model:
+        raise ValueError(
+            f"{sae} takes {d_model}-wide rows and this embedding is {width} wide, though "
+            f"both name {parent}. A table is stale; fix it rather than trusting either "
+            f"number."
+        )
+    return embedding
+
+
+def _require_statistics(idf: Any, maximum: Any, *, sae: str) -> None:
+    """Refuse ``normalize=True`` where the checkpoint ships no statistics to normalise by.
+
+    Read off the buffers and never off a table: they default to ones, so a checkpoint
+    shipping none would scale every feature by one and report success. One that gains them
+    later needs nothing changed here.
+    """
+    if bool((idf == 1).all()) and bool((maximum == 1).all()):
+        raise ValueError(
+            f"{sae} ships no per-feature statistics: its idf and max buffers are all ones, "
+            f"so normalize=True would scale every feature by one and call that normalised. "
+            f"Encode without it, and read `normalized` on what comes back."
+        )
+
+
+class SAE:
+    """One sparse autoencoder's weights, resident, plus :meth:`encode` over them.
+
+    Parameters
+    ----------
+    checkpoint : str
+        A key of :data:`SAE_CHECKPOINTS`, naming the full variant. **There is no default.**
+        ``ESMC()`` defaults to its smallest checkpoint, so an ``SAE()`` defaulting to the 6B
+        one would raise on every naive first pairing; naming it removes the trap rather than
+        documenting it. An unknown slug fails here, by name, before anything is downloaded.
+    device : str, optional
+        Where the weights go, e.g. ``"cuda"``, ``"cuda:1"``, ``"cpu"``. Omitted, it resolves
+        to ``"cuda"`` when torch can see a GPU and ``"cpu"`` otherwise; either way the answer
+        is on :attr:`device`.
+    token : str, optional
+        A Hugging Face token. Unnecessary for the published checkpoints, which are ungated.
+
+    Attributes
+    ----------
+    checkpoint : str
+        The slug that was asked for.
+    hf_id : str
+        The Hugging Face repository the slug names.
+    parent : str
+        The backbone slug this was trained on — a key of
+        :data:`protein.embed.esm.esmc.CHECKPOINTS`, and the one fact the table adds.
+    device : str
+        Where the weights actually are, resolved at construction.
+    layers : tuple of int
+        Which of the parent's hidden states this checkpoint covers, from its own config.
+    d_model : int
+        The row width it takes, from the config and cross-checked against the parent's.
+    codebook_size : int
+        How many features it has.
+    k : int
+        How many of them it keeps per residue.
+
+    Raises
+    ------
+    ValueError
+        If ``checkpoint`` is not a key of :data:`SAE_CHECKPOINTS`, or if its config's width
+        disagrees with the width recorded for the parent.
+
+    Examples
+    --------
+    >>> from protein.embed import SAE
+    >>> SAE("6b")
+    Traceback (most recent call last):
+        ...
+    ValueError: unknown SAE checkpoint '6b'. Known slugs: 300m-layer23-k64-cb16384, 600m-layer27-k64-cb16384, 6b-layer60-k64-cb16384.
+    >>> SAE("300m-layer23-k64-cb16384")                       # doctest: +SKIP
+    SAE('300m-layer23-k64-cb16384', cuda)
+    """
+
+    def __init__(
+        self, checkpoint: str, *, device: str | None = None, token: str | None = None
+    ) -> None:
+        if checkpoint not in SAE_CHECKPOINTS:
+            known = ", ".join(SAE_CHECKPOINTS)
+            raise ValueError(f"unknown SAE checkpoint {checkpoint!r}. Known slugs: {known}.")
+        # Inside the body, never at module level: this is what keeps `import protein` cheap.
+        import torch  # pyright: ignore[reportMissingImports]
+        from esm.models.esmc.sae import (  # pyright: ignore[reportMissingImports]
+            EsmcSaeModel,
+        )
+
+        self.checkpoint = checkpoint
+        self.hf_id, self.parent = SAE_CHECKPOINTS[checkpoint]
+        # `is None` and not falsiness: `device=""` is a mistake worth surfacing.
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
+        # A single-shard repository, so this loads the one layer it ships and `encode` finds
+        # it already there.
+        self._model: Any = EsmcSaeModel.from_pretrained(
+            self.hf_id, device=self.device, token=token
+        ).eval()
+        config = self._model.config
+        self.layers: tuple[int, ...] = tuple(int(layer) for layer in config.available_layers)
+        self.d_model = int(config.d_model)
+        self.codebook_size = int(config.codebook_dim)
+        self.k = int(config.k)
+        width = CHECKPOINTS[self.parent][1]
+        if self.d_model != width:
+            raise ValueError(
+                f"{self.hf_id} takes {self.d_model}-wide rows, and CHECKPOINTS records "
+                f"d_model {width} for {self.parent!r}, which SAE_CHECKPOINTS names as slug "
+                f"{checkpoint!r}'s parent. One of the two is wrong; fix it rather than "
+                f"trusting either number."
+            )
+
+    def encode(self, embedding: Embedding, *, normalize: bool = False) -> SaeActivation:
+        """Turn one embedding into the features that fired at each of its residues.
+
+        Parameters
+        ----------
+        embedding : Embedding
+            What :meth:`protein.embed.ESMC.embed` returned. An array is refused: it carries
+            neither the checkpoint nor the layer this has to check itself against.
+        normalize : bool, default False
+            Scale the magnitudes by the checkpoint's own per-feature statistics. Off by
+            default, so what comes back does not depend on which slug was loaded, and it
+            **raises** where the checkpoint ships none rather than scaling by one.
+
+        Returns
+        -------
+        SaeActivation
+            ``(L, k)`` indices and values with one reconstruction loss per residue, carrying
+            this SAE, its parent, the layer and whether normalisation happened. ``L`` is the
+            residue count: BOS and EOS never reach this path.
+
+        Raises
+        ------
+        TypeError
+            If ``embedding`` is not an :class:`~protein.embed.embedding.Embedding`.
+        ValueError
+            If it came from another backbone, from a layer this checkpoint does not cover,
+            or at another width — or if ``normalize`` is asked of a checkpoint that ships no
+            statistics.
+
+        Examples
+        --------
+        >>> from protein import ESMC, Protein
+        >>> from protein.embed import SAE
+        >>> model, sae = ESMC(), SAE("300m-layer23-k64-cb16384")   # doctest: +SKIP
+        >>> embedding = model.embed(Protein("MKTAY", id="P12345"), layer=23)  # doctest: +SKIP
+        >>> sae.encode(embedding).shape                            # doctest: +SKIP
+        (5, 16384)
+        """
+        import torch  # pyright: ignore[reportMissingImports]
+
+        checked = _checked(
+            embedding,
+            sae=self.checkpoint,
+            parent=self.parent,
+            layers=self.layers,
+            d_model=self.d_model,
+        )
+        # The standalone layer and not the container's forward: it applies no token mask and
+        # no flattening reshape, so `(L, d_model)` goes in and `(L, codebook)` comes out.
+        layer: Any = self._model.layers[str(checked.layer)]
+        rows = torch.as_tensor(checked.array, dtype=torch.float32, device=self.device)
+        with torch.no_grad():
+            output = layer(rows)
+            magnitudes = output.feature_magnitudes
+            if normalize:
+                _require_statistics(layer.idf, layer.max, sae=self.checkpoint)
+                magnitudes = magnitudes / layer.max * layer.idf
+            # Dense out, so the k slots are read back off it. Lossless: at most k entries per
+            # row are non-zero, so top-k finds every one of them.
+            values, indices = torch.topk(magnitudes, self.k, dim=-1)
+            loss = output.reconstruction_loss
+        return SaeActivation(
+            indices.to("cpu").numpy().astype(SaeActivation.index_dtype(self.codebook_size)),
+            values.to("cpu", torch.float16).numpy(),
+            loss.to("cpu", torch.float32).numpy(),
+            checked.source,
+            self.parent,
+            checked.layer,
+            self.checkpoint,
+            self.codebook_size,
+            self.k,
+            normalize,
+        )
+
+    def __repr__(self) -> str:
+        """Return e.g. ``SAE('300m-layer23-k64-cb16384', cuda)``.
+
+        The slug and where the weights ended up, as :class:`~protein.embed.esm.esmc.ESMC`
+        reports them.
+        """
+        return f"{type(self).__name__}({self.checkpoint!r}, {self.device})"
