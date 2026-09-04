@@ -107,8 +107,8 @@ request  # FoldingRequest(4 chains, 164 residues)
 request.chain_ids  # ('A', 'B', 'C', 'D')
 ```
 
-The two accessions are provenance. They ride along to the answer, so a folded chain can say
-where it came from.
+The two accessions ride along to the answer, so a folded chain can say which entry its
+sequence came from.
 
 ```python
 model = ESMFold2()  # the weights load once
@@ -119,13 +119,48 @@ prediction.chain_ids
 A chain label comes from its place in the request. Nobody named these chains, so read the
 labels off `prediction.chain_ids` rather than assuming them.
 
-The output directory is required and defaults nowhere. What comes back is a `Structure`, the
-same class a deposited entry gets. It also carries `prediction.confidence`, which is what
-the model said about its own answer.
+You have to pass an output directory. There is no default. What comes back is a `Structure`,
+the same thing you get for a deposited entry, and it carries `prediction.confidence` with
+what the model said about its own answer.
 
-The default checkpoint is `ESMFold2-Fast`. It needs no alignment, which is why this page
-never builds one. For a deeper run that reads one, see
-[Build an alignment](guides/alignments.md).
+The default checkpoint is `ESMFold2-Fast`, which needs no alignment. To fold against a
+deeper one, see [Build an alignment](guides/alignments.md).
+
+## Look at it
+
+`view()` gives you a viewer you can turn and zoom. Colour it by the B-factor column and you
+are colouring by the model's own confidence, residue by residue:
+
+```python exec="true" html="true" source="above"
+from protein import Structure
+
+prediction = Structure.from_file("docs/fixtures/ap1.cif", id="ap1")
+confidence = {"prop": "b", "gradient": "roygb", "min": 50, "max": 100}
+print(
+    prediction.view(
+        width="100%", height=460, style={"cartoon": {"colorscheme": confidence}}
+    ).write_html()
+)
+```
+
+Drag to turn it, scroll to zoom. Blue is confident and red is not.
+
+That is the real answer to the fold above, kept in the repository as
+[`ap1.cif`](fixtures/ap1.cif) so this page needs no GPU to draw it. Two long helices wind
+around each other and lie down in the groove of the duplex. The ends of the helices are red,
+which is what you should expect: they are the loose ends of a piece cut out of a longer
+protein.
+
+The numbers agree with the picture:
+
+```python
+prediction.confidence.plddt  # 0.87
+prediction.confidence.iptm  # 0.74
+```
+
+`plddt` is the mean per-residue confidence and `iptm` scores how well the chains sit against
+each other, so `iptm` is the one to read for a complex. Both run from 0 to 1. The B-factor
+column the viewer colours by holds the same per-residue measure scaled to 0 to 100.
 
 ## Check it against the crystal
 
@@ -148,8 +183,8 @@ chain has a twin.
 crystal["E"].uniprot  # ('P01100',)
 ```
 
-That accession comes from SIFTS, not from the file. Every mmCIF carries a cross-reference of
-its own, and the two disagree. SIFTS is the only join this package reads.
+That accession comes from SIFTS, not from the file. The file carries a cross-reference of its
+own, and the two can differ. This package always answers with SIFTS.
 
 Now the line that matters:
 
@@ -166,4 +201,5 @@ crystallographer put in a tube in 1995. Nothing asserted that. The trim checked 
   look at them in 3D.
 - [Predict a structure](guides/folding.md) — naming a prediction, repeated chains, bigger
   complexes.
-- [How it fits together](concepts.md) — why `Protein` and `Structure` are peers.
+- [The three things you work with](concepts.md) — moving between proteins, structures and
+  chains.

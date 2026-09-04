@@ -52,12 +52,8 @@ msa.write("p12345.a3m")  # keep it, at a path you choose
 A3M is FASTA with one rule on top. **Case is the match state.** An uppercase residue holds
 a column, and so does a `-`. A lowercase residue is an insertion, and it holds no column.
 
-That rule is the whole difference. An alignment that has been put into upper case has lost
-the one thing separating A3M from aligned FASTA. So nothing here changes the case of
-anything.
-
-It is also why an `MSA` holds plain text. biotite's `Alignment` uppercases on construction,
-so this package never holds one.
+An alignment that has been put into upper case has lost that information. So nothing here
+changes the case of anything.
 
 ## How deep does it need to be?
 
@@ -76,9 +72,9 @@ species.
 Rows with no key still fold. But each chain then folds as though nothing related it to the
 others, and nothing warns you.
 
-Headers are carried byte for byte for that reason. A `key=` or `OX=` field reaches the
-alignment, instead of being cut off with the description. A leading `#` line survives too.
-That is where the chain layout of a complex is written.
+Headers are carried byte for byte. A `key=` or `OX=` field reaches the alignment, instead of
+being cut off with the description. A leading `#` line survives too. That is where the chain
+layout of a complex is written.
 
 ## What gets refused, and when
 
@@ -86,9 +82,8 @@ An `MSA` is checked when it is built, not two steps later. Row 0 is the query, s
 carries no lowercase. Every row shares one match-state count. A ragged alignment is refused
 at construction, and the error names the row to blame.
 
-The check is about shape and never about residues. A row spelling `U` is well-formed A3M,
-whatever this package's own alphabet says. An alignment is a file's content, and this class
-holds it and hands it back.
+The check is about shape and never about residues. A row spelling `U` is well-formed A3M and
+is kept, whatever the rest of this package makes of that letter.
 
 ## From the command line
 
@@ -97,8 +92,8 @@ protein msa search MKTAYIAKQRQISFVKSHFSRQ uniref30 p12345.a3m
 protein msa align homologues.fasta insulin.a3m --query P01308
 ```
 
-The output path is an argument, not an option. It is required for both, and for the same
-reason there is no output path in Python. Nothing durable lands anywhere you did not name.
+The output path is an argument, not an option, and both commands require it. Nothing lands
+anywhere you did not name.
 
 `search` passes the mmseqs knobs through: `--sensitivity`, `--evalue`, `--max-seqs` and
 `--threads`. `--id` names the query, and that name becomes the header of row 0. `align`

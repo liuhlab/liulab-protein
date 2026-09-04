@@ -27,11 +27,11 @@ s["A"].search("pdb")  # one chain
 A whole structure is one Foldseek run, not a loop over chains. Foldseek splits the chains
 itself. The `query` column then names each one as `<entry>_<chain>`, such as `1UBQ_A`.
 
-## Why a protein cannot search by shape
+## There is no shape search on a protein
 
-There is no shape search on `Protein`. Foldseek reads coordinates, and a protein holds none.
-A method goes on the class the tool takes directly. It never goes on a class that would first
-have to fetch something else. [How it fits together](../concepts.md) has the rest of the rule.
+Foldseek reads coordinates, and a `Protein` holds none. To search by shape you need a
+`Structure` or a `Chain`. [The three things you work with](../concepts.md) shows how to get
+from an accession to a structure.
 
 ## You name the database every time
 

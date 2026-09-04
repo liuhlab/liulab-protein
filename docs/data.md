@@ -4,9 +4,8 @@ Point the package at the lab's data directory, then bring in the databases you s
 
 ## One data directory for the lab
 
-Databases and maps are gigabytes. They are shared, and they are the same files
-`liulab-genome` reads. So there is one data directory for the lab, and this package takes a
-subdirectory of it rather than inventing a second root.
+Databases and maps are gigabytes, and the lab shares one copy of them. Everything this
+package reads and writes lives under one directory that you name.
 
 Name it with `LIULAB_DATA`:
 

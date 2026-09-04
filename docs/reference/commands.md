@@ -1,7 +1,7 @@
 # Commands
 
 `protein --help` lists every command, and each command has a `--help` of its own. Every one
-of them takes `--json`. Each lane's commands live beside the code they call.
+of them takes `--json`.
 
 ## Every command
 
@@ -28,8 +28,8 @@ of them takes `--json`. Each lane's commands live beside the code they call.
 
 ## version and doctor
 
-Neither belongs to a lane. `doctor` exits 1 when a tool is missing, and the message names
-the command that installs it. Run it once after you install.
+`doctor` exits 1 when a tool is missing, and the message names the command that installs
+it. Run it once after you install.
 
 ## db
 
@@ -38,13 +38,12 @@ The four database commands. See [Set up your data](../data.md) for where the fil
 - `adopt` copies nothing. It points a name in the data dir at the path you give it, and
   writes a record beside the real files. Use it on a cluster, where the files are usually
   there already.
-- `download` does not do the downloading. `mmseqs databases` and `foldseek databases` fetch,
-  and this registers what they leave. It needs a network, so run it on a login node.
+- `download` hands the fetch to `mmseqs databases` or `foldseek databases`, then registers
+  what they leave. It needs a network, so run it on a login node.
 - `--kind sequence` or `--kind structure` is only for a name this package does not know.
   A declared name, and any name you adopted once, already says which it is.
 - `--force` writes a fresh record over one that is there.
-- None of the four changes a database. These files are read-only by design, so there is no
-  `remove`, no `rebuild` and no `index`.
+- None of the four changes a database. There is no `remove`, no `rebuild` and no `index`.
 
 ## esm
 
@@ -64,8 +63,8 @@ Embedding, and the feature descriptions that name what an SAE feature means. See
 One sequence in, one predicted structure on disk. See
 [Predict a structure](../guides/folding.md).
 
-- The output directory is an argument, not an option. The lab data dir holds input and
-  reference data, never your outputs, so you have to say where the prediction goes.
+- The output directory is an argument, not an option. You have to say where the prediction
+  goes.
 - The query is a FASTA file with one record, or the residues themselves. A file that exists
   wins, so a mistyped path is not folded as a sequence.
 - The command folds from the sequence alone. There is no flag for an alignment. To hand one
@@ -80,7 +79,7 @@ One sequence in, one predicted structure on disk. See
 
 Two ways to build an alignment. See [Build an alignment](../guides/alignments.md).
 
-- Both take the output path as an argument. Nothing durable lands anywhere you did not name.
+- Both take the output path as an argument. Nothing lands anywhere you did not name.
 - `search` takes the residues themselves, then the name of a registered sequence database.
   The alphabet is checked before mmseqs starts.
 - `align` needs `--query`, which says what goes in row 0. Give the header, or the identifier
@@ -95,7 +94,7 @@ One query against one database. See [Search a database](../guides/search.md).
 - Rows go to stdout, tab-separated. The column names and the count go to stderr, so
   `protein search seq ... | cut -f2` is the list of targets and nothing else.
 - Identity is `pident` for `seq` and `fident` for `struct`. The first is a percentage and
-  the second is a fraction. Neither is renamed into the other.
+  the second is a fraction.
 - Without `--chain`, `struct` runs Foldseek once over every chain at once. The `query`
   column then says which chain each hit belongs to.
 - `--chain` wants the label exactly as the file spells it. Case counts, and not every label
@@ -104,7 +103,7 @@ One query against one database. See [Search a database](../guides/search.md).
 
 ## sifts
 
-The PDB to UniProt map, which is the only join between the two namespaces. See
+The map from a PDB entry's chains to UniProt accessions. See
 [Set up your data](../data.md).
 
 - `prepare` needs the network, so run it on a login node. Already prepared, it fetches
@@ -124,14 +123,12 @@ Fill the coordinate cache, and look inside an entry. See
 - `show` takes a coordinate file, or a PDB entry id. An id that is not cached is fetched.
 - An empty `uniprot` cell is a real answer. It means a nucleic-acid chain, a ligand chain,
   or an entry SIFTS never curated.
-- Searching a structure is not here. It is `protein search struct`, beside the sequence
-  search.
+- Searching a structure is not here. It is `protein search struct`.
 
 ## The --json flag
 
 `--json` prints one JSON object instead of the plain lines. The answer is the same, keyed
-by name, so nothing has to read a printed table. Use it whenever something other than a
-person reads the output.
+by name. Use it whenever something other than a person reads the output.
 
 Every command takes it. Without it, `protein search` and `protein structure show` print a
 tab-separated table, and the rest print one `key: value` per line. On a `prepare` command,
