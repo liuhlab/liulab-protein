@@ -17,11 +17,12 @@ from typing import Any, cast
 
 import numpy as np
 import pytest
+from biotite.sequence import NucleotideSequence, ProteinSequence
 from biotite.structure import AtomArray
 from genome.store import fetch as genome_fetch
 
 from protein import Structure, sifts
-from protein.embed.esm import Embeddable
+from protein.embed.esm import Embeddable, _residues
 from protein.external import ExternalTool
 from protein.io import structure as io
 from protein.sifts import SiftsNotDownloadedError
@@ -45,6 +46,16 @@ def ubq() -> Structure:
 def bna() -> Structure:
     """`1BNA`, two chains of DNA."""
     return Structure.from_file(_BNA, id="1BNA")
+
+
+@pytest.fixture
+def water_only(ubq: Structure, tmp_path: Path) -> Structure:
+    """`1UBQ`'s waters alone, which is a chain of neither kind."""
+    atoms = ubq.atoms
+    waters = cast("AtomArray", atoms[atoms.res_name == "HOH"])
+    written = tmp_path / "water.cif"
+    io.write_atoms(written, waters)
+    return Structure.from_file(written)
 
 
 @pytest.fixture
@@ -150,12 +161,8 @@ def test_the_kind_is_the_majority_and_not_a_demand_for_purity(bna: Structure) ->
     assert chain.kind == "nucleic"
 
 
-def test_a_chain_of_neither_kind_is_other(ubq: Structure, tmp_path: Path) -> None:
-    atoms = ubq.atoms
-    waters = cast("AtomArray", atoms[atoms.res_name == "HOH"])
-    only_water = tmp_path / "water.cif"
-    io.write_atoms(only_water, waters)
-    assert Structure.from_file(only_water)["A"].kind == "other"
+def test_a_chain_of_neither_kind_is_other(water_only: Structure) -> None:
+    assert water_only["A"].kind == "other"
 
 
 # --- sequence ------------------------------------------------------------------
@@ -177,16 +184,24 @@ def test_the_sequence_is_a_biotite_protein_sequence_and_not_a_string(ubq: Struct
     assert str(sequence) == _UBIQUITIN
 
 
-def test_a_chain_that_is_not_protein_refuses_rather_than_answering(bna: Structure) -> None:
-    # The `Embeddable` protocol knows nothing of `.kind`, so this refusal is what stops a
-    # DNA chain reaching the tokenizer.
-    with pytest.raises(ValueError, match="1BNA_A is nucleic, not protein"):
-        _ = bna["A"].sequence
+def test_a_dna_chain_answers_with_its_bases(bna: Structure) -> None:
+    # The Drew-Dickerson dodecamer, as `1BNA` was solved for it.
+    assert str(bna["A"].sequence) == "CGCGAATTCGCG"
 
 
-def test_the_refusal_names_the_attribute_that_would_have_said_so(bna: Structure) -> None:
+def test_each_kind_answers_with_its_own_biotite_type(bna: Structure, ubq: Structure) -> None:
+    assert isinstance(bna["A"].sequence, NucleotideSequence)
+    assert isinstance(ubq["A"].sequence, ProteinSequence)
+
+
+def test_a_chain_of_neither_kind_refuses_rather_than_answering(water_only: Structure) -> None:
+    with pytest.raises(ValueError, match="is other, so it is ligand or solvent"):
+        _ = water_only["A"].sequence
+
+
+def test_the_refusal_names_the_attribute_that_would_have_said_so(water_only: Structure) -> None:
     with pytest.raises(ValueError, match=r"\.kind"):
-        _ = bna["A"].sequence
+        _ = water_only["A"].sequence
 
 
 # --- the embedding protocol ----------------------------------------------------
@@ -196,15 +211,16 @@ def test_a_chain_is_embeddable(ubq: Structure) -> None:
     assert isinstance(ubq["A"], Embeddable)
 
 
-def test_a_non_protein_chain_still_looks_embeddable_and_fails_when_asked(
+def test_a_nucleic_chain_still_looks_embeddable_and_is_refused_at_the_tokenizer(
     bna: Structure,
 ) -> None:
     # `isinstance` against a runtime-checkable protocol reads the class and never calls the
-    # property, so the refusal has to come from the property itself.
+    # property, so a DNA chain looks embeddable. What stops it is `ESMC.embed`'s own check,
+    # since `.sequence` now answers for it.
     chain = bna["A"]
     assert isinstance(chain, Embeddable)
-    with pytest.raises(ValueError, match="not protein"):
-        _ = chain.sequence
+    with pytest.raises(TypeError, match="ESM-C is a protein model"):
+        _residues(chain)
 
 
 # --- uniprot -------------------------------------------------------------------

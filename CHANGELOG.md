@@ -25,3 +25,12 @@ sets one.
   release answered, so there is no new set to prepare, no cache and no new command. One
   direction lives here. Going from a gene to its proteins starts from a species rather than
   from a protein, so it stays a plain `genome.xref` call.
+
+- **A nucleic alphabet, so DNA and RNA get in.** `protein.seq.to_nucleotide_sequence` takes
+  the four bases, the eleven IUPAC ambiguity codes and `U`, in either case, and hands back
+  biotite's `NucleotideSequence`. `U` becomes `T` and says so; anything else raises the same
+  error a bad protein sequence does. There is no `DNA` class and no `RNA` class.
+
+  `Chain.sequence` now answers for a nucleic chain instead of refusing, and refuses only a
+  chain that is neither — a ligand or the solvent. `Chain.kind` is unchanged and still says
+  which type will come back. The guard that kept DNA away from ESM-C moved to `ESMC.embed`.

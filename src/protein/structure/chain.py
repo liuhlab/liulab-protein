@@ -10,17 +10,19 @@ first two means anything.
 ADR-0002 and would not work anyway: it raises ``BadStructureError`` on an entry whose water
 block is its own chain segment. The residue-to-letter step is
 :func:`biotite.structure.info.one_letter_code`, which is CCD-backed and **truthful**, and the
-fold from there into what biotite can store is :func:`protein.seq.to_protein_sequence`, which
-writes ``X`` and warns. ``ProteinSequence.convert_letter_3to1`` is the other converter
-ADR-0002 rules out; do not reach for it.
+fold from there into what biotite can store is :func:`protein.seq.to_protein_sequence` or
+:func:`protein.seq.to_nucleotide_sequence`, which write ``X`` and ``T`` and warn.
+``ProteinSequence.convert_letter_3to1`` is the other converter ADR-0002 rules out; do not
+reach for it.
 
 **A sequence here is the observed one.** It is built from the residues that have
 coordinates, so a disordered loop is absent rather than filled in from ``SEQRES``. That is
 what Foldseek reads too, and what a residue-level SIFTS join is against.
 
 **A chain is not always a protein.** :attr:`~Chain.kind` is ``"protein"``, ``"nucleic"`` or
-``"other"``, and :attr:`~Chain.sequence` refuses on the last two rather than answering with
-something a tokenizer would accept.
+``"other"``, and it is what a caller checks first, because it says which of biotite's two
+sequence types :attr:`~Chain.sequence` will answer with. A ligand-only or water-only chain
+has neither, so it refuses.
 
 Examples
 --------
@@ -44,9 +46,11 @@ from protein import seq
 from protein.io import structure as _io
 
 if TYPE_CHECKING:
+    import numpy as np
     import pandas as pd
-    from biotite.sequence import ProteinSequence
+    from biotite.sequence import NucleotideSequence, ProteinSequence
     from biotite.structure import AtomArray
+    from numpy.typing import NDArray
 
     from protein.search.mmseqs import SearchTarget
     from protein.structure.structure import Structure
@@ -62,6 +66,9 @@ KINDS: tuple[ChainKind, ...] = ("protein", "nucleic", "other")
 #: What a residue with no one-letter code in the Chemical Component Dictionary becomes.
 #: ``X`` means unknown, which is true of it.
 _UNKNOWN_RESIDUE = "X"
+
+#: The same, for a nucleotide. ``N`` is the nucleic alphabet's unknown; ``X`` is not in it.
+_UNKNOWN_NUCLEOTIDE = "N"
 
 #: What a chain's query file is written as. mmCIF, because it is the format that can hold a
 #: chain label of more than one character and the only one this package writes.
@@ -183,54 +190,59 @@ class Chain:
         return "protein" if amino >= nucleic else "nucleic"
 
     @cached_property
-    def sequence(self) -> ProteinSequence:
-        """The residues this chain was solved for, as biotite's ``ProteinSequence``.
+    def sequence(self) -> ProteinSequence | NucleotideSequence:
+        """The residues this chain was solved for, as one of biotite's two sequence types.
 
-        Built from the amino-acid residues' ``res_name`` — see this module's docstring for
-        which converter does the three-letter step and ADR-0002 for which must not.
-        **Observed, not ``SEQRES``**: a residue with no coordinates is not in here.
+        Built from the polymer residues' ``res_name`` — see this module's docstring for which
+        converter does the three-letter step and ADR-0002 for which must not. **Observed, not
+        ``SEQRES``**: a residue with no coordinates is not in here.
 
         Returns
         -------
-        biotite.sequence.ProteinSequence
-            One symbol per residue, in file order. A residue the Chemical Component
-            Dictionary gives no one-letter code for becomes ``X``.
+        biotite.sequence.ProteinSequence or biotite.sequence.NucleotideSequence
+            One symbol per residue, in file order, and which type it is follows
+            :attr:`kind`. A residue the Chemical Component Dictionary gives no one-letter
+            code for becomes ``X`` in a protein and ``N`` in a nucleic acid.
 
         Raises
         ------
         ValueError
-            If :attr:`kind` is not ``"protein"``. The
-            :class:`~protein.embed.esm.Embeddable` protocol ``ESMC.embed`` checks knows
-            nothing of :attr:`kind`, so refusing here is what stops a DNA chain reaching the
-            tokenizer.
+            If :attr:`kind` is ``"other"`` — a ligand-only or water-only chain has no
+            polymer to read.
         protein.seq.InvalidResidueError
-            If a residue's one-letter code is outside :data:`protein.seq.ALPHABET`.
+            If a residue's one-letter code is outside the alphabet for its kind.
 
         Warns
         -----
         protein.seq.ResidueCoercionWarning
-            If the chain holds ``SEC`` or ``PYL``, whose truthful codes ``U`` and ``O``
-            biotite cannot store and this package folds to ``X`` — loudly, where ADR-0002's
-            banned converters are silent.
+            If a protein chain holds ``SEC`` or ``PYL``, or a nucleic one holds uracil.
+            biotite can store none of the three, and this package folds them loudly where
+            ADR-0002's banned converters are silent.
 
         Examples
         --------
         >>> str(Structure("1UBQ")["A"].sequence)[:5]      # doctest: +SKIP
         'MQIFV'
+        >>> str(Structure("1BNA")["A"].sequence)          # doctest: +SKIP
+        'CGCGAATTCGCG'
         """
-        if self.kind != "protein":
+        if self.kind == "other":
             raise ValueError(
-                f"chain {self.id} is {self.kind}, not protein, so it has no amino-acid "
-                f"sequence. Check `.kind` before asking; `.atoms` is what a non-protein "
-                f"chain answers with."
+                f"chain {self.id} is other, so it is ligand or solvent and has no polymer "
+                f"sequence. Check `.kind` before asking; `.atoms` is what such a chain "
+                f"answers with."
             )
         atoms = self.atoms
-        residues = atoms[struc.filter_amino_acids(atoms)]
-        _, names = struc.get_residues(residues)
-        letters = "".join(
-            struc_info.one_letter_code(str(name)) or _UNKNOWN_RESIDUE for name in names
-        )
-        return seq.to_protein_sequence(letters, name=self.id)
+        if self.kind == "protein":
+            letters = self._letters(struc.filter_amino_acids(atoms), _UNKNOWN_RESIDUE)
+            return seq.to_protein_sequence(letters, name=self.id)
+        letters = self._letters(struc.filter_nucleotides(atoms), _UNKNOWN_NUCLEOTIDE)
+        return seq.to_nucleotide_sequence(letters, name=self.id)
+
+    def _letters(self, mask: NDArray[np.bool_], unknown: str) -> str:
+        """Return one Chemical Component Dictionary letter per residue the mask keeps."""
+        _, names = struc.get_residues(self.atoms[mask])
+        return "".join(struc_info.one_letter_code(str(name)) or unknown for name in names)
 
     @property
     def uniprot(self) -> tuple[str, ...]:

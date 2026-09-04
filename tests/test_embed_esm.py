@@ -17,7 +17,7 @@ from biotite.sequence import ProteinSequence
 
 from protein import Protein
 from protein.embed import CHECKPOINTS, ESMC, Embeddable
-from protein.embed.esm import _layer_index
+from protein.embed.esm import _layer_index, _residues
 
 _SOURCE = Path(__file__).resolve().parents[1] / "src" / "protein" / "embed" / "esm.py"
 
@@ -102,3 +102,7 @@ def test_a_thing_carrying_no_identity_is_not_something_esmc_can_embed(item: obje
     # The reason is `Embedding.source`: an embedding made from one of these could not say
     # afterwards what it embedded.
     assert not isinstance(item, Embeddable)
+
+
+def test_the_tokenizer_reads_the_residues_of_a_protein() -> None:
+    assert _residues(Protein("MKTAY", id="P12345")) == "MKTAY"
