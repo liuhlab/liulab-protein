@@ -1,0 +1,2395 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Handling protein sequence related tasks.">
+      
+      
+      
+        <link rel="canonical" href="https://liuhlab.github.io/liulab-protein/research/biotite-coverage-of-v1/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>What biotite and its peers already cover of v1's surface - liulab-protein</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#what-biotite-and-its-peers-already-cover-of-v1s-surface" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="liulab-protein" class="md-header__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            liulab-protein
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              What biotite and its peers already cover of v1's surface
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="liulab-protein" class="md-nav__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    liulab-protein
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The three things you work with
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Setting up
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Setting up
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set up your data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Guides
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Guides
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Search a database
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/alignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build an alignment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Embed a sequence
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/structures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Work with structures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/folding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Predict a structure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Commands
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Python API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#answer-shortest-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Answer, shortest form
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#method-and-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Method and provenance
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coverage-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Coverage table
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#candidate-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Candidate table
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Candidate table">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-the-lock-holds-biotite-at-140" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Why the lock holds biotite at 1.4.0
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-alphabet" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. The alphabet
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. The alphabet">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-in-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What is in it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-construction-does-with-a-symbol-outside-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What construction does with a symbol outside it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#can-the-alphabet-be-extended" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Can the alphabet be extended?
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-dangerous-part-silent-repair-at-three-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The dangerous part: silent repair, at three boundaries
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-much-does-this-cost-in-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How much does this cost, in entries?
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#and-what-the-esm-c-tokenizer-actually-accepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        And what the ESM-C tokenizer actually accepts
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-8-has-to-decide" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What #8 has to decide
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-iofastapy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. <code>io/fasta.py</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. io&#x2f;fasta.py">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headers-survive-verbatim-adopt" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Headers survive verbatim — adopt
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-conversion-build-ours" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Type conversion — build ours
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gzip-build-ours-three-lines" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        gzip — build ours, three lines
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#does-it-scale-yes-measured" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Does it scale? Yes — measured
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-pyfastx-would-come-in-and-why-not-yet" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where <code>pyfastx</code> would come in — and why not yet
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-fetching" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Fetching
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Fetching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#both-fetch-functions-already-do-the-local-first-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Both <code>fetch()</code> functions already do the local-first rule
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Formats
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-constraint-the-map-puts-on-all-of-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The constraint the map puts on all of this
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. <code>Chain</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Chain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kind-adopt" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>.kind</code> — adopt
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#atoms-get_chains-and-chain_iter-are-not-what-a-caller-means" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>.atoms</code> — <code>get_chains</code> and <code>chain_iter</code> are not what a caller means
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sequence-to_sequence-fails-on-real-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>.sequence</code> — <code>to_sequence</code> fails on real entries
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-sifts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. SIFTS
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-externalpy-and-the-search-lanes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. <code>external.py</code> and the search lanes
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. external.py and the search lanes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#biotite-wraps-neither-tool-and-never-will-by-accident" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        biotite wraps neither tool, and never will by accident
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#is-any-wrapper-worth-taking-over-1s-own-seam-no" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Is any wrapper worth taking over #1's own seam? No
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-embed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        7. <code>embed/</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Open items
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="what-biotite-and-its-peers-already-cover-of-v1s-surface">What biotite and its peers already cover of v1's surface<a class="headerlink" href="#what-biotite-and-its-peers-already-cover-of-v1s-surface" title="Permanent link">&para;</a></h1>
+<p>Research note for <a href="https://github.com/liuhlab/liulab-protein/issues/21">issue #21</a>. Walks
+<a href="https://github.com/liuhlab/liulab-protein/issues/1">issue #1</a>'s module layout and records what
+a maintained package already does. The stance is settled by the map's Notes and is not reopened
+here: our classes <strong>hold</strong> biotite's types and never subclass them.</p>
+<h2 id="answer-shortest-form">Answer, shortest form<a class="headerlink" href="#answer-shortest-form" title="Permanent link">&para;</a></h2>
+<p><strong>biotite's <code>ProteinSequence</code> alphabet is 24 symbols — <code>ACDEFGHIKLMNPQRSTVWYBZX*</code>. It has no
+<code>U</code>, no <code>O</code> and no <code>J</code>, and never has.</strong> <code>ProteinSequence("MKTU")</code> raises
+<code>AlphabetError: Symbol 'U' is not in the alphabet</code>, which names one symbol, carries no position
+and carries no attributes. Worse than a hard failure: at three I/O boundaries biotite <em>silently
+repairs</em> the input instead — <code>U</code> becomes <code>C</code>, <code>O</code> becomes <code>K</code> — so a selenoprotein loses its
+selenocysteine without an exception and, for <code>O</code>, without even a warning.</p>
+<p>That is the whole of the answer to the load-bearing question, and it settles
+<a href="https://github.com/liuhlab/liulab-protein/issues/8">#8</a>: <code>seq.py</code>'s alphabet and its
+<code>InvalidResidueError</code> are <strong>ours to build</strong>. Nothing about that contradicts the map — validation
+is a pure function over a string, and it runs <em>before</em> a <code>ProteinSequence</code> is constructed.</p>
+<p>Elsewhere biotite covers more than #1 assumed. <code>FastaFile</code> keeps the full UniProt header
+verbatim and streams Swiss-Prot in under a second. Both <code>fetch()</code> functions already implement the
+look-local-first rule of #9. <code>filter_amino_acids</code> / <code>filter_nucleotides</code> make <code>Chain.kind</code> a
+one-liner. And biotite ships a native 3Di encoder, which foldseek's own database format does not
+give us.</p>
+<p>Three places have nothing to adopt: <strong>SIFTS</strong> (no maintained package parses the flat file),
+<strong><code>external.py</code></strong> (biotite wraps neither MMseqs2 nor Foldseek, and neither has ever been asked
+for), and <strong><code>embed/</code></strong> (nothing stands between us and the <code>esm</code> SDK that still installs).</p>
+<h2 id="method-and-provenance">Method and provenance<a class="headerlink" href="#method-and-provenance" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Executed on</td>
+<td><code>GPU71FM</code>, the default pixi environment of <code>~/pkg/liulab-protein</code>, biotite <strong>1.4.0</strong>, Python 3.13</td>
+</tr>
+<tr>
+<td>Also executed</td>
+<td>the <code>esm</code> environment, <code>esm</code> <strong>3.4.0</strong> — by file-path import, because <code>import esm</code> is broken there (already filed under <a href="https://github.com/liuhlab/liulab-protein/issues/5">#5</a>)</td>
+</tr>
+<tr>
+<td>Data measured</td>
+<td>Swiss-Prot <code>uniprot_sprot.fasta.gz</code>, downloaded to GPU71FM 2026-09-03, <code>Last-Modified: 2026-06-10</code>, 93,706,469 bytes; PDB entries <code>4HHB</code>, <code>1GP1</code>, <code>2OR1</code>, <code>1AA6</code>, <code>1L2Y</code> fetched live from RCSB</td>
+</tr>
+<tr>
+<td>Source read</td>
+<td>the installed biotite 1.4.0 tree on GPU71FM, plus <code>github.com/biotite-dev/biotite</code> at tag <code>v1.7.1</code></td>
+</tr>
+<tr>
+<td>Packaging facts</td>
+<td><code>pypi.org/pypi/&lt;name&gt;/json</code> and <code>api.anaconda.org/package/&lt;channel&gt;/&lt;name&gt;</code>, queried 2026-09-03</td>
+</tr>
+</tbody>
+</table>
+<p>Every claim below is marked <strong>VERIFIED</strong> (measured by running it) or <strong>INFERRED</strong> (read from
+source or documentation without running it). Where the two disagree, the measurement wins.</p>
+<p><strong>GPU71FM reached every network resource this note needed</strong> — UniProt's FTP, RCSB's REST
+download service, and EBI's SIFTS flat-file directory. No host but GPU71FM was used.</p>
+<h2 id="coverage-table">Coverage table<a class="headerlink" href="#coverage-table" title="Permanent link">&para;</a></h2>
+<p>Module names follow #1's layout, amended by <a href="https://github.com/liuhlab/liulab-protein/issues/9">#9</a>
+(<code>StructureMixin</code> dissolves; <code>Structure</code> and <code>Chain</code> become peers of <code>Protein</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>What already exists</th>
+<th>Verdict</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>seq.py</code></strong> — alphabet</td>
+<td><code>ProteinSequence.alphabet</code>, a 24-symbol <code>LetterAlphabet</code></td>
+<td><strong>Build ours</strong></td>
+<td>No <code>U</code>, <code>O</code> or <code>J</code>. Covers <code>B</code>, <code>Z</code>, <code>X</code> and <code>*</code> only. Unchanged since 2017 and unchanged in 1.7.1.</td>
+</tr>
+<tr>
+<td><strong><code>seq.py</code></strong> — validation</td>
+<td><code>AlphabetError</code></td>
+<td><strong>Build ours</strong></td>
+<td>Message names the <em>first</em> offender only, no position, no attributes. #1's <code>InvalidResidueError</code> with <code>.offenders</code> has no equivalent. A full scan is a one-line comprehension over <code>alphabet.get_symbols()</code>.</td>
+</tr>
+<tr>
+<td><strong><code>seq.py</code></strong> — the type <code>Protein.sequence</code> holds</td>
+<td><code>ProteinSequence</code></td>
+<td><strong>Hold it, and decide #8 first</strong></td>
+<td>It cannot represent 285 Swiss-Prot entries. Extending it needs a subclass <em>and</em> a <code>get_alphabet()</code> override, and breaks <code>get_molecular_weight</code> and every bundled substitution matrix.</td>
+</tr>
+<tr>
+<td><strong><code>io/fasta.py</code></strong> — read/write, headers</td>
+<td><code>FastaFile</code>, <code>read_iter</code>, <code>write_iter</code></td>
+<td><strong>Adopt</strong></td>
+<td>Header survives byte-for-byte, <code>OS=</code>/<code>OX=</code>/<code>GN=</code>/<code>PE=</code>/<code>SV=</code> included. 575,503 entries in 0.9 s at 0.05 GB peak RSS.</td>
+</tr>
+<tr>
+<td><strong><code>io/fasta.py</code></strong> — string to sequence</td>
+<td><code>fasta.get_sequence</code> / <code>get_sequences</code></td>
+<td><strong>Build ours</strong></td>
+<td>Tries <code>NucleotideSequence</code> first, so <code>"MKTU"</code> comes back as <em>DNA</em>. Then <code>U</code>→<code>C</code> with a warning, <code>O</code>→<code>K</code> with none, <code>J</code> → <code>ValueError</code>.</td>
+</tr>
+<tr>
+<td><strong><code>io/fasta.py</code></strong> — gzip</td>
+<td>nothing</td>
+<td><strong>Build ours, three lines</strong></td>
+<td><code>TextFile.read</code> has no gzip and no extension sniffing; a <code>.gz</code> path raises <code>UnicodeDecodeError</code>. <code>gzip.open(p, "rt")</code> passed as a file object works.</td>
+</tr>
+<tr>
+<td><strong><code>store.py</code></strong> — fetch on miss</td>
+<td><code>rcsb.fetch</code>, <code>uniprot.fetch</code>, <code>afdb.fetch</code></td>
+<td><strong>Adopt the fetch; build the root</strong></td>
+<td>Each already skips the download when the target file exists and is non-empty — exactly #9's rule. None owns a cache root; <code>target_path</code> is the caller's.</td>
+</tr>
+<tr>
+<td><strong><code>store.py</code></strong> — the data root</td>
+<td><code>genome.store.data_dir</code> / <code>completion</code></td>
+<td><strong>Adopt</strong> (sibling package)</td>
+<td>Settled by #1. Nothing third-party involved.</td>
+</tr>
+<tr>
+<td><strong><code>db/</code></strong> — Swiss-Prot retrieval</td>
+<td>nothing in biotite</td>
+<td><strong>Build ours</strong></td>
+<td>Settled by <a href="https://github.com/liuhlab/liulab-protein/issues/3">#3</a>: <code>mmseqs view --id-list --id-mode 1</code>, or a direct ffindex read.</td>
+</tr>
+<tr>
+<td><strong><code>db/</code></strong> — PDB</td>
+<td><code>pdbx.CIFFile</code> + <code>pdbx.get_structure</code></td>
+<td><strong>Adopt</strong></td>
+<td>Settled by #9. <code>Structure</code> holds a path and parses lazily.</td>
+</tr>
+<tr>
+<td><strong><code>Chain.kind</code></strong></td>
+<td><code>filter_amino_acids</code>, <code>filter_nucleotides</code></td>
+<td><strong>Adopt</strong></td>
+<td>One call each, both CCD-backed, both return atom masks. Correct on a protein-DNA complex.</td>
+</tr>
+<tr>
+<td><strong><code>Chain.atoms</code></strong></td>
+<td><code>get_chains</code>, <code>chain_iter</code></td>
+<td><strong>Build a thin accessor over <code>chain_id</code></strong></td>
+<td>Both are per chain <strong>segment</strong>, not per chain id: <code>get_chains(4HHB)</code> returns twelve entries for four chains. <code>atoms[atoms.chain_id == cid]</code> is what a caller means.</td>
+</tr>
+<tr>
+<td><strong><code>Chain.sequence</code></strong></td>
+<td><code>to_sequence</code></td>
+<td><strong>Build ours</strong></td>
+<td>Raises <code>BadStructureError</code> on every entry tested, even with <code>allow_hetero=True</code>, because waters get their own chain segment. And it silently maps <code>U</code>→<code>C</code>, <code>O</code>→<code>K</code>.</td>
+</tr>
+<tr>
+<td><strong>SIFTS (<a href="https://github.com/liuhlab/liulab-protein/issues/20">#20</a>)</strong></td>
+<td>nothing maintained, anywhere</td>
+<td><strong>Build ours</strong></td>
+<td>No package on PyPI, conda-forge or bioconda parses <code>pdb_chain_uniprot.tsv</code>. The file is 6,211,584 bytes and GPU71FM reaches it.</td>
+</tr>
+<tr>
+<td><strong><code>external.py</code></strong></td>
+<td><code>biotite.application</code> — 9 tools, none of them ours</td>
+<td><strong>Build ours</strong> (port from <code>liulab-genome</code>)</td>
+<td>No MMseqs2 wrapper, no Foldseek wrapper, and <code>mmseqs</code> returns zero hits across biotite's whole tracker. <code>pymmseqs</code> covers half the requirement and vendors a second <code>mmseqs</code> binary.</td>
+</tr>
+<tr>
+<td><strong><code>search/</code></strong> — 3Di</td>
+<td><code>biotite.structure.alphabet.to_3di</code></td>
+<td><strong>Note it, do not use it in v1</strong></td>
+<td>A native 3Di encoder, no Foldseek needed. It encodes; it does not search. Relevant to #1's deferred ProstT5 lane.</td>
+</tr>
+<tr>
+<td><strong><code>embed/</code></strong></td>
+<td><code>esm</code> 3.4.0 direct</td>
+<td><strong>Build ours, thin</strong></td>
+<td><code>bio-embeddings</code> is dead and pins <code>&lt;3.10</code>; <code>fair-esm</code> is archived and predates ESM-C. <code>transformers</code> is a dependency of <code>esm</code>, not an alternative to it.</td>
+</tr>
+<tr>
+<td><strong><code>core.py</code>, <code>cli.py</code></strong></td>
+<td>—</td>
+<td><strong>Build ours</strong></td>
+<td>This package's vocabulary. Typer and <code>liulab-genome</code>'s conventions, as #1 specifies.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="candidate-table">Candidate table<a class="headerlink" href="#candidate-table" title="Permanent link">&para;</a></h2>
+<p>Queried 2026-09-03. The repo is <code>platforms = ["linux-64"]</code>, Python 3.13, pixi-only, channels
+<code>conda-forge</code> then <code>bioconda</code> — so the last two columns are what decides whether a row is even
+available to us. <strong>VERIFIED</strong> against the PyPI and anaconda.org APIs.</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Latest</th>
+<th>Date</th>
+<th>Python 3.13</th>
+<th>conda-forge linux-64</th>
+<th>Licence</th>
+<th>Relevant to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>biotite</strong></td>
+<td><strong>1.7.1</strong></td>
+<td>2026-06-22</td>
+<td>yes, cp313 wheels; <code>requires-python &gt;=3.12</code></td>
+<td>yes — <code>py313h0aaa388_0</code></td>
+<td>BSD-3-Clause</td>
+<td>everything. <strong>We run 1.4.0</strong>; see below</td>
+</tr>
+<tr>
+<td>gemmi</td>
+<td>0.7.5</td>
+<td>2026-03-02</td>
+<td>yes, cp313 wheels</td>
+<td>yes — <code>py313hbaa079c_0</code></td>
+<td>MPL-2.0</td>
+<td>structure I/O, partial SIFTS</td>
+</tr>
+<tr>
+<td>biopython</td>
+<td>1.88</td>
+<td>2026-08-06</td>
+<td>yes, cp313 wheels + classifier</td>
+<td>yes — <code>py313h07c4f96_0</code></td>
+<td>Biopython Licence Agreement</td>
+<td>FASTA fallback</td>
+</tr>
+<tr>
+<td>MDAnalysis</td>
+<td>2.10.0</td>
+<td>2025-10-17</td>
+<td>yes, cp313 wheels + classifier</td>
+<td>yes — <code>py313h08cd8bf_0</code></td>
+<td>LGPL-3.0-or-later</td>
+<td>none found</td>
+</tr>
+<tr>
+<td><strong>ProDy</strong></td>
+<td>2.6.1</td>
+<td>2025-08-19</td>
+<td><strong>no</strong> — cp312 wheel only</td>
+<td><strong>no py313 build at any version</strong>; no osx-arm64 ever</td>
+<td>MIT</td>
+<td>ruled out by the toolchain</td>
+</tr>
+<tr>
+<td>pyfastx</td>
+<td>2.3.1</td>
+<td>2026-06-10</td>
+<td>yes, cp313 wheels + classifier</td>
+<td><strong>bioconda only</strong> — <code>py313hfeada96_0</code></td>
+<td>MIT</td>
+<td>large-FASTA random access</td>
+</tr>
+<tr>
+<td>pymmseqs</td>
+<td>1.2.0</td>
+<td>2026-08-11</td>
+<td>yes, classifier through 3.14</td>
+<td><strong>bioconda only</strong>, and <code>noarch</code></td>
+<td>MIT</td>
+<td><code>external.py</code> — see the caveat</td>
+</tr>
+<tr>
+<td>esm</td>
+<td>3.4.0</td>
+<td>2026-08-27</td>
+<td>yes; <code>requires-python &gt;=3.12</code></td>
+<td><strong>neither channel</strong> — PyPI only</td>
+<td>MIT (Chan Zuckerberg Biohub)</td>
+<td><code>embed/</code> — already our dependency</td>
+</tr>
+<tr>
+<td>transformers</td>
+<td>5.16.1</td>
+<td>2026-08-26</td>
+<td>yes, pure Python</td>
+<td>yes, <code>noarch</code></td>
+<td>Apache-2.0</td>
+<td>pulled in by <code>esm</code></td>
+</tr>
+<tr>
+<td>fair-esm</td>
+<td>2.0.0</td>
+<td>2022-11-01</td>
+<td>untested; upstream <strong>archived</strong> 2023</td>
+<td>yes, <code>noarch</code></td>
+<td>MIT</td>
+<td>superseded by <code>esm</code></td>
+</tr>
+<tr>
+<td>bio-embeddings</td>
+<td>0.2.2</td>
+<td>2021-09-06</td>
+<td><strong>no</strong> — pins <code>&lt;3.10</code></td>
+<td><code>noarch</code>, but the recipe dropped the ceiling</td>
+<td>MIT</td>
+<td>ruled out</td>
+</tr>
+<tr>
+<td>atomium</td>
+<td>1.0.11</td>
+<td>2021-11-28</td>
+<td>untested; repo idle since 2022</td>
+<td>yes, <code>noarch</code></td>
+<td>MIT</td>
+<td>none found</td>
+</tr>
+<tr>
+<td>PDBeCif</td>
+<td>1.5</td>
+<td>2021-03-10</td>
+<td>untested; repo idle since 2021</td>
+<td><strong>bioconda only</strong>, <code>noarch</code></td>
+<td>disputed — PyPI says GPLv3, repo says Apache-2.0</td>
+<td>none found</td>
+</tr>
+<tr>
+<td>pdbe-sifts</td>
+<td>1.0</td>
+<td>2026-04-30</td>
+<td>classifiers stop at 3.12</td>
+<td><strong>neither channel</strong></td>
+<td>Apache-2.0</td>
+<td>SIFTS — but see below</td>
+</tr>
+</tbody>
+</table>
+<p>Three rows are worth reading twice.</p>
+<p><strong>ProDy cannot be installed here.</strong> No cp313 wheel on PyPI and no <code>py313</code> build on conda-forge at
+any version; the "Rebuild for python 3.13" feedstock pull request has been open since 2025-08-07.
+Do not propose it for any module. <strong>VERIFIED</strong> against the anaconda.org file listing.</p>
+<p><strong>pyfastx and pymmseqs are bioconda-only</strong>, which is fine — this repo already takes <code>mmseqs2</code> and
+<code>foldseek</code> from bioconda — but neither has a conda-forge feedstock, so neither gets that channel's
+rebuild guarantees.</p>
+<p><strong>We run biotite 1.4.0 and the newest is 1.7.1 — and that is not drift.</strong> See
+<a href="#why-the-lock-holds-biotite-at-140">Why the lock holds biotite at 1.4.0</a>: a conda-forge numpy
+cap forces it. Either way <strong>the alphabet is identical in 1.7.1</strong> (<strong>VERIFIED</strong> by reading
+<code>seqtypes.py</code> at tag <code>v1.7.1</code>), so no upgrade rescues <code>U</code>, <code>O</code> or <code>J</code>.</p>
+<h3 id="why-the-lock-holds-biotite-at-140">Why the lock holds biotite at 1.4.0<a class="headerlink" href="#why-the-lock-holds-biotite-at-140" title="Permanent link">&para;</a></h3>
+<p>Not a pin and not an oversight. <code>pyproject.toml</code> asks for <code>biotite = "&gt;=1"</code> and <code>numpy = "&gt;=2"</code>,
+both open. The conflict is downstream:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>numpy constraint in the conda package</th>
+<th>Built</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>biotite 1.4.0</td>
+<td><code>numpy &gt;=1.23,&lt;3</code></td>
+<td>2025-09-22</td>
+</tr>
+<tr>
+<td>biotite 1.5.0 – <strong>1.7.1</strong></td>
+<td><strong><code>numpy &gt;=1.26,&lt;2.4</code></strong></td>
+<td>2026-01-03 – 2026-06-24</td>
+</tr>
+</tbody>
+</table>
+<p><strong>VERIFIED</strong> against the anaconda.org file listing. numpy 2.4 reached conda-forge 2026-05-16 and
+2.5.0 on 2026-06-22; biotite 1.7.1 was built two days later against the 2026-06-19 conda-forge
+pinning, which still pinned numpy 2.3 — so its run export caps at <code>&lt;2.4</code>. No biotite has been
+rebuilt since, and the feedstock has <strong>no open pull request</strong>. With <code>numpy = "&gt;=2"</code> the solver
+takes numpy 2.5.2, and 1.4.0 is then the newest biotite that fits.</p>
+<p>The cap is <strong>conda-forge's, not biotite's</strong>: upstream declares only <code>numpy&gt;=1.25</code>, in 1.4.0 and
+1.7.1 alike — <strong>VERIFIED</strong> against the PyPI metadata for both.</p>
+<p>The upgrade does solve, at a price. Re-locking the real manifest with <code>biotite = "&gt;=1.7"</code> in a
+throwaway worktree on GPU71FM gives biotite <strong>1.7.1</strong> and <strong>numpy 2.3.5</strong> — <strong>VERIFIED</strong>. Nothing
+else moves: pandas 2.3.3, pyarrow 25.0.0, scipy 1.18.0, <code>mmseqs2</code> and <code>foldseek</code> are unchanged.</p>
+<p>So it is a straight trade — newest biotite <strong>or</strong> newest numpy, not both — and nothing in this
+note needs either. Worth revisiting when the feedstock rebuilds; not worth forcing now.</p>
+<hr />
+<h2 id="1-the-alphabet">1. The alphabet<a class="headerlink" href="#1-the-alphabet" title="Permanent link">&para;</a></h2>
+<h3 id="what-is-in-it">What is in it<a class="headerlink" href="#what-is-in-it" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong> on GPU71FM, biotite 1.4.0:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">biotite</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">ProteinSequence</span><span class="o">.</span><span class="n">alphabet</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">()</span>
+<span class="go">'ACDEFGHIKLMNPQRSTVWYBZX*'   # 24 symbols</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>In the alphabet?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the 20 standard</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>B</code> (Asx), <code>Z</code> (Glx), <code>X</code> (any)</td>
+<td><strong>yes</strong></td>
+</tr>
+<tr>
+<td><code>*</code> (stop)</td>
+<td><strong>yes</strong></td>
+</tr>
+<tr>
+<td><code>U</code> (selenocysteine)</td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>O</code> (pyrrolysine)</td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>J</code> (Leu/Ile)</td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>-</code> (gap)</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>So #1's <code>AMBIGUOUS = X B Z J U O</code> overlaps biotite's alphabet on three of six. It also assumes
+<code>*</code> is rejected; biotite accepts it. And biotite silently uppercases, so <code>ProteinSequence("mkt")</code>
+returns <code>MKT</code> — <strong>VERIFIED</strong>.</p>
+<p>The class docstring says so outright, and says the same in 1.7.1:</p>
+<blockquote>
+<p>The <code>Alphabet</code> of this <code>Sequence</code> class does not support selenocysteine. Please convert
+selenocysteine (<code>U</code>) into cysteine (<code>C</code>) or use a custom <code>Sequence</code> class, if the
+differentiation is necessary.</p>
+</blockquote>
+<p>Pyrrolysine is not mentioned anywhere in the class. The <code>O</code>→<code>K</code> rule was added as an unannounced
+rider on the selenocysteine work (biotite <a href="https://github.com/biotite-dev/biotite/pull/246">PR #246</a>,
+merged 2020-11-10) — <strong>INFERRED</strong> from the tracker.</p>
+<p>The maintainer's reason, on <a href="https://github.com/biotite-dev/biotite/issues/232">issue #232</a>:</p>
+<blockquote>
+<p>One problem is that Selenocysteine (<code>U</code>) is currently not recognized by the amino acid
+alphabet. <strong>To fix this, <code>U</code> needs also to be added to substitution matrices.</strong></p>
+</blockquote>
+<p>and, closing it:</p>
+<blockquote>
+<p>If selenocysteine is explicitly required, a custom <code>Sequence</code> class needs to be created by the
+user.</p>
+</blockquote>
+<p>That is a deliberate, standing position, not an oversight. Searching biotite's tracker for
+<code>pyrrolysine</code> returns <strong>zero</strong> hits — <strong>INFERRED</strong>.</p>
+<h3 id="what-construction-does-with-a-symbol-outside-it">What construction does with a symbol outside it<a class="headerlink" href="#what-construction-does-with-a-symbol-outside-it" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">ProteinSequence</span><span class="p">(</span><span class="s2">"MKTU"</span><span class="p">)</span>
+<span class="go">biotite.sequence.AlphabetError: Symbol 'U' is not in the alphabet</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ProteinSequence</span><span class="p">(</span><span class="s2">"M-KT1 x?"</span><span class="p">)</span>
+<span class="go">biotite.sequence.AlphabetError: Symbol '-' is not in the alphabet</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Question #1 asks</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Which exception?</td>
+<td><code>AlphabetError</code>, which subclasses <code>Exception</code> — <strong>not</strong> <code>ValueError</code></td>
+</tr>
+<tr>
+<td>Does it carry the offending symbols?</td>
+<td>Only in the message string, and only the <strong>first</strong> one</td>
+</tr>
+<tr>
+<td>Does it carry their positions?</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td>Any attributes to read?</td>
+<td><strong>No.</strong> <code>e.args</code> is a 1-tuple holding that one string</td>
+</tr>
+</tbody>
+</table>
+<p>So #1's <code>InvalidResidueError(ValueError)</code> carrying <code>.offenders</code> and <code>.name</code> has no counterpart, and
+a caller repairing input <strong>would</strong> have to parse a message — which is precisely what #1 says it
+must not do. <code>seq.py</code> builds its own. The full scan biotite will not give you is one line:</p>
+<div class="highlight"><pre><span></span><code><span class="n">SYMBOLS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">ProteinSequence</span><span class="o">.</span><span class="n">alphabet</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">())</span>
+<span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SYMBOLS</span><span class="p">]</span>
+<span class="c1"># 'M-KT1 x?U' -&gt; [(1, '-'), (4, '1'), (5, ' '), (7, '?'), (8, 'U')]</span>
+</code></pre></div>
+<p><strong>VERIFIED.</strong> Note that <code>seq.py</code> will use its own 26-letter set here, not biotite's 24.</p>
+<h3 id="can-the-alphabet-be-extended">Can the alphabet be extended?<a class="headerlink" href="#can-the-alphabet-be-extended" title="Permanent link">&para;</a></h3>
+<p>Two paths, both measured, both with a cost.</p>
+<p><strong>Path A — reassign the class attribute.</strong> <code>ProteinSequence.alphabet = LetterAlphabet(...)</code>
+does let construction accept <code>U</code>, <code>O</code> and <code>J</code>. It also breaks the library for the whole process:</p>
+<table>
+<thead>
+<tr>
+<th>After the reassignment</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ProteinSequence("MKTUOJBZX*")</code></td>
+<td><strong>works</strong> — codes <code>[10 8 16 24 25 26 20 21 22 23]</code></td>
+</tr>
+<tr>
+<td><code>get_molecular_weight()</code></td>
+<td><code>IndexError: index 24 is out of bounds for axis 0 with size 24</code></td>
+</tr>
+<tr>
+<td><code>align_optimal(..., SubstitutionMatrix.std_protein_matrix())</code></td>
+<td><code>ValueError: The sequences' alphabets do not fit the matrix</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>VERIFIED.</strong> It is a monkeypatch of a third-party global. Do not.</p>
+<p><strong>Path B — subclass.</strong> Setting <code>alphabet</code> on a subclass is <strong>not enough</strong>: <code>ProteinSequence</code>
+hardcodes</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_alphabet</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ProteinSequence</span><span class="o">.</span><span class="n">alphabet</span>
+</code></pre></div>
+<p>so the subclass must override <code>get_alphabet()</code> too. With both, it works — <strong>VERIFIED</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Subclass with <code>alphabet</code> + <code>get_alphabet()</code></th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Ext("MKTUOJ")</code></td>
+<td><strong>works</strong>, and <code>isinstance(x, ProteinSequence)</code> is <code>True</code></td>
+</tr>
+<tr>
+<td><code>remove_stops()</code></td>
+<td>works</td>
+</tr>
+<tr>
+<td><code>get_molecular_weight()</code></td>
+<td><code>IndexError</code> — <code>_mol_weight_average</code> is a 24-entry array</td>
+</tr>
+<tr>
+<td>any bundled substitution matrix</td>
+<td><code>ValueError</code></td>
+</tr>
+<tr>
+<td><code>convert_letter_1to3("U")</code></td>
+<td><code>KeyError</code> — <code>_dict_1to3</code> has 24 entries</td>
+</tr>
+</tbody>
+</table>
+<p>The two breakages are the maintainer's stated reason for the 24-letter alphabet, so they are not
+bugs to route around. Whether they matter here is a scoping question for #8: v1 aligns with
+MMseqs2, not with <code>biotite.sequence.align</code>, and does not weigh proteins.</p>
+<p>Note also that the extended alphabet passes <code>EXT.extends(ProteinSequence.alphabet)</code> — biotite's
+own <code>AlphabetMapper</code> would recode between them — <strong>VERIFIED</strong>.</p>
+<h3 id="the-dangerous-part-silent-repair-at-three-boundaries">The dangerous part: silent repair, at three boundaries<a class="headerlink" href="#the-dangerous-part-silent-repair-at-three-boundaries" title="Permanent link">&para;</a></h3>
+<p>The alphabet failing loudly is survivable. What is not is that biotite's convenience layers
+rewrite the input rather than fail. <strong>VERIFIED</strong>, all of it:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># biotite/sequence/io/fasta/convert.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_process_protein_sequence</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Replace selenocysteine with cysteine and pyrrolysine with lysine."""</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"U"</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"O"</span><span class="p">,</span> <span class="s2">"K"</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1"># biotite/structure/sequence.py, inside to_sequence()</span>
+<span class="n">one_letter_symbols</span><span class="p">[</span><span class="n">one_letter_symbols</span> <span class="o">==</span> <span class="s2">"U"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"C"</span>
+<span class="n">one_letter_symbols</span><span class="p">[</span><span class="n">one_letter_symbols</span> <span class="o">==</span> <span class="s2">"O"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"K"</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Boundary</th>
+<th><code>U</code></th>
+<th><code>O</code></th>
+<th><code>J</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ProteinSequence(...)</code> directly</td>
+<td><code>AlphabetError</code></td>
+<td><code>AlphabetError</code></td>
+<td><code>AlphabetError</code></td>
+</tr>
+<tr>
+<td><code>fasta.get_sequence(..., seq_type=ProteinSequence)</code></td>
+<td>→ <code>C</code>, <strong><code>UserWarning</code></strong></td>
+<td>→ <code>K</code>, <strong>no signal at all</strong></td>
+<td><code>AlphabetError</code></td>
+</tr>
+<tr>
+<td><code>fasta.get_sequence(...)</code> with no <code>seq_type</code></td>
+<td>see §2 — worse</td>
+<td>→ <code>K</code>, silent</td>
+<td><code>ValueError</code></td>
+</tr>
+<tr>
+<td><code>structure.to_sequence(...)</code></td>
+<td>→ <code>C</code>, <strong>no signal at all</strong></td>
+<td>→ <code>K</code>, <strong>no signal at all</strong></td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<p>Measured end to end on a real entry: <strong>PDB <code>1AA6</code></strong> (formate dehydrogenase H) carries a <code>SEC</code>
+residue at chain-A index 139. <code>to_sequence</code> returns <code>'C'</code> there and emits nothing —
+<strong>VERIFIED</strong>. biotite <em>knows</em> the right letter: <code>biotite.structure.info.one_letter_code("SEC")</code>
+returns <code>'U'</code> and <code>("PYL")</code> returns <code>'O'</code> — <strong>VERIFIED</strong>. The alphabet is the bottleneck, not the
+data.</p>
+<p>The repo sets <code>filterwarnings = ["error"]</code>, so the one warning that does fire becomes a test
+failure rather than a silent corruption. That is the gate working, but it only covers <code>U</code>
+through the FASTA path. <strong><code>O</code> and the whole structure path are silent.</strong></p>
+<h3 id="how-much-does-this-cost-in-entries">How much does this cost, in entries?<a class="headerlink" href="#how-much-does-this-cost-in-entries" title="Permanent link">&para;</a></h3>
+<p>Counted over the full Swiss-Prot release of 2026-06-10 — 575,503 entries, 208,906,902 residues.
+<strong>VERIFIED</strong> on GPU71FM.</p>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Entries containing it</th>
+<th>Share</th>
+<th>Residue occurrences</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>X</code></td>
+<td>2,286</td>
+<td>0.397%</td>
+<td>8,183</td>
+</tr>
+<tr>
+<td><strong><code>U</code></strong></td>
+<td><strong>256</strong></td>
+<td><strong>0.0445%</strong></td>
+<td>331</td>
+</tr>
+<tr>
+<td><code>B</code></td>
+<td>113</td>
+<td>0.0196%</td>
+<td>276</td>
+</tr>
+<tr>
+<td><code>Z</code></td>
+<td>87</td>
+<td>0.0151%</td>
+<td>249</td>
+</tr>
+<tr>
+<td><strong><code>O</code></strong></td>
+<td><strong>29</strong></td>
+<td><strong>0.0050%</strong></td>
+<td>29</td>
+</tr>
+<tr>
+<td><strong><code>J</code></strong></td>
+<td><strong>0</strong></td>
+<td><strong>0%</strong></td>
+<td><strong>0</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The set of distinct symbols across all of Swiss-Prot is <code>ABCDEFGHIKLMNOPQRSTUVWXYZ</code> — every
+letter <strong>except <code>J</code></strong>.</p>
+<p>So: 285 entries (0.0495%) cannot round-trip through biotite, and <code>J</code> has no support in Swiss-Prot
+at all.</p>
+<h3 id="and-what-the-esm-c-tokenizer-actually-accepts">And what the ESM-C tokenizer actually accepts<a class="headerlink" href="#and-what-the-esm-c-tokenizer-actually-accepts" title="Permanent link">&para;</a></h3>
+<p>Issue #1 justifies all six symbols with "UniProt and the ESM tokenizers accept them". Half of
+that is wrong. <code>EsmcTokenizer</code>'s vocabulary is 33 tokens — <strong>VERIFIED</strong> by loading
+<code>esm/models/esmc/tokenizer.py</code> by file path in the <code>esm</code> environment (<code>import esm</code> itself is
+broken there, filed under #5):</p>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>ESM-C token id</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>X</code></td>
+<td>24</td>
+</tr>
+<tr>
+<td><code>B</code></td>
+<td>25</td>
+</tr>
+<tr>
+<td><strong><code>U</code></strong></td>
+<td><strong>26</strong></td>
+</tr>
+<tr>
+<td><code>Z</code></td>
+<td>27</td>
+</tr>
+<tr>
+<td><strong><code>O</code></strong></td>
+<td><strong>28</strong></td>
+</tr>
+<tr>
+<td><code>.</code></td>
+<td>29</td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td>30</td>
+</tr>
+<tr>
+<td><code>\|</code></td>
+<td>31</td>
+</tr>
+<tr>
+<td><strong><code>J</code></strong></td>
+<td><strong>absent → <code>&lt;unk&gt;</code> (3)</strong></td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td><strong>absent → <code>&lt;unk&gt;</code> (3)</strong></td>
+</tr>
+</tbody>
+</table>
+<p>So ESM-C carries five of #1's six. <strong><code>J</code> is not in the vocabulary and never reaches the model as
+itself</strong>, and neither does <code>*</code>. Meanwhile <code>-</code> and <code>.</code> <em>are</em> — the tokenizer would happily eat a
+gapped alignment row. #1's rationale for rejecting gaps ("a stray <code>*</code> or <code>-</code> reaching a tokenizer
+fails far from its cause") is therefore about our policy, not about the tokenizer failing.</p>
+<p><code>J</code> has no evidence behind it from either source #1 cites: zero occurrences in Swiss-Prot, and
+<code>&lt;unk&gt;</code> at ESM-C. It is still correct IUPAC and still what makes <code>ALPHABET</code> every ASCII letter,
+which is the property #1 leans on. That is a call for #8, not for this note.</p>
+<h3 id="what-8-has-to-decide">What #8 has to decide<a class="headerlink" href="#what-8-has-to-decide" title="Permanent link">&para;</a></h3>
+<p>The finding, stated as a constraint rather than a design:</p>
+<ul>
+<li><code>seq.py</code>'s alphabet, <code>outside_alphabet</code>, <code>offending_positions</code> and <code>InvalidResidueError</code> are
+  <strong>ours</strong>, with no adoptable part. Nothing in the map conflicts — these are pure functions over
+  a <code>str</code>.</li>
+<li>Whether <code>Protein.sequence</code> can stay a plain <code>ProteinSequence</code> depends on whether 285 Swiss-Prot
+  entries may lose a residue. If they may not, the choices are a <code>ProteinSequence</code> subclass with
+  an overridden <code>get_alphabet()</code> (giving up molecular weight and biotite's aligners), or holding
+  the raw <code>str</code> and building a <code>ProteinSequence</code> only where biotite is actually called.</li>
+<li>Either way, <strong>never call <code>fasta.get_sequence</code> or <code>structure.to_sequence</code> on data whose fidelity
+  matters</strong> without knowing they rewrite it.</li>
+<li><a href="https://github.com/liuhlab/liulab-protein/issues/3">#3</a> already found that a
+  <code>mmseqs databases</code> Swiss-Prot maps <code>U</code>,<code>O</code>→<code>X</code>, <code>B</code>→<code>D</code>, <code>Z</code>→<code>E</code>, <code>J</code>→<code>L</code>. So a <code>Protein</code> read
+  from that database is <em>already</em> lossy before biotite sees it. The two losses are independent
+  and they are not the same loss.</li>
+</ul>
+<h2 id="2-iofastapy">2. <code>io/fasta.py</code><a class="headerlink" href="#2-iofastapy" title="Permanent link">&para;</a></h2>
+<h3 id="headers-survive-verbatim-adopt">Headers survive verbatim — adopt<a class="headerlink" href="#headers-survive-verbatim-adopt" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED.</strong> <code>FastaFile</code> is a <code>MutableMapping</code> whose keys are the header lines minus the leading
+<code>&gt;</code>, with nothing else stripped:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">'sp|P12345|AATM_RABIT Aspartate aminotransferase, mitochondrial OS=Oryctolagus cuniculus OX=9986 GN=GOT2 PE=1 SV=2'</span>
+</code></pre></div>
+<p>Pipes, spaces, commas, <code>OS=</code>, <code>OX=</code>, <code>GN=</code>, <code>PE=</code>, <code>SV=</code> — all present, byte for byte. This is
+what <a href="https://github.com/liuhlab/liulab-protein/issues/3">#3</a> needs for <code>Protein.metadata</code>, and
+it comes free. biotite does <strong>no</strong> header parsing at all; splitting the fields is ours.</p>
+<p>Write round-trips it too: <code>out[HDR] = "MKTAYIAKQRQ"</code> then <code>.write(path)</code> produces the identical
+header line. Wrapping is <code>chars_per_line=80</code> by default — <strong>VERIFIED</strong>.</p>
+<p>One trap: <code>_entries</code> is keyed by header, so <strong>two entries with the same header silently
+collide</strong>, and <code>len(file)</code> under-counts. biotite's own <code>write_iter</code> docstring admits it does not
+check for ambiguity — <strong>INFERRED</strong> from source.</p>
+<h3 id="type-conversion-build-ours">Type conversion — build ours<a class="headerlink" href="#type-conversion-build-ours" title="Permanent link">&para;</a></h3>
+<p><code>fasta.get_sequence</code> tries <code>NucleotideSequence</code> <strong>before</strong> <code>ProteinSequence</code>. On a peptide the
+result is not a warning, it is a wrong type with wrong letters. <strong>VERIFIED</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>FASTA content</th>
+<th><code>get_sequence()</code> returns</th>
+<th>Warning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MKTU</code></td>
+<td><strong><code>NucleotideSequence("MKTT")</code></strong></td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>AGCTAGCT</code></td>
+<td><strong><code>NucleotideSequence("AGCTAGCT")</code></strong></td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>MKTO</code></td>
+<td><code>ProteinSequence("MKTK")</code></td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>MKTBZX</code></td>
+<td><code>ProteinSequence("MKTBZX")</code></td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>MKT*</code></td>
+<td><code>ProteinSequence("MKT*")</code></td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>MKTJ</code></td>
+<td><code>ValueError: FASTA data cannot be converted either to 'NucleotideSequence' nor to 'ProteinSequence'</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>MKT-</code></td>
+<td>same <code>ValueError</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><code>MKTU</code> becoming DNA is the sharp one: <code>M</code>, <code>K</code> and <code>T</code> are all IUPAC <em>nucleotide</em> ambiguity codes,
+<code>U</code>→<code>T</code> is the nucleotide preprocessor, and the guess succeeds. A selenoprotein peptide comes back
+as a DNA sequence with nothing said. Passing <code>seq_type=ProteinSequence</code> defuses the misdetection
+but re-arms the <code>U</code>→<code>C</code> rewrite. Neither branch is safe for us; <code>io.py</code> reads the raw string and
+converts under our own rules.</p>
+<h3 id="gzip-build-ours-three-lines">gzip — build ours, three lines<a class="headerlink" href="#gzip-build-ours-three-lines" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FastaFile.read("x.fasta.gz")</code></td>
+<td><code>UnicodeDecodeError: 'utf-8' codec can't decode byte 0x8b</code></td>
+</tr>
+<tr>
+<td><code>FastaFile.read(gzip.open(p, "rt"))</code></td>
+<td><strong>works</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>TextFile.read</code> calls builtin <code>open()</code> on any path-like, with no decompression and no extension
+sniffing; a text-mode file object passes its <code>is_text</code> check. <code>gzip.open(p, "rb")</code> does not.</p>
+<h3 id="does-it-scale-yes-measured">Does it scale? Yes — measured<a class="headerlink" href="#does-it-scale-yes-measured" title="Permanent link">&para;</a></h3>
+<p>Full Swiss-Prot, 288,037,659 bytes uncompressed, on GPU71FM — <strong>VERIFIED</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Entries</th>
+<th>Time</th>
+<th>Peak RSS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FastaFile.read_iter(path)</code></td>
+<td>575,503</td>
+<td><strong>0.9 s</strong></td>
+<td><strong>0.05 GB</strong></td>
+</tr>
+<tr>
+<td><code>FastaFile.read(path)</code></td>
+<td>575,503</td>
+<td>1.8 s</td>
+<td>0.87 GB</td>
+</tr>
+<tr>
+<td><code>read_iter</code> over <code>gzip.open(p, "rt")</code></td>
+<td>575,503</td>
+<td>2.4 s</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><code>read_iter</code> yields raw <code>(header, sequence_string)</code> tuples and <strong>bypasses <code>convert.py</code> entirely</strong>,
+so it does no type guessing and no <code>U</code>→<code>C</code> rewriting. It is both the fast path and the safe one.</p>
+<h3 id="where-pyfastx-would-come-in-and-why-not-yet">Where <code>pyfastx</code> would come in — and why not yet<a class="headerlink" href="#where-pyfastx-would-come-in-and-why-not-yet" title="Permanent link">&para;</a></h3>
+<p><code>pyfastx</code> 2.3.1 (2026-06-10, MIT, bioconda linux-64 <code>py313</code>) gives what biotite does not: random
+access by index or name into a gzipped FASTA, via a persistent <code>.fxi</code> index and bgzf. That is a
+real gap, but not one v1 has. #3 settled that <code>swissprot["P12345"]</code> resolves through
+<code>mmseqs view</code> / the ffindex <code>.lookup</code>, not through a FASTA; and #1's FASTA surface is
+<code>Protein.from_fasta</code> / <code>to_fasta</code> over user files. <strong>Verdict: adopt biotite, and name <code>pyfastx</code>
+as the answer if a large-FASTA random-access requirement ever appears.</strong> Taking it now buys
+nothing and costs a bioconda-only pin.</p>
+<h2 id="3-fetching">3. Fetching<a class="headerlink" href="#3-fetching" title="Permanent link">&para;</a></h2>
+<h3 id="both-fetch-functions-already-do-the-local-first-rule">Both <code>fetch()</code> functions already do the local-first rule<a class="headerlink" href="#both-fetch-functions-already-do-the-local-first-rule" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong> by execution, with the repo's own network guard installed
+(<code>requests.sessions.Session.request</code> and <code>socket.socket.connect</code> patched, as <code>tests/_guards.py</code>
+does):</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rcsb.fetch("1L2Y", "cif", d)</code> with nothing on disk</td>
+<td><code>RuntimeError: BLOCKED BY GUARD</code> — it <em>did</em> try the network</td>
+</tr>
+<tr>
+<td>the same call with a non-empty <code>1L2Y.cif</code> already in <code>d</code></td>
+<td>returns the path, <strong>no network touched</strong></td>
+</tr>
+<tr>
+<td>the same with a <strong>zero-byte</strong> <code>9XXX.cif</code> in <code>d</code></td>
+<td><code>BLOCKED BY GUARD</code> — it re-fetches</td>
+</tr>
+</tbody>
+</table>
+<p>The single line that does it, identical in both modules:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">isfile</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="ow">or</span> <span class="n">getsize</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+</code></pre></div>
+<p>So #9's "look local first, fetch on miss" is already implemented, per ID, and the zero-byte
+re-fetch guards a truncated previous run. What biotite does <strong>not</strong> own is the "cache in one
+place" half: <code>target_path</code> is the caller's argument and there is no package-level root. That
+stays <code>store.py</code>'s job — pass <code>protein_data_dir() / ...</code> and biotite does the rest.</p>
+<p>Two more things worth knowing:</p>
+<ul>
+<li><strong>The network guard catches biotite.</strong> Both fetches go through <code>requests.get</code>, which routes
+  through <code>Session.request</code>. So a test that accidentally reaches RCSB fails loudly rather than
+  hanging — <strong>VERIFIED</strong>.</li>
+<li><code>format="cif"</code> and <code>format="mmcif"</code> are synonyms upstream but write <strong>different filenames</strong>, so
+  the cache does not dedupe them. Pick one spelling and keep it — <strong>INFERRED</strong> from source.</li>
+</ul>
+<h3 id="formats">Formats<a class="headerlink" href="#formats" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Accepted <code>format=</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rcsb.fetch(pdb_ids, format, target_path=None, overwrite=False, verbose=False)</code></td>
+<td><code>pdb</code>, <code>pdbx</code>, <code>cif</code>, <code>mmcif</code>, <code>bcif</code>, <code>fasta</code></td>
+</tr>
+<tr>
+<td><code>uniprot.fetch(ids, format, target_path=None, overwrite=False, verbose=False)</code></td>
+<td><code>fasta</code>, <code>gff</code>, <code>txt</code>, <code>xml</code>, <code>rdf</code>, <code>tab</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>rcsb</code> also exposes the RCSB search API — <code>search</code>, <code>count</code>, and the <code>Query</code> hierarchy
+(<code>BasicQuery</code>, <code>FieldQuery</code>, <code>SequenceQuery</code>, <code>StructureQuery</code>, <code>MotifQuery</code>, plus <code>Sorting</code> and
+the <code>Grouping</code> classes). <code>uniprot</code> exposes <code>search</code> and <code>SimpleQuery</code> but <strong>no <code>count</code></strong> and no
+pagination — its <code>number</code> argument defaults to 500 and is passed straight through.
+<code>biotite.database.afdb</code> exists too, for AlphaFold models. <strong>VERIFIED</strong> by listing the modules;
+signatures <strong>VERIFIED</strong> by <code>inspect.signature</code>.</p>
+<h3 id="the-constraint-the-map-puts-on-all-of-this">The constraint the map puts on all of this<a class="headerlink" href="#the-constraint-the-map-puts-on-all-of-this" title="Permanent link">&para;</a></h3>
+<p>Both are <strong>per-ID network calls</strong>, and the map's Notes say "bulk, not per-ID", with
+<code>tests/_guards.py</code> making a per-ID call untestable by construction. That does not rule them out:
+issue #9 chose "local cache first, then RCSB on demand" for coordinates, which is exactly
+one <code>rcsb.fetch</code> per cache miss. It does rule them out as a way to <em>populate</em> anything.
+<code>uniprot.fetch</code> in particular has no bulk mode at all; Swiss-Prot arrives as a database, not as
+575,503 REST calls.</p>
+<h2 id="4-chain">4. <code>Chain</code><a class="headerlink" href="#4-chain" title="Permanent link">&para;</a></h2>
+<p>How much of #9's <code>Chain</code> is a one-line biotite call? <strong><code>.kind</code> yes; <code>.atoms</code> and <code>.sequence</code> no.</strong>
+Measured on <code>4HHB</code> (four protein chains, four hemes, waters), <code>1GP1</code> (selenoprotein), <code>2OR1</code>
+(two DNA chains plus two protein chains).</p>
+<h3 id="kind-adopt"><code>.kind</code> — adopt<a class="headerlink" href="#kind-adopt" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">struc</span><span class="o">.</span><span class="n">filter_amino_acids</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>  <span class="c1"># ndarray[bool] over atoms</span>
+<span class="n">struc</span><span class="o">.</span><span class="n">filter_nucleotides</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>VERIFIED</strong> on <code>2OR1</code>: chains <code>A</code> and <code>B</code> give <code>nuc=405</code>, <code>nuc=409</code> and <code>aa=0</code>; chains <code>L</code> and
+<code>R</code> give <code>aa=484</code> each and <code>nuc=0</code>. Both are backed by the PDB Chemical Component Dictionary, so
+modified residues (<code>MSE</code>, <code>SEP</code>, <code>TPO</code>) pass <code>filter_amino_acids</code>. <code>filter_canonical_amino_acids</code>
+uses a hardcoded 22-name list — the 20 plus <code>SEC</code> and <code>PYL</code>. Note the asymmetry that creates: a
+<code>SEC</code> residue passes the <em>canonical</em> filter and is then flattened to <code>C</code> by <code>to_sequence</code>.</p>
+<h3 id="atoms-get_chains-and-chain_iter-are-not-what-a-caller-means"><code>.atoms</code> — <code>get_chains</code> and <code>chain_iter</code> are not what a caller means<a class="headerlink" href="#atoms-get_chains-and-chain_iter-are-not-what-a-caller-means" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">struc</span><span class="o">.</span><span class="n">get_chains</span><span class="p">(</span><span class="n">atoms_4hhb</span><span class="p">)</span>
+<span class="go">array(['A','B','C','D','A','B','C','D','A','B','C','D'], dtype='&lt;U4')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">struc</span><span class="o">.</span><span class="n">get_chain_count</span><span class="p">(</span><span class="n">atoms_4hhb</span><span class="p">)</span>
+<span class="go">12</span>
+</code></pre></div>
+<p>Twelve, for an entry with four chains. <code>get_chains</code> is literally
+<code>array.chain_id[get_chain_starts(array)]</code> — chain ids at every <strong>segment</strong> boundary, not distinct
+ids. 4HHB's protein, heme and water records each open a new segment per chain letter.
+<code>get_chain_starts</code> also splits when <code>res_id</code> <em>decreases</em>, so numbering restarts split a chain too.</p>
+<p><code>chain_iter</code> yields those same twelve slices. So neither is the enumeration <code>Structure</code> wants.
+The one-liner that is:</p>
+<div class="highlight"><pre><span></span><code><span class="n">ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">struc</span><span class="o">.</span><span class="n">get_chains</span><span class="p">(</span><span class="n">atoms</span><span class="p">)))</span>  <span class="c1"># order-preserving unique</span>
+<span class="n">chain</span> <span class="o">=</span> <span class="n">atoms</span><span class="p">[</span><span class="n">atoms</span><span class="o">.</span><span class="n">chain_id</span> <span class="o">==</span> <span class="n">cid</span><span class="p">]</span>
+</code></pre></div>
+<p>Cheap, but ours to write, and worth a comment saying why <code>chain_iter</code> is not used.</p>
+<h3 id="sequence-to_sequence-fails-on-real-entries"><code>.sequence</code> — <code>to_sequence</code> fails on real entries<a class="headerlink" href="#sequence-to_sequence-fails-on-real-entries" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong>, and this is the surprise:</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>to_sequence(atoms_4hhb)</code></td>
+<td><code>BadStructureError: Chain A contains neither amino acids nor nucleotides</code></td>
+</tr>
+<tr>
+<td><code>to_sequence(atoms_4hhb, allow_hetero=True)</code></td>
+<td><strong>the same error</strong></td>
+</tr>
+<tr>
+<td><code>to_sequence(atoms_1gp1, allow_hetero=True)</code></td>
+<td>the same</td>
+</tr>
+<tr>
+<td><code>to_sequence(atoms_2or1, allow_hetero=True)</code></td>
+<td>the same</td>
+</tr>
+</tbody>
+</table>
+<p><code>allow_hetero</code> does not help, because the failure is not about hetero residues: the water block
+is its own chain segment, it contains no amino acids and no nucleotides, and that is a hard
+error. Filter first and it works:</p>
+<div class="highlight"><pre><span></span><code><span class="n">poly</span> <span class="o">=</span> <span class="n">atoms</span><span class="p">[</span><span class="n">struc</span><span class="o">.</span><span class="n">filter_amino_acids</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span> <span class="o">|</span> <span class="n">struc</span><span class="o">.</span><span class="n">filter_nucleotides</span><span class="p">(</span><span class="n">atoms</span><span class="p">)]</span>
+<span class="n">seqs</span><span class="p">,</span> <span class="n">chain_starts</span> <span class="o">=</span> <span class="n">struc</span><span class="o">.</span><span class="n">to_sequence</span><span class="p">(</span><span class="n">poly</span><span class="p">,</span> <span class="n">allow_hetero</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>VERIFIED</strong> — 4HHB then gives four <code>ProteinSequence</code>s of 141/146/141/146, and 2OR1 gives two
+<code>NucleotideSequence</code>s of 20 and two <code>ProteinSequence</code>s of 63, correctly typed. Note that
+<code>to_sequence</code> returns a <strong>tuple</strong> <code>(sequences, chain_start_indices)</code>, that peptide-vs-nucleic is
+decided by majority vote over residue names with ties going to nucleic, and that it applies the
+silent <code>U</code>→<code>C</code> / <code>O</code>→<code>K</code> rewrite from §1.</p>
+<p><strong>Verdict: <code>Chain.sequence</code> is ours.</strong> It is three lines over <code>to_sequence</code>, but the three lines
+are load-bearing and the residue-level fidelity question rides on them.</p>
+<h2 id="5-sifts">5. SIFTS<a class="headerlink" href="#5-sifts" title="Permanent link">&para;</a></h2>
+<p><strong>Nothing maintained parses <code>pdb_chain_uniprot.tsv</code>. #20 is ours to build.</strong></p>
+<ul>
+<li><strong>biotite has no SIFTS support of any kind</strong> — <code>grep -ril sifts</code> over the installed 1.4.0 tree
+  returns nothing. <strong>VERIFIED</strong> on GPU71FM.</li>
+<li><strong>No conda package named <code>sifts</code> exists on any channel.</strong> <code>api.anaconda.org/search?name=sifts</code>
+  returns literally <code>[]</code>, as do <code>proteofav</code>, <code>pdb-profiling</code>, <code>prointvar</code> and <code>pdbe-sifts</code>. The
+  endpoint works — <code>?name=gemmi</code> returns two results. <strong>VERIFIED</strong>.</li>
+<li>The PyPI package named <strong><code>sifts</code> is not structural biology</strong> — it is "Simple full-text search
+  library with SQL backend". <strong>VERIFIED</strong>.</li>
+</ul>
+<p>The near misses, and why each is one:</p>
+<table>
+<thead>
+<tr>
+<th>Candidate</th>
+<th>Status</th>
+<th>Reads the TSV?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ProteoFAV</strong></td>
+<td>last code commit 2018-02-21</td>
+<td>No — parses per-entry SIFTS <strong>XML</strong> with <code>lxml</code></td>
+</tr>
+<tr>
+<td><strong>pdb-profiling</strong></td>
+<td>last commit 2023-03-30</td>
+<td>No — calls the PDBe REST API</td>
+</tr>
+<tr>
+<td><strong>ProIntVar</strong></td>
+<td>not on PyPI; repo idle</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>SIFTSParse</strong></td>
+<td>GitHub only, pushed 2016</td>
+<td>Yes — and abandoned ten years ago</td>
+</tr>
+<tr>
+<td><strong>gemmi</strong></td>
+<td>active</td>
+<td>No TSV. It reads the <code>_pdbx_sifts*</code> mmCIF categories from PDBe "updated" files. Its own docs: <em>"Gemmi has limited support for both DBREF and SIFTS annotations. The API is undocumented yet and may change."</em></td>
+</tr>
+<tr>
+<td><strong>Biopython</strong></td>
+<td>active</td>
+<td>No SIFTS module in <code>Bio/PDB/</code></td>
+</tr>
+<tr>
+<td><strong>ProDy</strong></td>
+<td>active</td>
+<td>No SIFTS anywhere — and unusable here anyway (no Python 3.13)</td>
+</tr>
+<tr>
+<td><strong>pdbe-sifts 1.0</strong></td>
+<td>the official EMBL-EBI package, 2026-04-30</td>
+<td>No — it <em>runs the SIFTS pipeline locally</em> (MMseqs2 + FASTA36 into DuckDB) to <strong>produce</strong> mappings. Not on conda-forge or bioconda; classifiers stop at 3.12; deps include <code>ete4</code> and <code>scikit-learn</code></td>
+</tr>
+</tbody>
+</table>
+<p>Everything else that touches the file is an in-repo script (EVcouplings, CosMIS, pypath), not a
+library.</p>
+<p>That is the right answer for us anyway. <strong>VERIFIED from GPU71FM:</strong>
+<code>https://ftp.ebi.ac.uk/pub/databases/msd/sifts/flatfiles/tsv/pdb_chain_uniprot.tsv.gz</code> returns
+HTTP 200, <code>Content-Length: 6211584</code>, <code>Last-Modified: 2026-08-30</code>. Six megabytes of gzipped TSV,
+one bulk download, parsed with <code>pandas.read_csv</code> — exactly the map's "bulk, not per-ID". Adopting
+a dependency to read a four-column TSV would be the customization the restraint rule warns about.</p>
+<h2 id="6-externalpy-and-the-search-lanes">6. <code>external.py</code> and the search lanes<a class="headerlink" href="#6-externalpy-and-the-search-lanes" title="Permanent link">&para;</a></h2>
+<h3 id="biotite-wraps-neither-tool-and-never-will-by-accident">biotite wraps neither tool, and never will by accident<a class="headerlink" href="#biotite-wraps-neither-tool-and-never-will-by-accident" title="Permanent link">&para;</a></h3>
+<p><code>biotite.application</code> in 1.4.0 wraps exactly nine tools — <strong>VERIFIED</strong> by listing the package:</p>
+<p><code>autodock</code>, <code>blast</code>, <code>clustalo</code>, <code>dssp</code>, <code>mafft</code>, <code>muscle</code>, <code>sra</code>, <code>tantan</code>, <code>viennarna</code>, plus
+the <code>Application</code> / <code>LocalApp</code> / <code>WebApp</code> / <code>MSAApp</code> base classes.</p>
+<p><strong>No MMseqs2. No Foldseek.</strong> The set is identical at tag <code>v1.7.1</code>. Searching biotite's tracker for
+<code>mmseqs</code> returns <strong>zero</strong> hits — it has never been requested. <code>foldseek</code> returns two, both about
+something else: biotite <strong>reimplemented the 3Di alphabet natively</strong> rather than shelling out
+(PR #665, shipped in v1.1.0 as <code>biotite.structure.alphabet.to_3di</code>). <strong>INFERRED</strong> from the
+tracker; the encoder itself is <strong>VERIFIED</strong> — <code>to_3di</code> on 1L2Y returns
+<code>I3DSequence('dqqvvcvvcpnvvnvdhgdd')</code>.</p>
+<p>Worth recording for the deferred ProstT5 lane: we can get a 3Di string from coordinates with no
+subprocess and no extra dependency.</p>
+<h3 id="is-any-wrapper-worth-taking-over-1s-own-seam-no">Is any wrapper worth taking over #1's own seam? No<a class="headerlink" href="#is-any-wrapper-worth-taking-over-1s-own-seam-no" title="Permanent link">&para;</a></h3>
+<p>The only live candidate is <strong><code>pymmseqs</code></strong> — 1.2.0, 2026-08-11, MIT, 47 stars, PyPI classifiers
+through 3.14, bioconda <code>noarch</code>. Four reasons it does not displace <code>external.py</code>:</p>
+<ol>
+<li><strong>It covers half the requirement.</strong> <code>REQUIRED_TOOLS = ("mmseqs", "foldseek")</code>. There is <strong>no
+   Foldseek wrapper on PyPI at all</strong> — <code>foldseek</code>, <code>pyfoldseek</code> and <code>foldseek-python</code> are all
+   404, and anaconda.org knows only the bioconda binary. <strong>VERIFIED.</strong> Adopting <code>pymmseqs</code> would
+   split the subprocess boundary in two, which is the one thing #1's seam exists to prevent.</li>
+<li><strong>Its PyPI wheels vendor their own <code>mmseqs</code> binary</strong> — <code>pymmseqs/bin/mmseqs</code>, 18 MB unpacked.
+   <strong>VERIFIED</strong> by unzipping the manylinux wheel. This repo already pins bioconda <code>mmseqs2</code>
+   <code>18-8cc5c</code>; adopting it means two binaries at possibly different versions.</li>
+<li><strong>Its bioconda build is <code>noarch</code> and declares no <code>mmseqs2</code> dependency</strong> — deps are <code>numpy</code>,
+   <code>pandas</code>, <code>python &gt;=3.10</code>, <code>pyyaml</code>. <strong>VERIFIED</strong> against the anaconda.org file list. So on
+   conda it neither ships nor requires the binary it wraps.</li>
+<li><strong>The seam is not the wrapping.</strong> <code>external.py</code> carries <code>RecordingTool</code>, the <code>run_calls</code>
+   fixture, the make-style freshness rule in <code>run_to</code>, the path-keyed version cache and
+   <code>doctor()</code>. #1 is explicit that <code>run_to</code> must call <code>self.run</code> so one
+   <code>monkeypatch.setattr(ExternalTool, "run", ...)</code> catches every invocation. Every test in the
+   package rests on that. No third-party wrapper offers it, and adopting one would mean building
+   it again on the outside.</li>
+</ol>
+<p>Add that Foldseek vendors MMseqs2 — same CLI grammar, same database format, same
+<code>--format-output</code> — which is what makes #1's <code>MmseqsLikeTool</code> base worth having and what a
+single-tool wrapper cannot express.</p>
+<p><strong>Verdict: port the seam from <code>liulab-genome</code>, exactly as #1 says.</strong> <code>pymmseqs</code> is worth
+remembering only if someone later wants MMseqs2 in-process rather than as a subprocess, and that
+would be a different design.</p>
+<h2 id="7-embed">7. <code>embed/</code><a class="headerlink" href="#7-embed" title="Permanent link">&para;</a></h2>
+<p><strong>Nothing stands between us and the <code>esm</code> SDK.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Candidate</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>bio-embeddings</code> 0.2.2</strong></td>
+<td>Dead. Released 2021-09-06, repo idle since 2022-08-04, and it pins <code>&gt;=3.7.1,&lt;3.10</code> — it <strong>cannot install on Python 3.13</strong>. The conda recipe quietly dropped the ceiling, which makes the conda package worse than the wheel, not better.</td>
+</tr>
+<tr>
+<td><strong><code>fair-esm</code> 2.0.0</strong></td>
+<td>Released 2022-11-01. Upstream <code>facebookresearch/esm</code> is <strong>archived</strong>, last commit 2023-06-27. Predates ESM-C entirely.</td>
+</tr>
+<tr>
+<td><strong><code>transformers</code> 5.16.1</strong></td>
+<td>Not an alternative — it is what <code>esm</code> 3.4.0 is <em>built on</em>. <code>EsmcForMaskedLM</code> and <code>EsmcTokenizer</code> subclass <code>transformers</code> types. Adopting it is a consequence of adopting <code>esm</code>, not a choice.</td>
+</tr>
+<tr>
+<td><strong><code>esm</code> 3.4.0</strong></td>
+<td>PyPI only — <strong>on neither conda-forge nor bioconda</strong>, so it stays a PyPI dependency in the <code>esm</code> feature, as the lock already has it. MIT, Chan Zuckerberg Biohub, <code>requires-python &gt;=3.12</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>So <code>embed/</code> is a thin lane over <code>esm</code> as #1 specifies. The two things v1 must write itself —
+stripping BOS/EOS and the masked-mean pooling — have no library to take them from; #1 already
+says there is no local pooling helper.</p>
+<p>One thing this note adds to that lane: the tokenizer's vocabulary is fixed and small (33 tokens,
+§1), so <code>embed()</code> should validate against <strong>our</strong> alphabet before tokenizing. <code>J</code> and <code>*</code> become
+<code>&lt;unk&gt;</code> silently, which is exactly the "fails far from its cause" failure <code>seq.py</code> exists to
+catch.</p>
+<h2 id="open-items">Open items<a class="headerlink" href="#open-items" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>#8 must choose what <code>Protein.sequence</code> holds.</strong> This note gives the measurement (285
+  Swiss-Prot entries, 0.0495%) and the two mechanisms (subclass with <code>get_alphabet()</code>, or hold a
+  <code>str</code>), and declines to choose.</li>
+<li><strong>Whether <code>J</code> stays in <code>ALPHABET</code>.</strong> Zero occurrences in Swiss-Prot, <code>&lt;unk&gt;</code> at ESM-C, <code>L</code> after
+  a <code>mmseqs databases</code> build. It survives only on the IUPAC argument and on making <code>ALPHABET</code>
+  every ASCII letter.</li>
+<li><strong>Upgrading biotite 1.4.0 → 1.7.1 costs numpy 2.5.2 → 2.3.5</strong>, because every biotite build
+  since 1.5.0 carries conda-forge's <code>numpy &lt;2.4</code> cap and none has been rebuilt. Nothing here
+  needs either side of that trade — the alphabet is identical — so the question is whether v1
+  would rather wait for the feedstock or cap numpy itself.</li>
+<li><strong><code>filterwarnings = ["error"]</code> and biotite.</strong> The <code>U</code> conversion in <code>fasta.convert</code> raises a
+  <code>UserWarning</code> that will become a test error. That is the desired behaviour, but it needs a
+  targeted entry with a comment rather than the blanket ignore #1 forbids — and it does <strong>not</strong>
+  cover <code>O</code>, nor the structure path, both of which are silent.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+    
+  </body>
+</html>

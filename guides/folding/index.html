@@ -1,0 +1,1249 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Handling protein sequence related tasks.">
+      
+      
+      
+        <link rel="canonical" href="https://liuhlab.github.io/liulab-protein/guides/folding/">
+      
+      
+        <link rel="prev" href="../structures/">
+      
+      
+        <link rel="next" href="../../reference/commands/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Predict a structure - liulab-protein</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#predict-a-structure" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="liulab-protein" class="md-header__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            liulab-protein
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Predict a structure
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="liulab-protein" class="md-nav__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    liulab-protein
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The three things you work with
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Setting up
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Setting up
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set up your data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Guides
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Guides
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Search a database
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../alignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build an alignment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Embed a sequence
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../structures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Work with structures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Predict a structure
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Predict a structure
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-need-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What you need first
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-model-once" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Build the model once
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-goes-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What goes in
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-gets-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What gets refused
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-answer-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the answer goes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#naming-repeats-and-overwriting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Naming, repeats and overwriting
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-model-says-about-its-own-answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the model says about its own answer
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Two warnings
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#from-the-command-line" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        From the command line
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Commands
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Python API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-need-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What you need first
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-model-once" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Build the model once
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-goes-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What goes in
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-gets-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What gets refused
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-answer-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the answer goes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#naming-repeats-and-overwriting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Naming, repeats and overwriting
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-model-says-about-its-own-answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the model says about its own answer
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Two warnings
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#from-the-command-line" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        From the command line
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="predict-a-structure">Predict a structure<a class="headerlink" href="#predict-a-structure" title="Permanent link">&para;</a></h1>
+<p>ESMFold2 turns sequences into coordinates, on this machine. There is no server and no token.
+The weights are read from the Hugging Face cache.</p>
+<p><a href="../../start/">Getting started</a> folds one complex end to end. Read that for the worked
+example. This page is the reference for everything it did not cover.</p>
+<h2 id="what-you-need-first">What you need first<a class="headerlink" href="#what-you-need-first" title="Permanent link">&para;</a></h2>
+<p>Folding needs the <code>esm</code> environment, which is the one with torch in it. It also wants a GPU:</p>
+<div class="highlight"><pre><span></span><code>pixi<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>esm
+</code></pre></div>
+<h2 id="build-the-model-once">Build the model once<a class="headerlink" href="#build-the-model-once" title="Permanent link">&para;</a></h2>
+<p><code>ESMFold2()</code> loads a checkpoint when you build it. So build it once and keep it, and fold as
+many things as you like against it:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">protein.fold</span><span class="w"> </span><span class="kn">import</span> <span class="n">ESMFold2</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">ESMFold2</span><span class="p">()</span>  <span class="c1"># loads once</span>
+<span class="n">model</span><span class="o">.</span><span class="n">device</span>  <span class="c1"># where the weights actually went</span>
+</code></pre></div>
+<p>You name a checkpoint by its slug:</p>
+<table>
+<thead>
+<tr>
+<th>Slug</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ESMFold2-Fast</code></td>
+<td>the default. It needs no alignment, and it does not refuse one</td>
+</tr>
+<tr>
+<td><code>ESMFold2</code></td>
+<td>the other one, loaded the same way</td>
+</tr>
+</tbody>
+</table>
+<p>A slug the package does not know fails by name, before any download starts. An alignment
+reaches a Fast fold too, so give one when you have one.</p>
+<p><code>device=</code> says where to run. Leave it off and you get the GPU when torch can see one, and
+the CPU when it cannot. The answer sits on <code>model.device</code>, so a run that fell back to the
+CPU tells you so.</p>
+<p>Extra keywords are passed on. Whatever else you give <code>ESMFold2()</code> goes to the loader, and
+whatever else you give <code>fold</code> goes to the model's own <code>fold</code>. <code>model.model</code> is the loaded
+model itself, for the rest.</p>
+<h2 id="what-goes-in">What goes in<a class="headerlink" href="#what-goes-in" title="Permanent link">&para;</a></h2>
+<p>One entry per chain. The plain way to write one is a dictionary naming its <code>kind</code>,
+its <code>sequence</code>, and optionally an <code>accession</code> and an <code>alignment</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">chains</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"protein"</span><span class="p">,</span> <span class="s2">"sequence"</span><span class="p">:</span> <span class="s2">"MKTAY"</span><span class="p">,</span> <span class="s2">"accession"</span><span class="p">:</span> <span class="s2">"P12345"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"dna"</span><span class="p">,</span> <span class="s2">"sequence"</span><span class="p">:</span> <span class="s2">"ACGT"</span><span class="p">},</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>Hand that straight to <code>fold()</code>. You do not have to build anything first:</p>
+<div class="highlight"><pre><span></span><code><span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fold</span><span class="p">(</span><span class="n">chains</span><span class="p">,</span> <span class="s2">"folds"</span><span class="p">)</span>
+<span class="n">prediction</span><span class="o">.</span><span class="n">chain_ids</span>  <span class="c1"># ('A', 'B')</span>
+</code></pre></div>
+<p>Chain labels come from position, so read them off rather than guessing. <code>A</code> is the first
+chain you passed and <code>B</code> is the second. Past <code>Z</code> they carry on as <code>AA</code>, <code>AB</code>.</p>
+<p>A single chain needs no list around it, and a <code>Protein</code> can stand in for a whole entry,
+carrying its accession with it:</p>
+<div class="highlight"><pre><span></span><code><span class="n">model</span><span class="o">.</span><span class="n">fold</span><span class="p">(</span><span class="n">Protein</span><span class="p">(</span><span class="s2">"MKTAY"</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">"P12345"</span><span class="p">),</span> <span class="s2">"folds"</span><span class="p">)</span>
+</code></pre></div>
+<p>Bare residues work too, and mean protein:</p>
+<div class="highlight"><pre><span></span><code><span class="n">model</span><span class="o">.</span><span class="n">fold</span><span class="p">(</span><span class="s2">"MKTAY"</span><span class="p">,</span> <span class="s2">"folds"</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="what-gets-refused">What gets refused<a class="headerlink" href="#what-gets-refused" title="Permanent link">&para;</a></h2>
+<p>A dictionary must name its <code>kind</code>. <code>ACGT</code> is a valid protein sequence as well as a valid
+strand of DNA, and nothing here guesses which you meant. Bare residues are the one exception,
+and they mean protein.</p>
+<p>Misspell a field and you get an error naming it. Nothing is silently dropped, so a mistyped
+<code>accession</code> cannot quietly cost you the prediction's provenance.</p>
+<p>Three more things raise when the request is built, before any folding starts:</p>
+<ul>
+<li>An alignment whose query row is not the chain's sequence. The message says where the two
+  first differ.</li>
+<li>An alignment that covers a different number of positions than the chain has residues.</li>
+<li>Any alignment at all on a DNA or RNA chain.</li>
+</ul>
+<p>A protein chain given no alignment gets one built for it: the depth-1 alignment on its own
+sequence. You need do nothing about that.</p>
+<p>To fold against a real alignment, pass it as a field. It can be an <code>MSA</code> you built, or the
+path to an A3M file, which is what lets a whole request come out of a JSON document. See
+<a href="../alignments/">Build an alignment</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"protein"</span><span class="p">,</span> <span class="s2">"sequence"</span><span class="p">:</span> <span class="s2">"MKTAY"</span><span class="p">,</span> <span class="s2">"alignment"</span><span class="p">:</span> <span class="s2">"p12345.a3m"</span><span class="p">}</span>
+</code></pre></div>
+<p><code>ChainRequest</code> and <code>FoldingRequest</code> are still there, and a mixture of spellings is fine in
+one call. Reach for <code>ChainRequest</code> when you want the object itself:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">protein.fold</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChainRequest</span>
+
+<span class="n">chain</span> <span class="o">=</span> <span class="n">ChainRequest</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">Protein</span><span class="p">(</span><span class="s2">"MKTAY"</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">"P12345"</span><span class="p">))</span>
+<span class="n">chain</span><span class="o">.</span><span class="n">accession</span>  <span class="c1"># 'P12345'</span>
+</code></pre></div>
+<h2 id="where-the-answer-goes">Where the answer goes<a class="headerlink" href="#where-the-answer-goes" title="Permanent link">&para;</a></h2>
+<p><code>fold</code> takes the output directory as an argument. You pass one every time. There is no
+default:</p>
+<div class="highlight"><pre><span></span><code><span class="n">structure</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fold</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"folds"</span><span class="p">)</span>
+</code></pre></div>
+<p>The directory is created if it is not there.</p>
+<p>What comes back is a <code>Structure</code>, the same class a deposited entry gives you. Read its
+chains, read a sequence, or <a href="../search/">search with it</a>.</p>
+<h2 id="naming-repeats-and-overwriting">Naming, repeats and overwriting<a class="headerlink" href="#naming-repeats-and-overwriting" title="Permanent link">&para;</a></h2>
+<p>The file lands at <code>&lt;directory&gt;/&lt;name&gt;.cif</code>, and the name is:</p>
+<ol>
+<li>what you passed as <code>name=</code>, if you passed one</li>
+<li>the one accession the request names, if it names exactly one</li>
+<li>a short hash of the chains' kinds and sequences</li>
+</ol>
+<p>Fold the same thing twice and the second call gives you back the first answer. Nothing is
+recomputed, and the card is never started.</p>
+<p>Fold a different sequence under a name already taken and it raises <code>FileExistsError</code>. Pass
+<code>overwrite=True</code> to say you meant it, or pick another name. The check reads the sequences
+back off the residues on disk, so it still holds a day later and in another process. That is
+what stops a mutant carrying a reference accession from landing on the reference's file.</p>
+<p>Settings are not in the name. So re-folding with a new seed hits the answer already there,
+and you need <code>overwrite=True</code> or a distinct name to get a fresh one.</p>
+<h2 id="what-the-model-says-about-its-own-answer">What the model says about its own answer<a class="headerlink" href="#what-the-model-says-about-its-own-answer" title="Permanent link">&para;</a></h2>
+<p>Per-residue confidence rides in the B-factor column of the file. That is where every viewer
+looks for it, so a prediction colours by confidence with nothing more to do.</p>
+<p><strong>Watch the scale.</strong> The B-factor column runs 0 to 100. The scalars below are the same
+measures as a fraction, 0 to 1. A colour range or a cutoff written for one against the other
+treats every residue alike.</p>
+<p>The scalars are on <code>Structure.confidence</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">structure</span><span class="o">.</span><span class="n">confidence</span><span class="o">.</span><span class="n">plddt</span>  <span class="c1"># mean per-residue confidence, 0 to 1</span>
+<span class="n">structure</span><span class="o">.</span><span class="n">confidence</span><span class="o">.</span><span class="n">ptm</span>  <span class="c1"># the predicted TM-score, or None</span>
+<span class="n">structure</span><span class="o">.</span><span class="n">confidence</span><span class="o">.</span><span class="n">iptm</span>  <span class="c1"># the interface score, which means something for a complex</span>
+</code></pre></div>
+<p>Ask for several diffusion samples with <code>num_diffusion_samples=</code>. The one with the highest
+mean confidence is what gets written.</p>
+<p>The pairwise matrix says whether two chains sit correctly against each other, which
+per-residue confidence cannot. It goes in a sibling file beside the coordinates, named
+<code>&lt;name&gt;.pairwise.npy</code>, and it is read only when you ask:</p>
+<div class="highlight"><pre><span></span><code><span class="n">matrix</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">confidence</span><span class="o">.</span><span class="n">pairwise</span><span class="p">()</span>  <span class="c1"># one entry per pair of residues</span>
+</code></pre></div>
+<p>Low entries mean the model is sure of where those two residues sit relative to each other.
+Where the model reported no matrix, <code>pairwise()</code> raises <code>FileNotFoundError</code>.</p>
+<p>A prediction that was already on disk comes back with <code>confidence</code> set to <code>None</code>. The
+scalars do not survive the file. That covers the repeat fold above, and anything you open
+with <code>Structure.from_file</code>. So keep the scalars when you first get them, or re-fold with
+<code>overwrite=True</code> to get them again.</p>
+<h2 id="two-warnings">Two warnings<a class="headerlink" href="#two-warnings" title="Permanent link">&para;</a></h2>
+<p><code>load_esmc=False</code> is not a memory option. Without the language model, the model still writes
+a file of the right length. The structure in it is wrong. There is no error and no mark in
+the file, so it warns instead.</p>
+<p>Nothing here manages the card. There is no length cap and no memory arithmetic. A fold that
+does not fit raises whatever the GPU raises.</p>
+<h2 id="from-the-command-line">From the command line<a class="headerlink" href="#from-the-command-line" title="Permanent link">&para;</a></h2>
+<p><code>protein fold structure</code> folds one protein and prints what it wrote:</p>
+<div class="highlight"><pre><span></span><code>pixi<span class="w"> </span>run<span class="w"> </span>-e<span class="w"> </span>esm<span class="w"> </span>protein<span class="w"> </span>fold<span class="w"> </span>structure<span class="w"> </span>query.fasta<span class="w"> </span>folds
+</code></pre></div>
+<p>The query is a FASTA file holding exactly one record, or the residues themselves. A file
+that exists wins, so a sequence is never read as a path somebody typo'd. The output
+directory is an argument, not an option.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--checkpoint</code></td>
+<td>which checkpoint: <code>ESMFold2-Fast</code> or <code>ESMFold2</code></td>
+</tr>
+<tr>
+<td><code>--device</code></td>
+<td>where to run. Omitted, cuda when it is visible, else cpu</td>
+</tr>
+<tr>
+<td><code>--name</code></td>
+<td>what to call it. Omitted, the accession, else a hash</td>
+</tr>
+<tr>
+<td><code>--overwrite</code></td>
+<td>fold over a name already holding another sequence</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>print JSON instead of plain text</td>
+</tr>
+</tbody>
+</table>
+<p>It prints where the coordinates went, whose they are, and what the model said about them. It
+exits 1 if the slug is unknown, if the query is neither one FASTA record nor a protein
+sequence, or if the directory holds that name over a different sequence.</p>
+<p>The full list is on <a href="../../reference/commands/">Commands</a>, and the
+<a href="../../api/">Python API</a> has the rest.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+    
+  </body>
+</html>

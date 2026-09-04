@@ -1,0 +1,1647 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Handling protein sequence related tasks.">
+      
+      
+      
+        <link rel="canonical" href="https://liuhlab.github.io/liulab-protein/research/foldseek-pdb100-contents/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>What foldseek databases PDB stores, and whether a chain's coordinates come back out - liulab-protein</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#what-foldseek-databases-pdb-stores-and-whether-a-chains-coordinates-come-back-out" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="liulab-protein" class="md-header__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            liulab-protein
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              What foldseek databases PDB stores, and whether a chain's coordinates come back out
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="liulab-protein" class="md-nav__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    liulab-protein
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The three things you work with
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Setting up
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Setting up
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set up your data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Guides
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Guides
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Search a database
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/alignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build an alignment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Embed a sequence
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/structures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Work with structures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/folding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Predict a structure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Commands
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Python API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Answer
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#method-and-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Method and provenance
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-file-set-and-what-each-dbtype-marks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. The file set, and what each <code>.dbtype</code> marks
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-coordinates-c-alpha-only-and-how-lossy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Coordinates: C-alpha only, and how lossy
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Coordinates: C-alpha only, and how lossy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#only-c-alpha-is-ever-written" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Only C-alpha is ever written
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The encoding
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-getting-one-chain-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Getting one chain out
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Getting one chain out">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#three-traps-all-hit-while-doing-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Three traps, all hit while doing this
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-emitted-file-actually-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the emitted file actually is
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-other-verbs-the-ticket-asked-about" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The other verbs the ticket asked about
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-how-chains-are-keyed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. How chains are keyed
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. How chains are keyed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-key-is-1ubq-assembly1_a" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The key is <code>1ubq-assembly1_A</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pdb100-means-100-identity-not-100k-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        "pdb100" means 100% identity, not 100k entries
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-number-answers-how-many-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Which number answers "how many entries"
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verdict-on-issue-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Verdict on issue #1
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bulk-coordinate-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Bulk coordinate sources
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Bulk coordinate sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recommendation-rsync-the-rcsb-assembly-mmcif-archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Recommendation: rsync the RCSB assembly mmCIF archive
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-alternative-the-deposited-asymmetric-unit-archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The alternative: the deposited asymmetric-unit archive
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foldcomp-no-pdb-set-exists-and-the-format-cannot-hold-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Foldcomp: no PDB set exists, and the format cannot hold one
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-foldseek-database-keeps-more-than-c-alpha" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        No foldseek database keeps more than C-alpha
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#binarycif-has-no-bulk-distribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        BinaryCIF has no bulk distribution
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rcsb-sequence-clusters-are-not-a-coordinate-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        RCSB sequence clusters are not a coordinate source
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#currency" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Currency
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Open items
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="what-foldseek-databases-pdb-stores-and-whether-a-chains-coordinates-come-back-out">What <code>foldseek databases PDB</code> stores, and whether a chain's coordinates come back out<a class="headerlink" href="#what-foldseek-databases-pdb-stores-and-whether-a-chains-coordinates-come-back-out" title="Permanent link">&para;</a></h1>
+<p>Research note for <a href="https://github.com/liuhlab/liulab-protein/issues/4">issue #4</a>. Answers a
+claim in <a href="https://github.com/liuhlab/liulab-protein/issues/1">issue #1</a>.</p>
+<h2 id="answer">Answer<a class="headerlink" href="#answer" title="Permanent link">&para;</a></h2>
+<p><code>foldseek databases PDB</code> (pdb100) stores, per chain: the <strong>observed</strong> amino-acid sequence, the
+3Di structural sequence, a text header, and <strong>C-alpha coordinates only</strong>. No backbone N/C/O,
+no side chains, no ligands, no waters, no author residue numbering, no insertion codes, no
+alternate locations, no B-factors, no occupancies.</p>
+<p>A named chain's C-alpha trace <strong>does</strong> come back out, to within 0.001 A — the precision the
+PDB file format itself writes — as a CA-only PDB file, via <code>foldseek createsubdb</code> then
+<code>foldseek convert2pdb</code>. Every chain is present, not only the cluster representatives.</p>
+<p>Issue #1's <code>pdb["1UBQ_A"]</code> returning a <code>Protein</code> "carrying that chain's structure file" is
+<strong>wrong as written</strong>, on four counts, in rising order of how much they cost to fix:</p>
+<ol>
+<li><strong>The key is not <code>1UBQ_A</code>.</strong> It is <code>1ubq-assembly1_A</code>. pdb100 is built from <strong>biological
+   assembly</strong> files, not from deposited asymmetric units, and the assembly number is part of
+   the name. <code>1UBQ_A</code> matches nothing, and neither does <code>1ubq_A</code>.</li>
+<li><strong><code>pdb</code> is the wrong database to look in.</strong> <code>1ubq-assembly1_A</code> is <em>absent</em> from the
+   searchable <code>pdb100</code> index — ubiquitin chain A is not a 100%-identity cluster
+   representative. Only <code>pdb100_seq</code> has it.</li>
+<li><strong>What comes back is not "that chain's structure file".</strong> It is a synthetic CA-only PDB
+   renumbered from 1.</li>
+<li><strong>Foldseek must be shelled out to twice, and it writes files.</strong></li>
+</ol>
+<p>All-atom coordinates need a separate bulk source: RCSB's assembly mmCIF archive by rsync,
+113.1 GiB, CC0 — see <a href="#bulk-coordinate-sources">Bulk coordinate sources</a>. The smallest
+correct alternative to the <code>PDB</code> class as specified is in <a href="#verdict-on-issue-1">Verdict</a>.</p>
+<h2 id="method-and-provenance">Method and provenance<a class="headerlink" href="#method-and-provenance" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Binary exercised</td>
+<td>foldseek <code>10.941cd33</code>, bioconda, the default pixi env on <code>GPU71FM</code></td>
+</tr>
+<tr>
+<td>Database inspected</td>
+<td>the real pdb100 at <code>/scratch/zhoulab/hanliu/protein/db/pdb</code> on <code>GPU71FM</code>, downloaded under issue #6</td>
+</tr>
+<tr>
+<td>Source read</td>
+<td><code>github.com/steineggerlab/foldseek</code>, <code>master</code> and tag <code>10-941cd33</code>, fetched 2026-09-02</td>
+</tr>
+</tbody>
+</table>
+<p>Everything below is marked <strong>VERIFIED</strong> (measured on the real database or the running binary)
+or <strong>INFERRED</strong>. Line references to <code>master</code> are given where <code>master</code> and the <code>10-941cd33</code>
+tag agree; where they differ it is said so.</p>
+<p><strong>Where documentation and observation disagree, observation wins, and it did.</strong> This note was
+first drafted from the foldseek sources alone. Two claims drawn from them were wrong, both
+from
+<a href="https://github.com/steineggerlab/foldseek/blob/master/util/update_webserver_pdb/single-script.sh"><code>util/update_webserver_pdb/single-script.sh</code></a>,
+the build script the lab ships:</p>
+<ul>
+<li>The script rsyncs the <strong>divided asymmetric-unit</strong> mmCIF tree and names chains <code>1ubq_A</code>. The
+  published database is built from <strong>biological assemblies</strong> and names them
+  <code>1ubq-assembly1_A</code>. The checked-in script does not describe the pipeline that made the
+  artefact.</li>
+<li>Reasoning from that script, this note said pdb100 holds asymmetric units and cannot
+  represent assemblies. The truth is the exact reverse: it holds assemblies and cannot
+  represent asymmetric units.</li>
+</ul>
+<p>Treat that script as a sketch of the method, not a specification of the output.</p>
+<h2 id="1-the-file-set-and-what-each-dbtype-marks">1. The file set, and what each <code>.dbtype</code> marks<a class="headerlink" href="#1-the-file-set-and-what-each-dbtype-marks" title="Permanent link">&para;</a></h2>
+<p><code>foldseek databases PDB &lt;name&gt; tmp</code> downloads
+<code>https://foldseek.steineggerlab.workers.dev/pdb100.tar.gz</code> — 2,326,827,389 bytes,
+<code>last-modified: Fri, 19 Dec 2025</code> (HTTP <code>HEAD</code>, <strong>VERIFIED</strong>) — and unpacks it onto <code>&lt;name&gt;</code>
+(<a href="https://github.com/steineggerlab/foldseek/blob/10-941cd33/data/structdatabases.sh#L144-L152"><code>data/structdatabases.sh:144-152</code></a>).
+<code>&lt;name&gt;.version</code> reads <code>250101 PDB_DATE</code>, so the snapshot is the PDB as of 2025-01-01 —
+<strong>VERIFIED</strong> on the extracted database.</p>
+<p><strong>On disk it is 4.3 GB, not 2.33 GB</strong> — <strong>VERIFIED</strong> by <code>du -sh</code>. The advertised figure is the
+compressed tarball.</p>
+<p>There are <strong>two parallel databases</strong>, and this is the single most important structural fact
+about pdb100. Sizes below are from <code>ls -l</code> on the real extraction — <strong>VERIFIED</strong>:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Representative tier</th>
+<th>Full tier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Amino acids</td>
+<td><code>pdb100</code> (73.5 MB)</td>
+<td><code>pdb100_seq.0</code> -&gt; <code>pdb100</code>, <code>pdb100_seq.1</code> (343.0 MB)</td>
+</tr>
+<tr>
+<td>3Di</td>
+<td><code>pdb100_ss</code> (73.5 MB)</td>
+<td><code>pdb100_seq_ss.0</code> -&gt; <code>pdb100_ss</code>, <code>.1</code> (343.0 MB)</td>
+</tr>
+<tr>
+<td>C-alpha</td>
+<td><code>pdb100_ca</code> (459.8 MB)</td>
+<td><code>pdb100_seq_ca.0</code> -&gt; <code>pdb100_ca</code>, <code>.1</code> (2,094.1 MB)</td>
+</tr>
+<tr>
+<td>Headers</td>
+<td><code>pdb100_h</code> (30.7 MB)</td>
+<td><code>pdb100_seq_h.0</code> -&gt; <code>pdb100_h</code>, <code>.1</code> (119.4 MB)</td>
+</tr>
+<tr>
+<td>Entries</td>
+<td><strong>324,204</strong></td>
+<td><strong>1,562,678</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The full tier is a <strong>split</strong> ffindex database: <code>.0</code> is a symlink to the representative data
+file and <code>.1</code> holds everything else, with one index over both. Shared between the tiers:
+<code>pdb100.lookup</code> (50.3 MB, 1,562,678 lines), <code>pdb100.source</code> (325,897 lines),
+<code>pdb100_mapping</code>, <code>pdb100_taxonomy</code> (741.3 MB), and the cluster database <code>pdb100_clu</code>
+(324,204 entries). <code>pdb100_seq.lookup</code>, <code>pdb100_seq.source</code>, <code>pdb100_seq_mapping</code> and
+<code>pdb100_seq_taxonomy</code> are symlinks to those.</p>
+<p><code>.dbtype</code> values, read off the real database — <strong>VERIFIED</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th><code>.dbtype</code> int32</th>
+<th>Constant</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pdb100</code>, <code>pdb100_ss</code>, <code>pdb100_seq</code></td>
+<td><code>0</code></td>
+<td><code>DBTYPE_AMINO_ACIDS</code></td>
+</tr>
+<tr>
+<td><code>pdb100_h</code></td>
+<td><code>12</code></td>
+<td><code>DBTYPE_GENERIC_DB</code></td>
+</tr>
+<tr>
+<td><code>pdb100_ca</code>, <code>pdb100_seq_ca</code></td>
+<td><code>101</code></td>
+<td><code>DBTYPE_CA_ALPHA</code></td>
+</tr>
+<tr>
+<td><code>pdb100_clu</code></td>
+<td><code>6</code></td>
+<td><code>DBTYPE_CLUSTER_RES</code></td>
+</tr>
+</tbody>
+</table>
+<p>Names from
+<a href="https://github.com/steineggerlab/foldseek/blob/master/lib/mmseqs/src/commons/Parameters.h#L69-L89"><code>lib/mmseqs/src/commons/Parameters.h:69-89</code></a>
+and
+<a href="https://github.com/steineggerlab/foldseek/blob/10-941cd33/src/commons/LocalParameters.cpp#L6"><code>src/commons/LocalParameters.cpp:6</code></a>
+(<code>const int LocalParameters::DBTYPE_CA_ALPHA = 101;</code>).</p>
+<p><strong>The <code>.dbtype</code> does not tell you which database is the 3Di one.</strong> <code>pdb100</code> and <code>pdb100_ss</code>
+both carry <code>0</code>, and are byte-for-byte the same size because 3Di is one character per residue.
+Only the <code>_ss</code> suffix distinguishes them. A <code>Database</code> class must not sniff <code>.dbtype</code> to
+decide what it is holding.</p>
+<p>There is no <code>_id</code> database, so original residue numbers are stored nowhere. (<code>master</code> added
+an optional one — <code>idbw</code> at
+<a href="https://github.com/steineggerlab/foldseek/blob/master/src/strucclustutils/structcreatedb.cpp#L363-L366"><code>structcreatedb.cpp:363-366</code></a>
+— but the published pdb100 predates it.) There is no <code>_fcz</code> foldcomp database either.</p>
+<h2 id="2-coordinates-c-alpha-only-and-how-lossy">2. Coordinates: C-alpha only, and how lossy<a class="headerlink" href="#2-coordinates-c-alpha-only-and-how-lossy" title="Permanent link">&para;</a></h2>
+<h3 id="only-c-alpha-is-ever-written">Only C-alpha is ever written<a class="headerlink" href="#only-c-alpha-is-ever-written" title="Permanent link">&para;</a></h3>
+<p><code>createdb</code> reads full structures with gemmi and writes one coordinate array per chain:
+C-alpha.
+<a href="https://github.com/steineggerlab/foldseek/blob/master/src/strucclustutils/structcreatedb.cpp#L404-L433"><code>structcreatedb.cpp:404-433</code></a>
+holds the function's only coordinate writer, <code>cadbw</code>, reached by two branches that both write
+C-alpha and differ only in encoding. N, C and C-beta are read only to derive the 3Di states
+(<a href="https://github.com/steineggerlab/foldseek/blob/master/src/strucclustutils/structcreatedb.cpp#L321-L325"><code>:321-325</code></a>)
+and are then discarded. If the input is itself CA-only, PULCHRA rebuilds a backbone in memory
+purely to get 3Di, and that too is discarded
+(<a href="https://github.com/steineggerlab/foldseek/blob/master/src/strucclustutils/structcreatedb.cpp#L305-L320"><code>:305-320</code></a>).
+<strong>VERIFIED</strong> by reading the source, corroborated by the README's memory formula, which prices
+a residue at <code>6 bytes Ca + 1 3Di byte + 1 AA byte</code>
+(<a href="https://github.com/steineggerlab/foldseek#memory-requirements">README, Memory requirements</a>)
+— six bytes is three int16s, not three float32s, and by the emitted PDB files, which contain
+<code>CA</code> atoms and nothing else.</p>
+<h3 id="the-encoding">The encoding<a class="headerlink" href="#the-encoding" title="Permanent link">&para;</a></h3>
+<p>Default is <code>--coord-store-mode 2</code>, "C-alpha as difference (uint16_t)" (<code>foldseek createdb -h</code>
+on 10.941cd33 — <strong>VERIFIED</strong>). Layout, from
+<a href="https://github.com/steineggerlab/foldseek/blob/10-941cd33/src/commons/Coordinate16.h"><code>src/commons/Coordinate16.h</code></a>:
+per axis, one <code>int32</code> start in thousandths of an angstrom followed by <code>n-1</code> <code>int16</code> deltas.
+The three axes are stored consecutively, x then y then z. Encoding truncates —
+<code>int32_t last = (int)(data[0] * 1000)</code> (<code>:61</code>); decoding divides by <code>1000.0f</code> (<code>:34</code>).</p>
+<p>Entry size is <code>(n-1)*3*2 + 3*4 + 1</code> bytes plus the writer's NUL. Measured: a 141-residue
+chain occupied 854 bytes, a 76-residue chain 464 — both exact — <strong>VERIFIED</strong>.</p>
+<p><strong>It is lossy, by 0.001 A.</strong> Round-tripping 1UBQ chain A through <code>createdb</code> and <code>convert2pdb</code>
+and diffing against <code>_atom_site.Cartn_*</code> in the deposited mmCIF gave
+<code>max abs coord diff = 0.001000 A over 76 rows</code> — <strong>VERIFIED</strong> on GPU71FM. That is the
+truncation quantum and no worse: deltas are computed between already-quantised values, so
+error does not accumulate along a chain
+(<a href="https://github.com/steineggerlab/foldseek/blob/10-941cd33/src/commons/Coordinate16.h#L60-L73"><code>Coordinate16.h:60-73</code></a>).
+The legacy PDB format writes three decimals, so this is the precision a <code>.pdb</code> file carries
+anyway. The same coordinates came back from the real pdb100 — <strong>VERIFIED</strong>.</p>
+<p>Two things put <code>float32</code> in a <code>_ca</code> database instead, so a reader must decide by entry length
+as foldseek does, not by assuming the compressed layout:</p>
+<ul>
+<li>A consecutive delta over 32.767 A, which a chain break can produce, drops that chain to
+  plain <code>float32</code>, 12 bytes per residue
+  (<a href="https://github.com/steineggerlab/foldseek/blob/master/src/strucclustutils/structcreatedb.cpp#L405-L420"><code>structcreatedb.cpp:405-420</code></a>);
+  the reader detects it by entry length
+  (<a href="https://github.com/steineggerlab/foldseek/blob/10-941cd33/src/commons/Coordinate16.h#L16-L18"><code>Coordinate16.h:16-18</code></a>).</li>
+<li><code>foldseek compressca &lt;DB&gt; &lt;caDB&gt; --coord-store-mode 1</code> re-encodes to float32 — <strong>VERIFIED</strong>:
+  entry sizes went 854 to 1693 bytes. It recovers nothing; the 0.001 A was lost at <code>createdb</code>
+  time.</li>
+</ul>
+<h2 id="3-getting-one-chain-out">3. Getting one chain out<a class="headerlink" href="#3-getting-one-chain-out" title="Permanent link">&para;</a></h2>
+<p>Yes, in two commands. <code>foldseek convert2pdb</code> is the only structure emitter:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>foldseek<span class="w"> </span>convert2pdb<span class="w"> </span>-h
+<span class="go">usage: foldseek convert2pdb &lt;i:Db&gt; &lt;o:pdbFile|pdbDir&gt; [options]</span>
+<span class="go"> --pdb-output-mode INT   PDB output mode:</span>
+<span class="go">                         0: Single multi-model PDB file</span>
+<span class="go">                         1: One PDB file per chain</span>
+<span class="go">                         2: One PDB file per complex [0]</span>
+</code></pre></div>
+<p>Run against a whole database it writes one file per entry, so extract first. This recipe was
+run end to end against the <strong>real pdb100</strong> on GPU71FM — <strong>VERIFIED</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">DB</span><span class="o">=</span>/scratch/zhoulab/hanliu/protein/db/pdb/pdb100
+
+<span class="c1"># 1. name -&gt; integer key. Note pdb100_seq, not pdb100: see the trap below.</span>
+<span class="nv">KEY</span><span class="o">=</span><span class="k">$(</span>awk<span class="w"> </span>-F<span class="s1">'\t'</span><span class="w"> </span><span class="s1">'$2=="1ubq-assembly1_A"{print $1; exit}'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$DB</span><span class="s2">.lookup"</span><span class="k">)</span><span class="w">   </span><span class="c1"># 1190456</span>
+
+<span class="c1"># 2. one-entry sub-database. --subdb-mode 1 soft-links the data, so this is O(1)</span>
+<span class="c1">#    in the size of pdb100 and copies nothing.</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="w"> </span>keys.txt
+foldseek<span class="w"> </span>createsubdb<span class="w"> </span>keys.txt<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">DB</span><span class="si">}</span><span class="s2">_seq"</span><span class="w"> </span>one<span class="w"> </span>--subdb-mode<span class="w"> </span><span class="m">1</span>
+
+<span class="c1"># 3. convert2pdb needs .lookup, and needs the header DATA files, which</span>
+<span class="c1">#    createsubdb does not link when the source header db is split (see below)</span>
+ln<span class="w"> </span>-sf<span class="w"> </span><span class="s2">"</span><span class="nv">$DB</span><span class="s2">.lookup"</span><span class="w">      </span>one.lookup
+ln<span class="w"> </span>-sf<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">DB</span><span class="si">}</span><span class="s2">_h"</span><span class="w">         </span>one_h.0
+ln<span class="w"> </span>-sf<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">DB</span><span class="si">}</span><span class="s2">_seq_h.1"</span><span class="w">   </span>one_h.1
+
+<span class="c1"># 4. emit</span>
+foldseek<span class="w"> </span>convert2pdb<span class="w"> </span>one<span class="w"> </span>outdir<span class="w"> </span>--pdb-output-mode<span class="w"> </span><span class="m">1</span>
+<span class="c1"># -&gt; outdir/1ubq-assembly1_A.pdb</span>
+</code></pre></div>
+<h3 id="three-traps-all-hit-while-doing-this">Three traps, all hit while doing this<a class="headerlink" href="#three-traps-all-hit-while-doing-this" title="Permanent link">&para;</a></h3>
+<p><strong>Use <code>pdb100_seq</code>, not <code>pdb100</code>.</strong> <code>1ubq-assembly1_A</code> resolves through the shared lookup to
+key 1190456, and that key is <strong>absent</strong> from <code>pdb100.index</code> and <code>pdb100_ca.index</code>, present in
+<code>pdb100_seq.index</code> and <code>pdb100_seq_ca.index</code> — <strong>VERIFIED</strong>. The representative tier covers
+324,204 of 1,562,678 named chains, 20.7%. A lookup that succeeds on the name and then reads
+the representative database fails for four chains in five, and ubiquitin is one of them. This
+is exactly the confusion in
+<a href="https://github.com/steineggerlab/foldseek/issues/258">foldseek issue #258</a>.</p>
+<p><strong><code>createsubdb</code> does not link a split header database.</strong> It links <code>one_h.dbtype</code> and
+<code>one_h.index</code> but not <code>one_h.0</code> / <code>one_h.1</code>, and <code>convert2pdb</code> then dies with
+<code>No datafile could be found for .../one_h!</code> — <strong>VERIFIED</strong>. Link the two data files by hand,
+as above.</p>
+<p><strong>Do not use <code>--id-mode 1</code>.</strong> Its help says "Select DB entries based on 1: FASTA identifiers
+(.lookup)", which is exactly what is wanted, and in 10.941cd33 it is broken: foldseek passes
+one parameter string to all three sub-database stages, so <code>--id-mode 1</code> leaks to the <code>_ss</code>
+stage, which has no <code>.lookup</code>, and the workflow dies with <code>Cannot open lookup file ...</code> —
+<strong>VERIFIED</strong>. <code>master</code> fixed it by resetting <code>par.dbIdMode = 0</code> for the second stage
+(<a href="https://github.com/steineggerlab/foldseek/blob/master/src/strucclustutils/createstructsubdb.cpp#L25-L27"><code>createstructsubdb.cpp:25-27</code></a>);
+the tag has one shared <code>CREATESTRUCTSUBDB_PAR</code>
+(<a href="https://github.com/steineggerlab/foldseek/blob/10-941cd33/src/strucclustutils/createstructsubdb.cpp#L25">tag</a>).
+Resolve the name to a key from <code>.lookup</code> yourself.</p>
+<h3 id="what-the-emitted-file-actually-is">What the emitted file actually is<a class="headerlink" href="#what-the-emitted-file-actually-is" title="Permanent link">&para;</a></h3>
+<p>Real output from the real pdb100 — <strong>VERIFIED</strong>:</p>
+<div class="highlight"><pre><span></span><code>TITLE     1ubq-assembly1_A STRUCTURE OF UBIQUITIN REFINED AT 1.8 ANGSTROMS RESOL
+TITLE    2UTION
+ATOM      1  CA  MET A   1      26.266  25.413   2.842
+ATOM      2  CA  GLN A   2      26.850  29.021   3.898
+...
+ATOM     76  CA  GLY A  76      40.373  39.813  33.944
+</code></pre></div>
+<p>78 lines: two <code>TITLE</code>, 76 <code>ATOM</code>, every one named <code>CA</code>. No <code>TER</code>, no <code>END</code>, no occupancy, no
+B-factor, no element column — the writer is one <code>fprintf</code>
+(<a href="https://github.com/steineggerlab/foldseek/blob/10-941cd33/src/strucclustutils/convert2pdb.cpp#L211"><code>convert2pdb.cpp:211</code></a>):</p>
+<div class="highlight"><pre><span></span><code><span class="n">fprintf</span><span class="p">(</span><span class="n">threadHandle</span><span class="p">,</span><span class="w"> </span><span class="s">"ATOM  %5d  CA  %s %c%4d    %8.3f%8.3f%8.3f</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+<span class="w">        </span><span class="p">(</span><span class="kt">int</span><span class="p">)(</span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span><span class="w"> </span><span class="n">aa3</span><span class="p">,</span><span class="w"> </span><span class="n">chainName</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span><span class="w"> </span><span class="p">...);</span>
+</code></pre></div>
+<p>Read that format string for the three defects it bakes in:</p>
+<ul>
+<li><strong>Residues are renumbered from 1.</strong> Both the atom serial and the residue number are the loop
+  index; author numbering is not stored and cannot be recovered. Demonstrated on 6M0J chain E:
+  deposited <code>auth_seq_id</code> runs 333 to 526 across 195 CA records, and foldseek emits 194 atoms
+  numbered 1 to 194, having dropped one alternate location — <strong>VERIFIED</strong>. Gaps in the model
+  close up silently, so sequence position is not model position.</li>
+<li><strong><code>chainName[0]</code>.</strong> The PDB chain column holds one character, so a multi-character chain
+  label is truncated. <strong>180,077 of 1,562,678 pdb100 chain labels are longer than one
+  character</strong> — <strong>VERIFIED</strong> — for example <code>6dwu-assembly44_DU</code>. Nearly 12% of the database
+  cannot round-trip its own chain identifier through this writer.</li>
+<li><strong><code>aa3</code> is a 26-entry table</strong> indexed by the one-letter code
+  (<a href="https://github.com/steineggerlab/foldseek/blob/10-941cd33/src/strucclustutils/convert2pdb.cpp#L127"><code>convert2pdb.cpp:127</code></a>),
+  so <code>X</code> becomes <code>XAA</code> rather than the real modified-residue name.</li>
+</ul>
+<p><code>master</code> has grown <code>--pdb-output-format</code> for mmCIF output and a per-chain mmCIF split. That is
+<strong>not</strong> in 10.941cd33 — the installed binary's help lists <code>--pdb-output-mode</code> only.</p>
+<h3 id="the-other-verbs-the-ticket-asked-about">The other verbs the ticket asked about<a class="headerlink" href="#the-other-verbs-the-ticket-asked-about" title="Permanent link">&para;</a></h3>
+<p><code>foldseek -h</code> prints 55 lines, but foldseek inherits the MMseqs2 command set and much of it is
+callable while unlisted: <code>convert2fasta</code>, <code>prefixid</code>, <code>lndb</code>, <code>mvdb</code> and <code>createtsv</code> all
+answer <code>-h</code> on 10.941cd33 — <strong>VERIFIED</strong>. Do not conclude from <code>foldseek -h</code> that a verb is
+missing.</p>
+<ul>
+<li><strong><code>convert2fasta</code></strong> exists and is the efficient bulk reader, but only for sequence.
+  <code>foldseek convert2fasta pdb100_seq out.fasta</code> writes <code>&gt;1ubq-assembly1_A &lt;TITLE&gt;</code> plus the
+  observed amino-acid sequence for every chain in one pass — <strong>VERIFIED</strong>. Pointed at
+  <code>pdb100_seq_ss</code> it emits 3Di instead, after <code>foldseek lndb pdb100_seq_h pdb100_seq_ss_h</code>
+  supplies the header database it complains about — <strong>VERIFIED</strong>. No coordinates either way.</li>
+<li><strong><code>structureto3didescriptor</code></strong> runs the opposite direction: it reads PDB/mmCIF files and
+  writes a four-column TSV of name, amino-acid sequence and 3Di — <strong>VERIFIED</strong>. It consumes
+  structures and cannot produce one.</li>
+<li><strong><code>createsubdb</code></strong> — covered above.</li>
+</ul>
+<h2 id="4-how-chains-are-keyed">4. How chains are keyed<a class="headerlink" href="#4-how-chains-are-keyed" title="Permanent link">&para;</a></h2>
+<h3 id="the-key-is-1ubq-assembly1_a">The key is <code>1ubq-assembly1_A</code><a class="headerlink" href="#the-key-is-1ubq-assembly1_a" title="Permanent link">&para;</a></h3>
+<p><code>pdb100.lookup</code> is <code>key&lt;TAB&gt;name&lt;TAB&gt;file-number</code>. Verbatim first and last lines from the real
+file — <strong>VERIFIED</strong>:</p>
+<div class="highlight"><pre><span></span><code>0   200l-assembly1_A    0
+1   101m-assembly1_A    1
+2   201l-assembly1_A    2
+3   201l-assembly2_B    3
+...
+1562676 8zz0-assembly1_F    325896
+1562677 8zz0-assembly1_G    325896
+</code></pre></div>
+<p>The name has three parts and every one of them will trip a naive parser:</p>
+<p><strong>Entry id, lowercase.</strong> 224,856 distinct ids — <strong>VERIFIED</strong>. <code>1UBQ</code> never appears.</p>
+<p><strong>Assembly number, and it is part of the identity.</strong> <code>201l</code> appears as both
+<code>201l-assembly1_A</code> and <code>201l-assembly2_B</code>; the maximum seen is <code>6dwu-assembly44_DU</code> —
+<strong>VERIFIED</strong>. <code>pdb100.source</code> names 325,897 assembly files against 224,856 entries, so an
+entry averages 1.45 assemblies. "The chain A of entry 1abc" is not a unique address in pdb100
+unless the assembly is named too.</p>
+<p><strong>Chain label, with an optional <code>-&lt;N&gt;</code> symmetry-copy suffix.</strong> 641,030 of 1,562,678 names —
+41% — end in <code>-&lt;N&gt;</code> — <strong>VERIFIED</strong>. <code>2ggg-assembly1_C</code>, <code>_C-2</code>, <code>_C-3</code> and <code>_C-4</code> are four
+distinct keys pointing at the same source file. <strong>Splitting on the last <code>-</code> therefore gives
+the wrong chain.</strong> Split on the last <code>_</code>, then strip a trailing <code>-&lt;digits&gt;</code> if the remainder
+is to be read as a chain.</p>
+<p>The suffix is not foldseek's invention. RCSB's assembly mmCIF for 2GGG carries
+<code>label_asym_id</code> values <code>A A-2 A-3 A-4 C C-2 C-3 C-4</code> with <code>auth_asym_id</code> set to <code>?</code>
+throughout — <strong>VERIFIED</strong> by downloading and parsing that file. Foldseek copies the label it
+finds. So the pdb100 chain label is the assembly file's label: the author chain id for the
+first copy, and <code>&lt;chain&gt;-&lt;N&gt;</code> for the Nth symmetry copy.</p>
+<p>That the base label follows the author chain id, not <code>label_asym_id</code>, is confirmed by 6M0J,
+which is <code>6m0j-assembly1_A</code> and <code>6m0j-assembly1_E</code> — <strong>VERIFIED</strong>; <code>E</code> is 6M0J's author chain
+for the RBD, whose <code>label_asym_id</code> is different. 4HHB is <code>4hhb-assembly1_A</code> through <code>_D</code>.</p>
+<h3 id="pdb100-means-100-identity-not-100k-entries">"pdb100" means 100% identity, not 100k entries<a class="headerlink" href="#pdb100-means-100-identity-not-100k-entries" title="Permanent link">&para;</a></h3>
+<p>The lab clusters at 100% sequence identity with 95% coverage and keeps the representatives
+(<a href="https://github.com/steineggerlab/foldseek/blob/master/util/update_webserver_pdb/single-script.sh#L51-L57"><code>single-script.sh:51-57</code></a>):</p>
+<div class="highlight"><pre><span></span><code>foldseek<span class="w"> </span>cluster<span class="w"> </span>pdb_seq<span class="w"> </span>pdb_clu<span class="w"> </span>tmp<span class="w"> </span>-c<span class="w"> </span><span class="m">0</span>.95<span class="w"> </span>--min-seq-id<span class="w"> </span><span class="m">1</span>.0<span class="w"> </span>--cov-mode<span class="w"> </span><span class="m">0</span>
+foldseek<span class="w"> </span>createsubdb<span class="w"> </span>pdb_clu<span class="w"> </span>pdb_seq<span class="w"> </span>pdb<span class="w"> </span>--subdb-mode<span class="w"> </span><span class="m">1</span>
+</code></pre></div>
+<p>So the "100" is redundancy removal at identity 1.0. The counts bear it out: 1,562,678 chains
+cluster to 324,204 representatives — <strong>VERIFIED</strong>.</p>
+<h3 id="which-number-answers-how-many-entries">Which number answers "how many entries"<a class="headerlink" href="#which-number-answers-how-many-entries" title="Permanent link">&para;</a></h3>
+<p>Three different numbers, and they answer three different questions — all <strong>VERIFIED</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Number</th>
+<th>What it counts</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>224,856</td>
+<td>PDB entries</td>
+<td>distinct ids in <code>pdb100.lookup</code></td>
+</tr>
+<tr>
+<td>325,897</td>
+<td>biological assemblies</td>
+<td>lines in <code>pdb100.source</code></td>
+</tr>
+<tr>
+<td><strong>1,562,678</strong></td>
+<td><strong>chains — every key you can name</strong></td>
+<td>lines in <code>pdb100.lookup</code>, <code>pdb100_seq.index</code></td>
+</tr>
+<tr>
+<td><strong>324,204</strong></td>
+<td><strong>chains you can search</strong></td>
+<td>lines in <code>pdb100.index</code>, <code>pdb100_ca.index</code>, <code>pdb100_clu.index</code></td>
+</tr>
+</tbody>
+</table>
+<p>A <code>Database.status()</code> should report the last two as a pair. Reporting either alone is
+misleading: 1,562,678 overstates what <code>foldseek search</code> will match against, and 324,204
+understates what can be retrieved.</p>
+<h2 id="verdict-on-issue-1">Verdict on issue #1<a class="headerlink" href="#verdict-on-issue-1" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><code>PDB</code> understands PDB ids, chains and the asymmetric unit, so <code>pdb["1UBQ_A"]</code> returns a
+<code>Protein</code> carrying that chain's structure file.</p>
+</blockquote>
+<p>Unbuildable as written, and the phrase to strike hardest is "the asymmetric unit" — pdb100 is
+the one thing it is not. pdb100 holds biological assemblies. The asymmetric unit is what is
+<strong>absent</strong>, and no amount of parsing recovers it.</p>
+<p>The smallest correct alternative, in rising order of cost:</p>
+<ol>
+<li><strong><code>pdb["1ubq-assembly1_A"]</code> returns a <code>Protein</code> with sequence and metadata, and no
+   structure.</strong> Read <code>pdb100_seq</code> for the sequence and <code>pdb100_seq_h</code> / <code>pdb100_mapping</code> for
+   the title and taxid. The ffindex format is a three-column TSV index over a NUL-delimited
+   data file, so a read-only Python reader needs no subprocess; <code>convert2fasta</code> is the bulk
+   alternative. Nothing about this object is a lie.</li>
+<li><strong>Give the class a real key type, not a string convention.</strong> A <code>(entry, assembly, chain,
+   copy)</code> tuple that renders to the foldseek name and parses back. Anything that accepts
+   <code>"1UBQ_A"</code> has to guess an assembly, and a guess of <code>assembly1</code> is wrong whenever an entry
+   has several. Prefer failing loudly with the candidate names — a <code>pdb.chains("1ubq")</code> that
+   lists what exists is more useful than an accessor that silently picks one.</li>
+<li><strong>Add <code>.ca_structure()</code>, returning a path to a CA-only PDB.</strong> The recipe in section 3. Name
+   it so no caller reads it as the deposited structure, and document the renumbering. It is
+   enough for <code>foldseek_search</code>, TM-align, and everything foldseek itself does.</li>
+<li><strong>All-atom <code>.structure</code> is backed by the RCSB assembly mirror, not by pdb100.</strong> A separate
+   <code>Database</code>. See below.</li>
+</ol>
+<p>Two more things worth writing into the class:</p>
+<ul>
+<li>pdb100's sequence is the <strong>observed</strong> sequence, not SEQRES. A residue with no modelled
+  coordinates is simply absent from the string, so pdb100 sequence indices do not correspond
+  to UniProt indices.</li>
+<li>The searchable tier holds 20.7% of the named chains. <code>search</code> results and <code>__getitem__</code>
+  therefore draw on different databases, and the class should be explicit about which.</li>
+</ul>
+<h2 id="bulk-coordinate-sources">Bulk coordinate sources<a class="headerlink" href="#bulk-coordinate-sources" title="Permanent link">&para;</a></h2>
+<p>Priced against live servers on 2026-09-02. Only one family carries all-atom coordinates for an
+arbitrary PDB chain.</p>
+<h3 id="recommendation-rsync-the-rcsb-assembly-mmcif-archive">Recommendation: rsync the RCSB assembly mmCIF archive<a class="headerlink" href="#recommendation-rsync-the-rcsb-assembly-mmcif-archive" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>rsync<span class="w"> </span>-rlpt<span class="w"> </span>-v<span class="w"> </span>-z<span class="w"> </span>--delete<span class="w"> </span>--port<span class="o">=</span><span class="m">33444</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>rsync.rcsb.org::ftp_data/assemblies/mmCIF/divided/<span class="w"> </span>/path/to/assemblies
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Size</td>
+<td><strong>113.1 GiB</strong>, 368,372 <code>-assemblyN.cif.gz</code> files</td>
+</tr>
+<tr>
+<td>Layout</td>
+<td><code>divided/&lt;middle two chars&gt;/&lt;lowercase id&gt;-assembly&lt;N&gt;.cif.gz</code></td>
+</tr>
+<tr>
+<td>Contents</td>
+<td>all chains, all atoms, HETATM, ligands, B-factors, symmetry copies expanded</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td><strong>CC0 1.0</strong>, per <a href="https://www.rcsb.org/pages/policies">rcsb.org/pages/policies</a></td>
+</tr>
+</tbody>
+</table>
+<p>Size and file count measured directly by a recursive <code>rsync --list-only</code> and summed —
+<strong>VERIFIED</strong>. <code>1ubq-assembly1.cif.gz</code> and <code>2ggg-assembly{1,2}.cif.gz</code> were confirmed present
+at those paths — <strong>VERIFIED</strong>.</p>
+<p><strong>This is the archive that keys 1:1 with pdb100.</strong> Every line of <code>pdb100.source</code> is one of
+these filenames, so <code>1ubq-assembly1_A</code> maps to
+<code>divided/ub/1ubq-assembly1.cif.gz</code> plus label <code>A</code> with no translation and no network call.
+That correspondence is why this beats the deposited-structure archive for this project, even
+though it is larger.</p>
+<h3 id="the-alternative-the-deposited-asymmetric-unit-archive">The alternative: the deposited asymmetric-unit archive<a class="headerlink" href="#the-alternative-the-deposited-asymmetric-unit-archive" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>rsync<span class="w"> </span>-rlpt<span class="w"> </span>-v<span class="w"> </span>-z<span class="w"> </span>--delete<span class="w"> </span>--port<span class="o">=</span><span class="m">33444</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>rsync.rcsb.org::ftp_data/structures/divided/mmCIF/<span class="w"> </span>/path/to/mmCIF
+</code></pre></div>
+<p>Verbatim from <a href="https://www.wwpdb.org/ftp/pdb-ftp-sites">wwpdb.org/ftp/pdb-ftp-sites</a> —
+<strong>VERIFIED</strong>. <strong>85.1 GiB</strong>, 259,016 <code>.cif.gz</code> files, layout <code>mmCIF/ub/1ubq.cif.gz</code>, weekly
+Wednesday refresh from 00:00 UTC, CC0. <code>mmCIF/ub/1ubq.cif.gz</code> is byte-identical to
+<code>https://files.rcsb.org/download/1UBQ.cif.gz</code> — <strong>VERIFIED</strong> — so the mirror is an exact
+substitute for the per-ID REST calls this project rules out, not an approximation.</p>
+<p>Take this one if <code>Protein</code> should mean the deposited chain, keyed by entry plus
+<code>auth_asym_id</code>. It does <strong>not</strong> key compatibly with pdb100: mapping an assembly chain label
+back to an author chain needs the assembly file anyway, so a project that wants both ends up
+mirroring both, at 198 GiB.</p>
+<p>Two traps on either archive, both <strong>VERIFIED</strong> independently here:</p>
+<ul>
+<li><strong>Use port 33444.</strong> The rsync default 873 times out at RCSB —
+  <code>connect timeout: 132.249.213.18</code>.</li>
+<li><strong>Budget the measured size, not the published one.</strong> RCSB's <a href="https://www.rcsb.org/docs/programmatic-access/file-download-services">File Download
+  Services</a> page still
+  links <a href="https://files.wwpdb.org/pub/pdb/software/rsyncPDB.sh"><code>rsyncPDB.sh</code></a>, which claims
+  the mmCIF coordinates are "Aproximately 24 GB". That script is stamped 2014 and the archive
+  has grown 3.5x since.</li>
+</ul>
+<p>Mirrors on the standard port 873, if RCSB is slow from the cluster:
+<code>rsync.ebi.ac.uk::pub/databases/pdb/data/...</code> (PDBe) and <code>ftp.pdbj.org::ftp_data/...</code> (PDBj).
+FTP itself has been deprecated across the archive since 2024-11-01.</p>
+<p>Worth taking alongside either: <code>derived_data/pdb_seqres.txt.gz</code>, 66.8 MB — the SEQRES sequence
+of every chain, which is what pdb100's observed sequences should be checked against.</p>
+<h3 id="foldcomp-no-pdb-set-exists-and-the-format-cannot-hold-one">Foldcomp: no PDB set exists, and the format cannot hold one<a class="headerlink" href="#foldcomp-no-pdb-set-exists-and-the-format-cannot-hold-one" title="Permanent link">&para;</a></h3>
+<p>Three independent disqualifiers, all <strong>VERIFIED</strong>:</p>
+<ol>
+<li>Every published set is predicted structures — <code>afdb_uniprot_v4</code> (1.10 TB),
+   <code>highquality_clust30</code> (120.4 GB), <code>afdb_swissprot_v4</code> (3.05 GB), <code>h_sapiens</code> (234 MB),
+   <code>e_coli</code> (21.8 MB). No experimental-structure set exists.</li>
+<li>It could not be built either. The <a href="https://github.com/steineggerlab/foldcomp">README</a>:
+   "Foldcomp currently only supports compression of single chain PDB files". The
+   <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10085514">paper</a> (Kim, Mirdita, Steinegger,
+   <em>Bioinformatics</em> 39(4) btad153, 2023) adds "without missing residues". Experimental entries
+   are routinely multi-chain and almost always have disordered gaps.</li>
+<li>The paper is explicit that it discards metadata: "Foldcomp is not meant to replace the
+   PDB/mmCIF format, since these contain valuable meta-information that is discarded by
+   Foldcomp."</li>
+</ol>
+<p>Worth recording because it is a common misconception: foldcomp is <strong>not</strong> backbone-only. It
+stores side chains at 13 bytes per residue, with reconstruction error 0.08 A backbone and
+0.14 A all-atom. The accuracy is fine; the data does not exist in this format and the format
+cannot represent it. Licence MIT.</p>
+<h3 id="no-foldseek-database-keeps-more-than-c-alpha">No foldseek database keeps more than C-alpha<a class="headerlink" href="#no-foldseek-database-keeps-more-than-c-alpha" title="Permanent link">&para;</a></h3>
+<p><code>--coord-store-mode</code> offers <code>1: C-alpha as float</code>, <code>2: C-alpha as difference (uint16_t)</code> and,
+in <code>compressca</code>, <code>3: Plain text list of floats</code>. <strong>Every mode is C-alpha</strong> — so not even a
+local build can produce an all-atom foldseek database. The <code>--write-foldcomp</code> expert flag
+exists (<a href="https://github.com/steineggerlab/foldseek/blob/master/src/commons/LocalParameters.cpp#L21"><code>LocalParameters.cpp:21</code></a>,
+default <code>0</code> at
+<a href="https://github.com/steineggerlab/foldseek/blob/master/src/commons/LocalParameters.cpp#L392"><code>:392</code></a>)
+and writes a side <code>_fcz</code> database, but it inherits every foldcomp limit above, and no
+published database uses it — the extracted pdb100 has no <code>_fcz</code> member. The AlphaFold foldseek
+databases are the same shape: <code>afdb50.tar.gz</code> 122.6 GB, <code>afdb_swissprot.tar.gz</code> 1.56 GB,
+<code>cath50.tar.gz</code> 1.01 GB, all C-alpha. <strong>VERIFIED</strong>. Foldseek is GPL-3.0.</p>
+<h3 id="binarycif-has-no-bulk-distribution">BinaryCIF has no bulk distribution<a class="headerlink" href="#binarycif-has-no-bulk-distribution" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED negative.</strong> <code>data/structures/divided/</code> on the rsync server lists <code>XML-extatom,
+XML-noatom, XML, mmCIF, nmr_chemical_shifts, nmr_data, nmr_restraints, nmr_restraints_v2, pdb,
+structure_factors</code> — no <code>bcif</code>. RCSB serves BinaryCIF only per entry from
+<code>https://models.rcsb.org/&lt;id&gt;.bcif.gz</code>, the per-ID pattern this project rules out. For the
+record <code>1ubq.bcif.gz</code> is 21,254 bytes against <code>1ubq.cif.gz</code> at 26,915, so a bulk bcif archive
+would be near 67 GiB (<strong>INFERRED</strong> by scaling) — but none is published.</p>
+<h3 id="rcsb-sequence-clusters-are-not-a-coordinate-source">RCSB sequence clusters are not a coordinate source<a class="headerlink" href="#rcsb-sequence-clusters-are-not-a-coordinate-source" title="Permanent link">&para;</a></h3>
+<p><code>https://cdn.rcsb.org/resources/sequence/clusters/clusters-by-entity-{30,...,100}.txt</code>, about
+22.5 MB each, are entity-id lists with no coordinates — <strong>VERIFIED</strong>. They are a redundancy
+filter to apply over a real source, and the natural way to reproduce something pdb100-like
+against a local mirror.</p>
+<h3 id="currency">Currency<a class="headerlink" href="#currency" title="Permanent link">&para;</a></h3>
+<p>pdb100's version file says <code>250101 PDB_DATE</code> and its files are dated 2025-07-25, so it is
+rebuilt occasionally, not weekly. The RCSB archives refresh every Wednesday. A weekly mirror
+will hold entries pdb100 has never seen, and <code>search</code> will silently not find them.</p>
+<h2 id="open-items">Open items<a class="headerlink" href="#open-items" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The <code>.source</code> file numbers in <code>pdb100.lookup</code> point into <code>pdb100.source</code>, giving a direct
+  chain-to-assembly-file map. Nothing here needed it, but a <code>PDB</code> class joining pdb100 to a
+  local assembly mirror should use it rather than re-deriving the filename from the key.</li>
+<li>Whether to read ffindex directly in Python or shell out per lookup. The format is trivial
+  and these databases are immutable, so a read-only reader carries no consistency risk. A
+  design question, not a research one.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+    
+  </body>
+</html>

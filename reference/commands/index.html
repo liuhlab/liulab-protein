@@ -1,0 +1,1266 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Handling protein sequence related tasks.">
+      
+      
+      
+        <link rel="canonical" href="https://liuhlab.github.io/liulab-protein/reference/commands/">
+      
+      
+        <link rel="prev" href="../../guides/folding/">
+      
+      
+        <link rel="next" href="../../api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Commands - liulab-protein</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#commands" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="liulab-protein" class="md-header__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            liulab-protein
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Commands
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="liulab-protein" class="md-nav__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    liulab-protein
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The three things you work with
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Setting up
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Setting up
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set up your data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Guides
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Guides
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Search a database
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/alignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build an alignment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Embed a sequence
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/structures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Work with structures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/folding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Predict a structure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Commands
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Commands
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#every-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Every command
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-and-doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        version and doctor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#db" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        db
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#esm" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        esm
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fold" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fold
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#msa" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        msa
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#search" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        search
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sifts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        sifts
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        structure
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-json-flag" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The --json flag
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Python API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#every-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Every command
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-and-doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        version and doctor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#db" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        db
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#esm" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        esm
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fold" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fold
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#msa" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        msa
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#search" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        search
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sifts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        sifts
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        structure
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-json-flag" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The --json flag
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h1>
+<p><code>protein --help</code> lists every command, and each command has a <code>--help</code> of its own. Every one
+of them takes <code>--json</code>.</p>
+<h2 id="every-command">Every command<a class="headerlink" href="#every-command" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>protein version</code></td>
+<td>Print the installed package version.</td>
+</tr>
+<tr>
+<td><code>protein doctor</code></td>
+<td>Report which native tools are here, and what version each is.</td>
+</tr>
+<tr>
+<td><code>protein db list</code></td>
+<td>List every database registered here, and every one this package can fetch.</td>
+</tr>
+<tr>
+<td><code>protein db adopt</code></td>
+<td>Register a database that is already on disk, without copying it.</td>
+</tr>
+<tr>
+<td><code>protein db download</code></td>
+<td>Fetch a database with the tool's own downloader, then register it.</td>
+</tr>
+<tr>
+<td><code>protein db status</code></td>
+<td>Say what is on disk for one database.</td>
+</tr>
+<tr>
+<td><code>protein esm embed</code></td>
+<td>Embed the one record in a FASTA file, and report what came back.</td>
+</tr>
+<tr>
+<td><code>protein esm features prepare</code></td>
+<td>Download the SAE feature descriptions and store them.</td>
+</tr>
+<tr>
+<td><code>protein esm features status</code></td>
+<td>Say whether the feature descriptions are here.</td>
+</tr>
+<tr>
+<td><code>protein fold structure</code></td>
+<td>Fold one sequence with ESMFold2 and report what was written.</td>
+</tr>
+<tr>
+<td><code>protein msa search</code></td>
+<td>Search a database with one sequence, and write the alignment it found.</td>
+</tr>
+<tr>
+<td><code>protein msa align</code></td>
+<td>Line up a FASTA of sequences with MUSCLE, anchored on the one you name.</td>
+</tr>
+<tr>
+<td><code>protein search seq</code></td>
+<td>Search one sequence against a database with MMseqs2.</td>
+</tr>
+<tr>
+<td><code>protein search struct</code></td>
+<td>Search a structure, or one chain of it, against a database with Foldseek.</td>
+</tr>
+<tr>
+<td><code>protein sifts prepare</code></td>
+<td>Download the SIFTS map and store it.</td>
+</tr>
+<tr>
+<td><code>protein sifts status</code></td>
+<td>Say which SIFTS release is here.</td>
+</tr>
+<tr>
+<td><code>protein structure fetch</code></td>
+<td>Put one PDB entry's coordinates in the cache.</td>
+</tr>
+<tr>
+<td><code>protein structure show</code></td>
+<td>List a structure's chains, and what is known about each.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="version-and-doctor">version and doctor<a class="headerlink" href="#version-and-doctor" title="Permanent link">&para;</a></h2>
+<p><code>doctor</code> exits 1 when a tool is missing, and the message names the command that installs
+it. Run it once after you install.</p>
+<h2 id="db">db<a class="headerlink" href="#db" title="Permanent link">&para;</a></h2>
+<p>The four database commands. See <a href="../../data/">Set up your data</a> for where the files go.</p>
+<ul>
+<li><code>adopt</code> copies nothing. It points a name in the data dir at the path you give it, and
+  writes a record beside the real files. Use it on a cluster, where the files are usually
+  there already.</li>
+<li><code>download</code> hands the fetch to <code>mmseqs databases</code> or <code>foldseek databases</code>, then registers
+  what they leave. It needs a network, so run it on a login node.</li>
+<li><code>--kind sequence</code> or <code>--kind structure</code> is only for a name this package does not know.
+  A declared name, and any name you adopted once, already says which it is.</li>
+<li><code>--force</code> writes a fresh record over one that is there.</li>
+<li>None of the four changes a database. There is no <code>remove</code>, no <code>rebuild</code> and no <code>index</code>.</li>
+</ul>
+<h2 id="esm">esm<a class="headerlink" href="#esm" title="Permanent link">&para;</a></h2>
+<p>Embedding, and the feature descriptions that name what an SAE feature means. See
+<a href="../../guides/embedding/">Embed a sequence</a>.</p>
+<ul>
+<li>The FASTA must hold exactly one record. A file with more is refused.</li>
+<li>The numbers are never printed. <code>--out</code> writes the array as a <code>.npy</code> file, and that is how
+  you keep them.</li>
+<li><code>--layer</code> picks the hidden state. 0 is the embedding layer and -1 is the last.</li>
+<li><code>--device</code> is left out by default. It picks cuda when torch can see a GPU, and cpu when it
+  cannot. Name one to override that.</li>
+<li><code>features prepare</code> needs the network, so run it on a login node.</li>
+</ul>
+<h2 id="fold">fold<a class="headerlink" href="#fold" title="Permanent link">&para;</a></h2>
+<p>One sequence in, one predicted structure on disk. See
+<a href="../../guides/folding/">Predict a structure</a>.</p>
+<ul>
+<li>The output directory is an argument, not an option. You have to say where the prediction
+  goes.</li>
+<li>The query is a FASTA file with one record, or the residues themselves. A file that exists
+  wins, so a mistyped path is not folded as a sequence.</li>
+<li>The command folds from the sequence alone. There is no flag for an alignment. To hand one
+  in, use the <a href="../../api/">Python API</a>.</li>
+<li><code>--name</code> says what to call it. Left out, it uses the accession, and a hash when there is
+  none.</li>
+<li>Folding over a name that already holds a different sequence fails. <code>--overwrite</code> allows it.</li>
+<li><code>--device</code> works the way it does for <code>esm embed</code>.</li>
+<li>Per-residue confidence is the coordinate file's own B-factor column.</li>
+</ul>
+<h2 id="msa">msa<a class="headerlink" href="#msa" title="Permanent link">&para;</a></h2>
+<p>Two ways to build an alignment. See <a href="../../guides/alignments/">Build an alignment</a>.</p>
+<ul>
+<li>Both take the output path as an argument. Nothing lands anywhere you did not name.</li>
+<li><code>search</code> takes the residues themselves, then the name of a registered sequence database.
+  The alphabet is checked before mmseqs starts.</li>
+<li><code>align</code> needs <code>--query</code>, which says what goes in row 0. Give the header, or the identifier
+  the header opens with.</li>
+<li>The depth is whatever the search found, and no floor is enforced. A search that matched
+  nothing writes the query alone.</li>
+</ul>
+<h2 id="search">search<a class="headerlink" href="#search" title="Permanent link">&para;</a></h2>
+<p>One query against one database. See <a href="../../guides/search/">Search a database</a>.</p>
+<ul>
+<li>Rows go to stdout, tab-separated. The column names and the count go to stderr, so
+  <code>protein search seq ... | cut -f2</code> is the list of targets and nothing else.</li>
+<li>Identity is <code>pident</code> for <code>seq</code> and <code>fident</code> for <code>struct</code>. The first is a percentage and
+  the second is a fraction.</li>
+<li>Without <code>--chain</code>, <code>struct</code> runs Foldseek once over every chain at once. The <code>query</code>
+  column then says which chain each hit belongs to.</li>
+<li><code>--chain</code> wants the label exactly as the file spells it. Case counts, and not every label
+  is one character.</li>
+<li><code>--threads</code> is worth naming on a shared machine. The default is every core.</li>
+</ul>
+<h2 id="sifts">sifts<a class="headerlink" href="#sifts" title="Permanent link">&para;</a></h2>
+<p>The map from a PDB entry's chains to UniProt accessions. See
+<a href="../../data/">Set up your data</a>.</p>
+<ul>
+<li><code>prepare</code> needs the network, so run it on a login node. Already prepared, it fetches
+  nothing and tells you what is there.</li>
+<li><code>status</code> reads the record on disk and nothing else. It says which release you have, never
+  whether a newer one exists.</li>
+<li><code>protein structure show</code> fails until the map is prepared, and its message names the
+  command that prepares it.</li>
+</ul>
+<h2 id="structure">structure<a class="headerlink" href="#structure" title="Permanent link">&para;</a></h2>
+<p>Fill the coordinate cache, and look inside an entry. See
+<a href="../../guides/structures/">Work with structures</a>.</p>
+<ul>
+<li><code>fetch</code> is the one step here that needs a network. Run it before a job starts, because
+  the compute nodes have none.</li>
+<li><code>show</code> takes a coordinate file, or a PDB entry id. An id that is not cached is fetched.</li>
+<li>An empty <code>uniprot</code> cell is a real answer. It means a nucleic-acid chain, a ligand chain,
+  or an entry SIFTS never curated.</li>
+<li>Searching a structure is not here. It is <code>protein search struct</code>.</li>
+</ul>
+<h2 id="the-json-flag">The --json flag<a class="headerlink" href="#the-json-flag" title="Permanent link">&para;</a></h2>
+<p><code>--json</code> prints one JSON object instead of the plain lines. The answer is the same, keyed
+by name. Use it whenever something other than a person reads the output.</p>
+<p>Every command takes it. Without it, <code>protein search</code> and <code>protein structure show</code> print a
+tab-separated table, and the rest print one <code>key: value</code> per line. On a <code>prepare</code> command,
+<code>--json</code> also turns the progress bar off.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+    
+  </body>
+</html>
