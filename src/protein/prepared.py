@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 __all__ = ["PreparedSet", "PreparedStatus"]
 
 #: What a failed call raises: a set that is not here or an interrupted run is a
-#: ``RuntimeError``, a file a reader cannot slice a ``ValueError``, and a file that went away
+#: ``RuntimeError``, bytes a reader cannot read a ``ValueError``, and a file that went away
 #: under the read an ``OSError``.
 _ERRORS = (ValueError, OSError, RuntimeError)
 
