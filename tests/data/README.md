@@ -170,3 +170,35 @@ reader and the two verbs have to answer for:
 | `1ubq` | chain A is `P0CG48` here and `P62988` in the mmCIF — the round trip |
 | `8uqe` | chain B carries four accessions, the most any chain does |
 | `9on4` | has a chain **labelled `NA`**, between chains `MA` and `OA` |
+
+## SAE feature descriptions
+
+Fetched on GPU71FM, 2026-09-03, from the publisher's bulk endpoint, which serves every
+feature of the `ESMC-6B-sae-layer60-k64-codebook16384` codebook in one unauthenticated
+request:
+
+```bash
+curl -sS https://biohub.ai/esm/protein/api/v1alpha1/features
+```
+
+The response was 7,290,131 bytes, `md5:2b7eb3fe1d52b79a09797e7698c9ebe2`, one line, and held
+16,384 records under `data`, indices `0` to `16383` with none missing and none repeated. The
+publisher calls this an alpha interface and keeps no archive, so the digest records what was
+cut rather than pinning what can be fetched again.
+
+| File | What it is | Departs from the source |
+| --- | --- | --- |
+| `esm_sae_features_slice.json` | 4 of 16,384 records | only those four records kept |
+
+Each kept record is the publisher's own bytes, spliced out of the response and joined with
+the envelope it arrived in, so the escaping and the field order are untouched and the file is
+still one line.
+
+The four are each in it for a reason:
+
+| Feature | Why |
+| --- | --- |
+| `0` | the first index, and the ordinary case |
+| `19` | a description carrying non-ASCII letters, so a mis-declared encoding fails |
+| `10425` | the record the research note quotes, so a reader can check the fixture against it |
+| `16383` | the last index the codebook holds, so `uint16` is exercised at its top end — and its description carries double quotes and an em dash, which is the tab-separated round trip's hardest case |

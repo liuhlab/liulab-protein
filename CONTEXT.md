@@ -92,6 +92,24 @@ subprocess does not.** ESM-C holds its weights across calls, so they became the 
 you construct and keep; mmseqs holds nothing between calls, so `search()` stays a method. The
 asymmetry between `p.search(db)` and `ESMC().embed(p)` is this rule, not an oversight.
 
+### SAE activation
+
+**A class, not just a word.** What one sparse-autoencoder call over an **Embedding** gives
+back: two `(L, k)` arrays — which codebook features fired at each residue, and how hard —
+plus one reconstruction loss per residue.
+
+A peer of **Embedding**, never one of them. It is sparse over a codebook far wider than
+`d_model`, so that width would be a lie here, and `.mean()` would divide a feature's presence
+by protein length. `.max()` is the per-sequence vector and there is no `.mean()` at all. See
+ADR-0007.
+
+The pair is lossless: top-k fills exactly `k` slots per row whether or not all `k` are
+non-zero. `.dense()` materialises the whole codebook on request and nothing holds it.
+Indices are stored in the narrowest unsigned type the codebook needs, values in float16.
+
+It carries which SAE, which parent, which layer, which codebook and whether normalisation
+happened, so two activation sets are comparable or provably not.
+
 ### SIFTS
 
 The EBI's re-curated map between PDB chains and UniProt accessions, and the only join

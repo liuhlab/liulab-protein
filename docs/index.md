@@ -71,7 +71,7 @@ Everything above has a command as well:
 ```text
 protein version | doctor
 protein db        list | adopt | download | status
-protein esm       embed
+protein esm       embed | features prepare | features status
 protein search    seq | struct
 protein sifts     prepare | status
 protein structure fetch | show
@@ -98,6 +98,7 @@ Everything this package writes lands under `$LIULAB_DATA/protein/`:
 | Path | What it holds |
 | --- | --- |
 | `db/<name>/` | one registered database |
+| `esm/sae-features/` | what each of an SAE's features means |
 | `sifts/` | the PDB to UniProt map |
 | `structures/` | coordinate files, cached as you ask for them |
 | `.work/` | scratch space a search makes and then removes |
@@ -121,13 +122,15 @@ protein db download swissprot
 protein db list
 ```
 
-The SIFTS map is smaller and comes from the EBI rather than from either tool:
+Two smaller sets come from their own publishers rather than from either tool. The SIFTS map
+comes from the EBI, and the SAE feature descriptions from the ESM project:
 
 ```bash
 protein sifts prepare
+protein esm features prepare
 ```
 
-Both of those need the network, so run them on a login node. The lab's compute nodes have
+All of those need the network, so run them on a login node. The lab's compute nodes have
 none, and a job that dies for a file you could have fetched in a second is a wasted job.
 
 ## Check your work
