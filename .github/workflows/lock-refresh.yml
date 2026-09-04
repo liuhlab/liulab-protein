@@ -29,7 +29,7 @@ jobs:
           # `locked: true` would refuse to run before it has.
           run-install: false
       - run: pixi run relock
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/pixi-lock
           title: "chore(deps): refresh pixi.lock"
