@@ -158,6 +158,11 @@ src = ["src", "tests", "scripts"]
 # No `target-version`: ruff infers it from `requires-python`.
 extend-exclude = [".pixi", "site", "build", "dist"]
 
+[tool.ruff.format]
+# `docs/research/` quotes upstream code verbatim, and the formatter rewrites Python
+# fences in Markdown. Four other gates exempt the directory for the same reason.
+exclude = ["docs/research/**"]
+
 [tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
