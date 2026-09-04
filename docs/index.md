@@ -22,6 +22,7 @@ s = Structure("1UBQ")  # coordinates arrive on first use
 s.chain_ids  # ('A',)
 s["A"].uniprot  # ('P0CG48',) — from SIFTS, not from the file
 s["A"].search("pdb")  # a DataFrame of Foldseek hits
+s.view().show()  # the fold itself, in 3D, in a notebook
 ```
 
 Every one of those has a command as well. `protein --help` lists them.
@@ -33,6 +34,7 @@ Every one of those has a command as well. `protein --help` lists them.
 | watch it do one real job, start to finish | [Getting started](start.md) |
 | know why the pieces are shaped this way | [How it fits together](concepts.md) |
 | get it running | [Install](install.md), then [Set up your data](data.md) |
+| open a structure and look at it in 3D | [Work with structures](guides/structures.md) |
 | find similar sequences or similar folds | [Search a database](guides/search.md) |
 | build an alignment | [Build an alignment](guides/alignments.md) |
 | turn a sequence into vectors | [Embed a sequence](guides/embedding.md) |

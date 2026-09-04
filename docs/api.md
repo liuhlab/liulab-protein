@@ -51,6 +51,8 @@ A `Structure` is one PDB entry, and a `Chain` is one polymer in it. They are pee
 
 ::: protein.structure.chain
 
+::: protein.structure.view
+
 ## Embedding
 
 `ESMC` holds the weights, and `Embedding` is what one call over them gives back. A sparse

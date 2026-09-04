@@ -24,6 +24,7 @@ nav:
       - Install: install.md
       - Set up your data: data.md
   - Guides:
+      - Work with structures: guides/structures.md
       - Search a database: guides/search.md
       - Build an alignment: guides/alignments.md
       - Embed a sequence: guides/embedding.md
@@ -71,6 +72,12 @@ theme:
 
 plugins:
   - search
+  # Runs a page's `python exec="true"` block while the site builds, so a figure is made by
+  # the code the page shows rather than checked in beside it and left to rot. zensical shims
+  # the mkdocs plugin itself — it wires the superfences custom fences from this one line, and
+  # `!!python/name:` tags are not read here at all — and it fails the build when the package
+  # is missing rather than rendering the block as a code sample.
+  - markdown-exec
   - mkdocstrings:
       handlers:
         python:

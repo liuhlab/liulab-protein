@@ -116,7 +116,8 @@ The PDB to UniProt map, which is the only join between the two namespaces. See
 
 ## structure
 
-Fill the coordinate cache, and look inside an entry.
+Fill the coordinate cache, and look inside an entry. See
+[Work with structures](../guides/structures.md).
 
 - `fetch` is the one step here that needs a network. Run it before a job starts, because
   the compute nodes have none.

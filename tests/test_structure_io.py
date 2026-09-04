@@ -153,6 +153,28 @@ def test_the_two_fields_foldseek_needs_are_written_back_out(tmp_path: Path) -> N
     assert "_atom_site.occupancy" in text
 
 
+def test_serialising_to_text_gives_what_writing_to_a_file_gives(tmp_path: Path) -> None:
+    # One serialiser, two destinations: a viewer takes a string and Foldseek takes a file,
+    # and neither may see a different document.
+    atoms = io.read_atoms(_UBQ)
+    written = tmp_path / "1ubq.cif"
+    io.write_atoms(written, atoms)
+    assert io.to_text(atoms, name="1ubq") == written.read_text(encoding="utf-8")
+
+
+def test_text_reads_back_as_the_atoms_it_was_given(tmp_path: Path) -> None:
+    atoms = _relabelled(io.read_atoms(_BNA), "Q1")
+    path = tmp_path / "round_trip.cif"
+    path.write_text(io.to_text(atoms, name="round_trip"), encoding="utf-8")
+    assert io.read_atoms(path).array_length() == atoms.array_length()
+    assert io.chain_ids(io.read_atoms(path)) == ("Q1",)
+
+
+def test_the_data_block_is_named_by_the_caller_rather_than_by_a_file() -> None:
+    # A chain has no file to take a name from, so the name is an argument here.
+    assert io.to_text(io.read_atoms(_UBQ), name="1UBQ_A").startswith("data_1UBQ_A")
+
+
 def test_a_pdb_file_is_read_and_not_written(tmp_path: Path) -> None:
     # Nothing in this package needs to write one, and a PDB file cannot spell every chain
     # label the archive uses.

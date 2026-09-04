@@ -35,6 +35,7 @@ Examples
 from __future__ import annotations
 
 import gzip
+from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, cast
 
@@ -57,6 +58,7 @@ __all__ = [
     "format_suffix",
     "read_atoms",
     "read_models",
+    "to_text",
     "write_atoms",
 ]
 
@@ -230,10 +232,39 @@ def write_atoms(path: str | Path, atoms: AtomArray) -> None:
     suffix = format_suffix(target)
     if suffix not in CIF_SUFFIXES:
         raise _unsupported(target, suffix, verb="write")
-    written = pdbx.CIFFile()
-    pdbx.set_structure(written, atoms, data_block=entry_name(target))
     with _open_text(target, mode="wt") as handle:
-        written.write(handle)
+        handle.write(to_text(atoms, name=entry_name(target)))
+
+
+def to_text(atoms: AtomArray, *, name: str) -> str:
+    """Return ``atoms`` as mmCIF text — what :func:`write_atoms` puts in a file.
+
+    Text rather than a path because a viewer takes a string, and because **a chain has no
+    file of its own** to hand one.
+
+    Parameters
+    ----------
+    atoms : biotite.structure.AtomArray
+        What to serialise. It should carry :data:`EXTRA_FIELDS` if Foldseek is to read it
+        back, and a viewer wants ``b_factor`` to colour a prediction by.
+    name : str
+        What to call the data block.
+
+    Returns
+    -------
+    str
+        One mmCIF document, holding ``atom_site`` and no secondary structure — a viewer
+        computes its own.
+
+    Examples
+    --------
+    >>> to_text(atoms, name="1ubq")                           # doctest: +SKIP
+    """
+    written = pdbx.CIFFile()
+    pdbx.set_structure(written, atoms, data_block=name)
+    handle = StringIO()
+    written.write(handle)
+    return handle.getvalue()
 
 
 def chain_ids(atoms: AtomArray) -> tuple[str, ...]:

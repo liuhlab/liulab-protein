@@ -162,6 +162,8 @@ crystallographer put in a tube in 1995. Nothing asserted that. The trim checked 
 
 ## Where next
 
+- [Work with structures](guides/structures.md) — open the prediction and the crystal, and
+  look at them in 3D.
 - [Predict a structure](guides/folding.md) — naming a prediction, repeated chains, bigger
   complexes.
 - [How it fits together](concepts.md) — why `Protein` and `Structure` are peers.
