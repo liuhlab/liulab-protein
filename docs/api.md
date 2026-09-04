@@ -89,6 +89,8 @@ with a `pandas.DataFrame` read by the same parser.
 
 ::: protein.search.mixin
 
+::: protein.search.target
+
 ::: protein.search.mmseqs
 
 ::: protein.search.foldseek

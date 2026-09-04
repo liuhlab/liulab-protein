@@ -31,7 +31,7 @@ from protein.db.base import (
     registered_names,
 )
 from protein.external import ExternalTool, Foldseek, InstalledTool, ToolCall
-from protein.search import mmseqs as search_mmseqs
+from protein.search import target as search_target
 
 #: A `db/pdb/` listing: the flat database, the siblings a search needs, the cluster
 #: database, and the split full tier.
@@ -176,13 +176,13 @@ def test_a_directory_holding_no_ffindex_database_raises(db_root: Path) -> None:
 
 
 def test_the_search_lane_resolves_a_name_through_this_module(swissprot: Path) -> None:
-    assert search_mmseqs.database_path("swissprot") == swissprot
+    assert search_target.database_path("swissprot") == swissprot
 
 
 def test_a_database_is_a_search_target_and_answers_with_its_own_prefix(swissprot: Path) -> None:
     # One read-only `path` is the whole of `SearchTarget`, so `p.search(SwissProt())` and
     # `p.search("swissprot")` reach the same file.
-    assert search_mmseqs.database_path(_Sequence("swissprot")) == swissprot
+    assert search_target.database_path(_Sequence("swissprot")) == swissprot
 
 
 # --- the four dbtype bytes ------------------------------------------------------
@@ -568,4 +568,4 @@ def test_a_sequence_database_adds_retrieval_because_mmseqs_supports_it_directly(
 
 def test_the_layout_is_spelled_once_and_the_search_lane_no_longer_spells_it() -> None:
     assert base.DATABASE_SUBDIR == "db"
-    assert not hasattr(search_mmseqs, "DATABASE_SUBDIR")
+    assert not hasattr(search_target, "DATABASE_SUBDIR")

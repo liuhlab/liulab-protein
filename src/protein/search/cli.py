@@ -28,7 +28,7 @@ from typing import Any as _Any
 import typer
 
 from protein import Protein as _Protein
-from protein.search.mmseqs import DEFAULT_QUERY_NAME as _DEFAULT_QUERY_NAME
+from protein.search.target import DEFAULT_QUERY_NAME as _DEFAULT_QUERY_NAME
 from protein.structure import Structure as _Structure
 
 if _TYPE_CHECKING:

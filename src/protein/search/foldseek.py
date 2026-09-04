@@ -1,8 +1,9 @@
 """Structural search with Foldseek — the same lane, over coordinates instead of residues.
 
-Thin on purpose. Foldseek vendors MMseqs2, so everything except *what a query is* comes from
-:mod:`protein.search.mmseqs` — the database, the flags and the hit parsing — rather than from
-a second copy that could come to disagree about a column.
+Thin on purpose. Everything except *what a query is* is shared: the database and the flags
+come from :mod:`protein.search.target`, and the hits are parsed by
+:func:`protein.search.mmseqs.read_hits`, because Foldseek vendors MMseqs2 and a second copy
+of that parser could come to disagree about a column.
 
 **A query is a structure file that already exists**, so this half of the lane writes nothing,
 and its caller is ``Structure`` or ``Chain`` rather than the search mixin. The frame's
@@ -24,7 +25,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from protein.external import Foldseek
-from protein.search.mmseqs import database_path, read_hits, search_flags
+from protein.search.mmseqs import read_hits
+from protein.search.target import database_path, search_flags
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -32,7 +34,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from protein.external import MmseqsLikeTool
-    from protein.search.mmseqs import SearchTarget
+    from protein.search.target import SearchTarget
 
 __all__ = ["search"]
 
@@ -57,12 +59,12 @@ def search(
     ----------
     structure : str or pathlib.Path
         The query coordinates — mmCIF or PDB. It must already be on disk.
-    database : protein.search.mmseqs.SearchTarget or str
+    database : protein.search.target.SearchTarget or str
         What to search against: a **Database**, or the name of a registered one.
     tool : protein.external.MmseqsLikeTool, optional
         The tool to drive. Defaults to :class:`~protein.external.Foldseek`.
     sensitivity, evalue, max_seqs, threads, extra : optional
-        As :func:`protein.search.mmseqs.search_flags`.
+        As :func:`protein.search.target.search_flags`.
 
     Returns
     -------

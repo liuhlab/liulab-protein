@@ -50,13 +50,13 @@ from biotite.application.muscle import Muscle5App
 from protein import seq
 from protein.core import Protein
 from protein.external import Mmseqs, Muscle
-from protein.search.mmseqs import DEFAULT_QUERY_NAME, database_path, search_flags
+from protein.search.target import DEFAULT_QUERY_NAME, database_path, search_flags
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
     from protein.external import ExternalTool, MmseqsLikeTool
-    from protein.search.mmseqs import SearchTarget
+    from protein.search.target import SearchTarget
 
 __all__ = [
     "MSA",
@@ -477,7 +477,7 @@ def search(
     ----------
     sequence : str
         The residues to search with.
-    database : protein.search.mmseqs.SearchTarget or str
+    database : protein.search.target.SearchTarget or str
         What to search against: a **Database**, or the name of a registered one. Required;
         nothing is shipped or adopted behind it.
     query_name : str, default "query"
@@ -485,7 +485,7 @@ def search(
     tool : protein.external.MmseqsLikeTool, optional
         The tool to drive. Defaults to :class:`~protein.external.Mmseqs`.
     sensitivity, evalue, max_seqs, threads : optional
-        As :func:`protein.search.mmseqs.search_flags`. They reach the ``search`` verb.
+        As :func:`protein.search.target.search_flags`. They reach the ``search`` verb.
     extra : sequence of str, optional
         Further arguments for ``search``, appended unread.
 

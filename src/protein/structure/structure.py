@@ -61,7 +61,7 @@ if TYPE_CHECKING:
     from biotite.structure import AtomArray, AtomArrayStack
 
     from protein.fold.predictions import Confidence
-    from protein.search.mmseqs import SearchTarget
+    from protein.search.target import SearchTarget
     from protein.structure.chain import Chain
 
 __all__ = [
@@ -434,7 +434,7 @@ class Structure:
 
         Parameters
         ----------
-        database : protein.search.mmseqs.SearchTarget or str
+        database : protein.search.target.SearchTarget or str
             What to search against: a **Database**, or the name of a registered one.
         **kwargs : Any
             Forwarded to :func:`protein.search.foldseek.search` — ``sensitivity``,

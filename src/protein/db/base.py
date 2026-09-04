@@ -8,7 +8,7 @@ registration, at ``<protein_data_dir()>/db/<name>``, under a filesystem-safe slu
 
 The ffindex prefix inside that directory is not always the name, so :func:`ffindex_prefix`
 looks it up; :attr:`Database.path` is that prefix, which is the whole of
-:class:`~protein.search.mmseqs.SearchTarget`. :func:`database_files` claims every file it
+:class:`~protein.search.target.SearchTarget`. :func:`database_files` claims every file it
 finds rather than a list of suffixes two tools would have to be kept in step with.
 
 **These databases are immutable** — the index holds byte offsets into the data file, so
@@ -476,7 +476,7 @@ class Database(ABC):
     def path(self) -> Path:
         """The ffindex prefix a tool is pointed at — see :func:`ffindex_prefix`.
 
-        This one attribute is the whole of :class:`protein.search.mmseqs.SearchTarget`, so
+        This one attribute is the whole of :class:`protein.search.target.SearchTarget`, so
         ``p.search(SwissProt())`` and ``p.search("swissprot")`` are the same call.
 
         Returns
