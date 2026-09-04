@@ -90,33 +90,33 @@ middle of the second strand.
 
 ## Fold it
 
-One `ChainRequest` per chain, in the order you want them:
+One entry per chain, in the order you want them. Each names what it is, what it reads, and
+the accession it came from:
 
 ```python
-from protein import ChainRequest, ESMFold2, FoldingRequest
+from protein import ESMFold2
 
-request = FoldingRequest(
+model = ESMFold2()  # the weights load once
+prediction = model.fold(
     [
-        ChainRequest("protein", fos_bzip, accession="P01100"),
-        ChainRequest("protein", jun_bzip, accession="P05412"),
-        ChainRequest("dna", top),
-        ChainRequest("dna", bottom),
-    ]
+        {"kind": "protein", "sequence": fos_bzip, "accession": "P01100"},
+        {"kind": "protein", "sequence": jun_bzip, "accession": "P05412"},
+        {"kind": "dna", "sequence": top},
+        {"kind": "dna", "sequence": bottom},
+    ],
+    "folds",
 )
-request  # FoldingRequest(4 chains, 164 residues)
-request.chain_ids  # ('A', 'B', 'C', 'D')
+prediction.chain_ids  # ('A', 'B', 'C', 'D')
 ```
+
+**Always name the `kind`.** `ACGT` is a valid protein sequence as well as a valid strand of
+DNA, so nothing here guesses which you meant. Misspell any of the four field names and you
+get an error rather than a silently dropped field.
 
 The two accessions ride along to the answer, so a folded chain can say which entry its
 sequence came from.
 
-```python
-model = ESMFold2()  # the weights load once
-prediction = model.fold(request, "folds")
-prediction.chain_ids
-```
-
-A chain label comes from its place in the request. Nobody named these chains, so read the
+A chain label comes from its place in the list. Nobody named these chains, so read the
 labels off `prediction.chain_ids` rather than assuming them.
 
 You have to pass an output directory. There is no default. What comes back is a `Structure`,

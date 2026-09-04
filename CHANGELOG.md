@@ -123,6 +123,12 @@ sets one.
 
 ### Changed
 
+- **The docs teach the plain spelling of a fold.** The worked example and the folding guide
+  build a request out of dictionaries and hand it straight to `fold()`, so a reader meets no
+  classes on the way to their first structure. What each page adds is the part that bites:
+  name the `kind` on every chain, because `ACGT` is a valid protein sequence and nothing
+  guesses; misspell a field and you get an error rather than a dropped value.
+
 - **The docs site says how to use the package, and stops there.** Every reference to a
   decision record is gone from the published pages, along with the passages that explained
   why a method sits on one class and not another, why a model is an object you keep, and why

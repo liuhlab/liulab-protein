@@ -46,41 +46,49 @@ model itself, for the rest.
 
 ## What goes in
 
-A `FoldingRequest` holds one `ChainRequest` per chain. Each chain names its kind: `protein`,
-`dna` or `rna`.
+One entry per chain. The plain way to write one is a dictionary naming its `kind`,
+its `sequence`, and optionally an `accession` and an `alignment`:
 
 ```python
-from protein.fold import ChainRequest, FoldingRequest
-
-request = FoldingRequest(
-    [
-        ChainRequest("protein", "MKTAY", accession="P12345"),
-        ChainRequest("dna", "ACGT"),
-    ]
-)
-request.chain_ids  # ('A', 'B')
+chains = [
+    {"kind": "protein", "sequence": "MKTAY", "accession": "P12345"},
+    {"kind": "dna", "sequence": "ACGT"},
+]
 ```
 
-Chain labels come from position in the request, so read them off `request.chain_ids` rather
-than guessing. `A` is the first chain you passed and `B` is the second. Past `Z` they carry
-on as `AA`, `AB`.
-
-`ChainRequest.of` is the shortcut when you already hold a `Protein`. It carries the
-accession across:
+Hand that straight to `fold()`. You do not have to build anything first:
 
 ```python
-from protein import Protein
-from protein.fold import ChainRequest
-
-chain = ChainRequest.of(Protein("MKTAY", id="P12345"))
-chain.accession  # 'P12345'
+prediction = model.fold(chains, "folds")
+prediction.chain_ids  # ('A', 'B')
 ```
 
-That accession rides onto the prediction, and `Chain.uniprot` answers with it.
+Chain labels come from position, so read them off rather than guessing. `A` is the first
+chain you passed and `B` is the second. Past `Z` they carry on as `AA`, `AB`.
+
+A single chain needs no list around it, and a `Protein` can stand in for a whole entry,
+carrying its accession with it:
+
+```python
+model.fold(Protein("MKTAY", id="P12345"), "folds")
+```
+
+Bare residues work too, and mean protein:
+
+```python
+model.fold("MKTAY", "folds")
+```
 
 ## What gets refused
 
-Three things raise when you build the request, before any folding starts:
+A dictionary must name its `kind`. `ACGT` is a valid protein sequence as well as a valid
+strand of DNA, and nothing here guesses which you meant. Bare residues are the one exception,
+and they mean protein.
+
+Misspell a field and you get an error naming it. Nothing is silently dropped, so a mistyped
+`accession` cannot quietly cost you the prediction's provenance.
+
+Three more things raise when the request is built, before any folding starts:
 
 - An alignment whose query row is not the chain's sequence. The message says where the two
   first differ.
@@ -90,11 +98,22 @@ Three things raise when you build the request, before any folding starts:
 A protein chain given no alignment gets one built for it: the depth-1 alignment on its own
 sequence. You need do nothing about that.
 
-To fold against a real alignment, build it first and pass it in. See
+To fold against a real alignment, pass it as a field. It can be an `MSA` you built, or the
+path to an A3M file, which is what lets a whole request come out of a JSON document. See
 [Build an alignment](alignments.md):
 
 ```python
-ChainRequest.of(protein, alignment=msa)
+{"kind": "protein", "sequence": "MKTAY", "alignment": "p12345.a3m"}
+```
+
+`ChainRequest` and `FoldingRequest` are still there, and a mixture of spellings is fine in
+one call. Reach for `ChainRequest` when you want the object itself:
+
+```python
+from protein.fold import ChainRequest
+
+chain = ChainRequest.of(Protein("MKTAY", id="P12345"))
+chain.accession  # 'P12345'
 ```
 
 ## Where the answer goes
@@ -134,6 +153,10 @@ and you need `overwrite=True` or a distinct name to get a fresh one.
 
 Per-residue confidence rides in the B-factor column of the file. That is where every viewer
 looks for it, so a prediction colours by confidence with nothing more to do.
+
+**Watch the scale.** The B-factor column runs 0 to 100. The scalars below are the same
+measures as a fraction, 0 to 1. A colour range or a cutoff written for one against the other
+treats every residue alike.
 
 The scalars are on `Structure.confidence`:
 
