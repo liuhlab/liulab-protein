@@ -168,7 +168,7 @@ def read_hits(output: Path, tool: MmseqsLikeTool) -> pd.DataFrame:
     Parameters
     ----------
     output : pathlib.Path
-        The tab-separated hits an ``easy-search`` or ``convertalis`` wrote.
+        The tab-separated hits an ``easy-search`` wrote.
     tool : protein.external.MmseqsLikeTool
         The tool that wrote it, whose ``--format-output`` named the columns.
 
