@@ -120,6 +120,7 @@ Everything above has a command as well:
 protein version | doctor
 protein db        list | adopt | download | status
 protein esm       embed | features prepare | features status
+protein msa       search | align
 protein search    seq | struct
 protein sifts     prepare | status
 protein structure fetch | show
