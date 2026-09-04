@@ -140,7 +140,6 @@ sets one.
   the B-factor column holding the same per-residue measure runs 0 to 100. A viewer style
   written for the first range against the second one paints everything the same colour.
 
-
 - **The docs site is twelve pages rather than two.** Home carried five jobs at once — the
   classes, the install, a full alignment tutorial, every command and the gate — so a reader
   after one of them scrolled past the other four. It is now a landing page, and each job has
