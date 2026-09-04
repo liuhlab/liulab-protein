@@ -40,6 +40,9 @@ if TYPE_CHECKING:
     import pandas as pd
     from biotite.sequence import ProteinSequence
 
+    from protein.msa import MSA
+    from protein.search.mmseqs import SearchTarget
+
 __all__ = ["Protein"]
 
 
@@ -192,6 +195,54 @@ class Protein(SearchMixin):
         if path is not None:
             fasta.write_records(path, [record], line_width=line_width)
         return text
+
+    def msa(self, database: SearchTarget | str, **kwargs: Any) -> MSA:
+        """Search ``database`` and return the alignment, in memory.
+
+        :meth:`search` exactly, one step further along: the same tool, the same database, and
+        a value back rather than a file. **There is no output path** — an alignment is a
+        value, like a hit table, and :meth:`MSA.write` is how one is kept.
+
+        ``database`` is required and nothing is shipped or adopted behind it. A shallow set
+        quietly standing in for a deep one is a wrong answer that looks right.
+
+        A thin entry point onto :func:`protein.msa.search`, where the knobs are documented.
+
+        Parameters
+        ----------
+        database : protein.search.mmseqs.SearchTarget or str
+            What to search against: a **Database**, or the name of a registered one.
+        **kwargs : Any
+            Forwarded to :func:`protein.msa.search`. ``query_name`` is filled in from
+            :attr:`id` unless it is given here.
+
+        Returns
+        -------
+        protein.msa.MSA
+            Query-anchored, this protein's sequence in row 0. Depth 1 when the search found
+            nothing.
+
+        Raises
+        ------
+        LookupError
+            If ``database`` names nothing registered.
+        protein.external.ToolNotFoundError
+            If ``mmseqs`` is not installed.
+        RuntimeError
+            If the search exits non-zero.
+
+        Examples
+        --------
+        >>> from protein import Protein
+        >>> p = Protein("MKTAYIAKQRQISFVKSHFSRQ", id="P12345")
+        >>> p.msa("uniref30").depth                             # doctest: +SKIP
+        1281
+        """
+        from protein import msa
+        from protein.search import mmseqs
+
+        kwargs.setdefault("query_name", self.id or mmseqs.DEFAULT_QUERY_NAME)
+        return msa.search(str(self.sequence), database, **kwargs)
 
     @property
     def structures(self) -> pd.DataFrame:

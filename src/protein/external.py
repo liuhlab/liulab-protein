@@ -912,6 +912,159 @@ class MmseqsLikeTool(InstalledTool):
                 overwrite=overwrite,
             )
 
+    def search(
+        self,
+        query_db: Path,
+        target_db: Path,
+        result_db: Path,
+        *,
+        extra: Sequence[str] = (),
+        overwrite: bool = False,
+    ) -> Path:
+        """Search ``query_db`` against ``target_db`` and write the alignments to ``result_db``.
+
+        :meth:`easy_search` taken apart: databases in, an alignment database out, and no
+        table. That is what the verbs which build an alignment out of a search read next,
+        and keeping it one invocation is what makes the whole chain recordable.
+
+        Parameters
+        ----------
+        query_db : pathlib.Path
+            The query database, as :meth:`createdb` builds one.
+        target_db : pathlib.Path
+            The ffindex prefix to search against.
+        result_db : pathlib.Path
+            The alignment database to write.
+        extra : sequence of str, optional
+            Further arguments, passed through unread — the search settings belong to the
+            caller.
+        overwrite : bool, default False
+            Search regardless of freshness.
+
+        Returns
+        -------
+        pathlib.Path
+            ``result_db``.
+
+        Examples
+        --------
+        >>> from pathlib import Path
+        >>> Mmseqs().search(Path("q"), Path("sp"), Path("res"))     # doctest: +SKIP
+        PosixPath('res')
+        """
+        with self.scratch_dir("search") as work:
+            return self.run_to(
+                ["search", str(query_db), str(target_db), str(result_db), str(work), *extra],
+                output=result_db,
+                inputs=[query_db, target_db],
+                overwrite=overwrite,
+            )
+
+    def result2msa(
+        self,
+        query_db: Path,
+        target_db: Path,
+        result_db: Path,
+        msa_db: Path,
+        *,
+        format_mode: int | None = None,
+        extra: Sequence[str] = (),
+        overwrite: bool = False,
+    ) -> Path:
+        """Turn the alignments in ``result_db`` into one alignment per query.
+
+        Parameters
+        ----------
+        query_db, target_db, result_db : pathlib.Path
+            The two databases the search ran over, and what it wrote.
+        msa_db : pathlib.Path
+            The alignment database to write, one entry per query.
+        format_mode : int, optional
+            ``--msa-format-mode``. **The modes are not interchangeable**: they differ in what
+            a row's header keeps as well as in how the row is written. Omitted, the tool's own
+            default stands.
+        extra : sequence of str, optional
+            Further arguments, passed through unread — the redundancy filters belong to the
+            caller.
+        overwrite : bool, default False
+            Build regardless of freshness.
+
+        Returns
+        -------
+        pathlib.Path
+            ``msa_db``.
+
+        Examples
+        --------
+        >>> from pathlib import Path
+        >>> Mmseqs().result2msa(                                    # doctest: +SKIP
+        ...     Path("q"), Path("sp"), Path("res"), Path("msa"), format_mode=2
+        ... )
+        PosixPath('msa')
+        """
+        mode = [] if format_mode is None else ["--msa-format-mode", str(format_mode)]
+        return self.run_to(
+            [
+                "result2msa",
+                str(query_db),
+                str(target_db),
+                str(result_db),
+                str(msa_db),
+                *mode,
+                *extra,
+            ],
+            output=msa_db,
+            inputs=[query_db, target_db, result_db],
+            overwrite=overwrite,
+        )
+
+    def unpackdb(
+        self,
+        database: Path,
+        destination: Path,
+        *,
+        suffix: str | None = None,
+        name_mode: int | None = None,
+        extra: Sequence[str] = (),
+    ) -> Path:
+        """Write every entry of ``database`` into ``destination`` as a file of its own.
+
+        How an ffindex database leaves the tool's world. Plain :meth:`run` and not
+        :meth:`run_to`: what this builds is a directory, and the freshness rule judges a file.
+
+        Parameters
+        ----------
+        database : pathlib.Path
+            The ffindex prefix to unpack.
+        destination : pathlib.Path
+            An existing directory to write into. Nothing here creates one.
+        suffix : str, optional
+            ``--unpack-suffix``, put on the end of every file name.
+        name_mode : int, optional
+            ``--unpack-name-mode``. ``0`` names each file by its database key, ``1`` by the
+            accession in the database's ``.lookup``.
+        extra : sequence of str, optional
+            Further arguments, passed through unread.
+
+        Returns
+        -------
+        pathlib.Path
+            ``destination``.
+
+        Examples
+        --------
+        >>> from pathlib import Path
+        >>> Mmseqs().unpackdb(Path("msa"), Path("out"), suffix=".a3m")   # doctest: +SKIP
+        PosixPath('out')
+        """
+        args = ["unpackdb", str(database), str(destination)]
+        if suffix is not None:
+            args += ["--unpack-suffix", suffix]
+        if name_mode is not None:
+            args += ["--unpack-name-mode", str(name_mode)]
+        self.run([*args, *extra])
+        return destination
+
     def convertalis(
         self,
         query_db: Path,

@@ -50,6 +50,35 @@ s["A"].uniprot  # ('P0CG48',) — from SIFTS, not from the file
 s["A"].search("pdb")  # a DataFrame of Foldseek hits
 ```
 
+## Build an alignment for one protein
+
+`p.msa(db)` searches a database and gives back the alignment, the way `p.search(db)` gives
+back a table of hits:
+
+```python
+msa = p.msa("uniref30")
+msa.depth  # how many rows the search found
+msa.write("p12345.a3m")  # keep it, at a path you choose
+```
+
+You name the database on every call. Nothing ships with this package and nothing is picked
+for you, because a shallow set standing in for a deep one is a wrong answer that looks
+right. Nothing durable is written either: the run happens in scratch space and cleans up
+after itself, and what you get is a value in memory.
+
+### How deep does it need to be?
+
+Deep enough, not as deep as you can get. The folding tools that read one of these throw away
+everything past about 16,000 rows, and past 1,024 rows they take a sample of what is left
+rather than the top of the list. So a few thousand rows is a floor to clear, and going far
+past it buys nothing.
+
+If you are folding two chains together, the header of each row matters as much as the count.
+This package copies the organism the database named into a `key=` field, which is how the
+folding tools tell that a row from one chain and a row from another came from the same
+species. Rows with no key still fold — but each chain folds as though nothing related it to
+the others, and nothing warns you.
+
 ## Line up a set of sequences
 
 You may already hold the homologues — from a paper, from a colleague, from an earlier
