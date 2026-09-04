@@ -12,13 +12,12 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 
 import pytest
-from biotite.application.muscle import Muscle5App
 from biotite.sequence import ProteinSequence
 from biotite.sequence.align import Alignment
 
-from protein import MSA, msa
+from protein import MSA
 from protein.external import RecordingTool
-from protein.msa import align
+from protein.msa.muscle import align
 from protein.seq import ResidueCoercionWarning
 
 #: Three of one length, so the stand-in's default answer is a symmetric alignment.
@@ -65,7 +64,7 @@ def muscle(monkeypatch: pytest.MonkeyPatch) -> _Muscle:
             rows = recorded.gapped or [str(sequence) for sequence in recorded.sequences]
             return Alignment(recorded.sequences, Alignment.trace_from_strings(rows), None)
 
-    monkeypatch.setattr(msa, "Muscle5App", _App)
+    monkeypatch.setattr("biotite.application.muscle.Muscle5App", _App)
     return recorded
 
 
@@ -78,9 +77,14 @@ def tool() -> RecordingTool:
 # --- what reaches MUSCLE -----------------------------------------------------
 
 
-def test_align_drives_muscle_5_and_not_the_app_that_wraps_muscle_3() -> None:
-    # MuscleApp is the version-3 interface and spells its arguments differently.
-    assert msa.Muscle5App is Muscle5App
+def test_align_drives_muscle_5_and_not_the_app_that_wraps_muscle_3(
+    muscle: _Muscle, tool: RecordingTool
+) -> None:
+    # `Muscle5App` alone is stood in for, so reaching the stand-in is what says which app
+    # `align` imports. MuscleApp is the version-3 interface and spells its arguments
+    # differently.
+    align(_HOMOLOGUES, query="P01308", tool=tool)
+    assert muscle.calls == 1
 
 
 def test_align_hands_over_the_path_protein_external_located(

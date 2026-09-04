@@ -24,9 +24,21 @@ and the error you catch when a sequence carries something that is not a residue.
 
 ## Alignments
 
-An `MSA` is one alignment, anchored on the query in its first row and held as text.
+An `MSA` is one alignment, anchored on the query in its first row and held as text. One
+module per job: the class, the search that fills one, the MUSCLE run that lines one up, and
+the commands over both.
 
 ::: protein.msa
+    options:
+      members: false
+
+::: protein.msa.msa
+
+::: protein.msa.mmseqs
+
+::: protein.msa.muscle
+
+::: protein.msa.cli
 
 ## Structures
 
