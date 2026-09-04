@@ -15,7 +15,7 @@ same name.
 Examples
 --------
 >>> from protein import ESMC, Protein
->>> from protein.embed.esm import CHECKPOINTS
+>>> from protein.embed.esm.esmc import CHECKPOINTS
 >>> CHECKPOINTS["300m"]
 ('biohub/ESMC-300M', 960)
 >>> model = ESMC()                                       # doctest: +SKIP

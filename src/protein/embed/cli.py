@@ -24,8 +24,8 @@ import numpy as _np
 import typer
 
 from protein.core import Protein as _Protein
-from protein.embed.esm import CHECKPOINTS as _CHECKPOINTS
-from protein.embed.esm import ESMC as _ESMC
+from protein.embed.esm.esmc import CHECKPOINTS as _CHECKPOINTS
+from protein.embed.esm.esmc import ESMC as _ESMC
 
 #: What this sub-app catches. Each already carries its next action, so the command prints the
 #: message and exits 1. What the hub raises for a checkpoint it cannot serve is neither shape
