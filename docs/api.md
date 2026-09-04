@@ -55,6 +55,8 @@ rather than one of them.
 
 ::: protein.embed.esm.sae
 
+::: protein.embed.esm.features
+
 ## Search
 
 One lane, two queries: a sequence goes to MMseqs2, coordinates go to Foldseek. Both answer
