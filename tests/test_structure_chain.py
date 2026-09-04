@@ -21,7 +21,7 @@ from biotite.structure import AtomArray
 from genome.store import fetch as genome_fetch
 
 from protein import Structure, sifts
-from protein.embed.esm import Embeddable
+from protein.embed.esm.esmc import Embeddable
 from protein.external import ExternalTool
 from protein.io import structure as io
 from protein.sifts import SiftsNotDownloadedError

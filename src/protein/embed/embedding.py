@@ -1,6 +1,6 @@
 """The :class:`Embedding` value object — an array, and what it came from.
 
-**numpy only.** Nothing here imports torch; :mod:`protein.embed.esm` is where the weights
+**numpy only.** Nothing here imports torch; :mod:`protein.embed.esm.esmc` is where the weights
 live.
 
 An embedding is a value object rather than a bare array because an array found in a notebook
@@ -56,7 +56,7 @@ class Embedding:
         The UniProt accession or chain key it came from, or ``None`` when the ``Protein`` had
         no id.
     checkpoint : str
-        The slug, e.g. ``"300m"`` — a key of :data:`protein.embed.esm.CHECKPOINTS`, never an
+        The slug, e.g. ``"300m"`` — a key of :data:`protein.embed.esm.esmc.CHECKPOINTS`, never an
         HF id.
     layer : int
         Which hidden state, as a **non-negative** index into the model's ``hidden_states``:

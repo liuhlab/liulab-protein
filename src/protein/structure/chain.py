@@ -118,7 +118,7 @@ class Chain:
         spells it and the label is as the file does.
 
         It is spelled ``id`` because :class:`~protein.core.Protein` spells its accession that
-        way, and one :class:`~protein.embed.esm.Embeddable` protocol over both is the point.
+        way, and one :class:`~protein.embed.esm.esmc.Embeddable` protocol over both is the point.
 
         Returns
         -------
@@ -200,7 +200,7 @@ class Chain:
         ------
         ValueError
             If :attr:`kind` is not ``"protein"``. The
-            :class:`~protein.embed.esm.Embeddable` protocol ``ESMC.embed`` checks knows
+            :class:`~protein.embed.esm.esmc.Embeddable` protocol ``ESMC.embed`` checks knows
             nothing of :attr:`kind`, so refusing here is what stops a DNA chain reaching the
             tokenizer.
         protein.seq.InvalidResidueError

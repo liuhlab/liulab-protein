@@ -17,9 +17,9 @@ from biotite.sequence import ProteinSequence
 
 from protein import Protein
 from protein.embed import CHECKPOINTS, ESMC, Embeddable
-from protein.embed.esm import _layer_index
+from protein.embed.esm.esmc import _layer_index
 
-_SOURCE = Path(__file__).resolve().parents[1] / "src" / "protein" / "embed" / "esm.py"
+_SOURCE = Path(__file__).resolve().parents[1] / "src" / "protein" / "embed" / "esm" / "esmc.py"
 
 
 def test_the_table_names_every_checkpoint_this_package_claims_to_know() -> None:
@@ -58,7 +58,7 @@ def test_importing_the_embedding_lane_does_not_import_torch() -> None:
     assert "torch" not in sys.modules
 
 
-def test_the_module_body_of_esm_py_imports_neither_torch_nor_esm() -> None:
+def test_the_module_body_of_esmc_py_imports_neither_torch_nor_esm() -> None:
     # Against the syntax tree and not `sys.modules`, so this holds even in an environment
     # where torch is absent and the import would have failed anyway.
     tree = ast.parse(_SOURCE.read_text(encoding="utf-8"))

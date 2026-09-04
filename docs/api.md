@@ -44,6 +44,10 @@ A `Structure` is one PDB entry, and a `Chain` is one polymer in it. They are pee
       members: false
 
 ::: protein.embed.esm
+    options:
+      members: false
+
+::: protein.embed.esm.esmc
 
 ::: protein.embed.embedding
 
