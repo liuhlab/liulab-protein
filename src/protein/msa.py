@@ -11,6 +11,11 @@ The **shape** is checked at construction and the **residues are not**. An alignm
 file's content, and refusing a row because a database entry spells ``U`` would reject
 well-formed A3M this class only holds and hands back.
 
+Two verbs, because the two jobs have different shapes. :func:`search` searches a **Database**
+and is what :meth:`protein.core.Protein.msa` calls; :func:`align` takes a set of sequences
+the caller already holds, runs MUSCLE through biotite, and anchors the symmetric alignment
+that comes back with :meth:`MSA.compress`.
+
 Examples
 --------
 >>> from protein import MSA
@@ -29,16 +34,60 @@ MKTaAY
 
 from __future__ import annotations
 
+import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, cast
+
+from biotite.application.muscle import Muscle5App
+
+from protein import seq
+from protein.external import Mmseqs, Muscle
+from protein.search.mmseqs import DEFAULT_QUERY_NAME, database_path, search_flags
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
-__all__ = ["MSA", "InvalidAlignmentError", "count_match_states"]
+    from protein.external import ExternalTool, MmseqsLikeTool
+    from protein.search.mmseqs import SearchTarget
+
+__all__ = [
+    "MSA",
+    "InvalidAlignmentError",
+    "align",
+    "count_match_states",
+    "organism_id",
+    "search",
+    "with_organism_key",
+]
 
 #: Offending positions the lowercase message lists before it counts the rest.
 _MAX_LISTED = 5
+
+#: What a gap is written as. A3M also spells an insert-column gap ``.``; nothing here
+#: produces one, and :meth:`MSA.compress` reads only this.
+_GAP = "-"
+
+#: What MUSCLE needs before it will align anything.
+_MIN_ALIGNED = 2
+
+#: How a search's own header spells the organism, and what a folding tool reads instead.
+#: UniProtKB writes ``OX=``, UniRef writes ``TaxID=``, and a header that has already been
+#: through :func:`with_organism_key` carries ``key=``.
+_ORGANISM_ID = re.compile(r"\b(?:OX|TaxID|key)=(\d+)\b")
+
+#: What ``result2msa`` is asked to write. The A3M modes replace a hit's header with its
+#: accession alone, which throws away the organism id that pairs the chains of a complex;
+#: this one keeps the header whole. What it costs is the hit's own insertions, which this
+#: writer drops — every row it writes is one column per query residue, which is a valid A3M
+#: with no insert columns.
+_MSA_FORMAT_MODE = 2
+
+#: What the unpacked alignment is named. ``0`` is ``--unpack-name-mode``: one query, so one
+#: file, named by its database key rather than through a ``.lookup`` the query database is
+#: not obliged to have.
+_A3M_SUFFIX = ".a3m"
+_UNPACK_BY_KEY = 0
 
 
 class InvalidAlignmentError(ValueError):
@@ -208,6 +257,55 @@ class MSA:
         a3m.write_records(path, self.rows, comment=self.comment)
         return Path(path)
 
+    def compress(self, index: int = 0) -> Self:
+        """Anchor this alignment on row ``index`` and return the result.
+
+        The columns where that row has a gap stop being columns: a residue in one becomes a
+        lowercase insertion, and a gap in one disappears. The designated row leads the
+        result, which is what makes it the query. There is no ``expand``: nothing in this
+        package needs a rectangular matrix back.
+
+        Parameters
+        ----------
+        index : int, default 0
+            The row to anchor on. It is moved to row 0; the rest keep their order.
+
+        Returns
+        -------
+        MSA
+            A new alignment, checked at construction like any other. The comment is carried.
+
+        Raises
+        ------
+        InvalidAlignmentError
+            If the rows are not all as long as row ``index``. Compressing needs a symmetric
+            alignment — one alignment column per character — and an A3M is not one.
+        IndexError
+            If there is no row ``index``.
+
+        Examples
+        --------
+        >>> MSA([("query", "MK-TAY"), ("hit", "MKWTAY")]).compress().rows
+        (('query', 'MKTAY'), ('hit', 'MKwTAY'))
+        >>> MSA([("a", "MK-T"), ("b", "MKWT")]).compress(1).rows
+        (('b', 'MKWT'), ('a', 'MK-T'))
+        """
+        anchor = self.rows[index][1]
+        width = len(anchor)
+        ragged = next((row for row, (_, text) in enumerate(self.rows) if len(text) != width), None)
+        if ragged is not None:
+            raise InvalidAlignmentError(
+                f"compress anchors on row {index}, which needs every row to be {width} "
+                f"characters long; row {ragged} is {len(self.rows[ragged][1])}. A symmetric "
+                f"alignment has one character per column, and an A3M does not.",
+                row=ragged,
+            )
+        order = [index, *(row for row in range(len(self.rows)) if row != index)]
+        return type(self)(
+            ((self.rows[row][0], _demote(self.rows[row][1], anchor)) for row in order),
+            comment=self.comment,
+        )
+
     @property
     def depth(self) -> int:
         """How many rows the alignment holds, the query included.
@@ -265,6 +363,264 @@ class MSA:
         MSA(depth 1, 5 match states)
         """
         return f"{type(self).__name__}(depth {self.depth}, {self.match_states} match states)"
+
+
+def align(
+    sequences: Mapping[str, str] | Iterable[tuple[str, str]],
+    *,
+    query: str,
+    tool: ExternalTool | None = None,
+) -> MSA:
+    """Align sequences the caller already holds, and anchor the result on ``query``.
+
+    A function and not a method: MUSCLE takes a **set**, and this package has no class for
+    one. No **Database** is involved and none is searched — this is the verb for homologues
+    that came from a paper, a colleague or an earlier search.
+
+    biotite drives the binary. Its ``Muscle5App`` — version 5, not the ``MuscleApp`` that
+    wraps version 3 — owns the temporary files, the arguments and the parsing; this package
+    locates the binary, builds the sequences through :func:`protein.seq.to_protein_sequence`
+    and hands both over. MUSCLE aligns symmetrically, so the result is anchored by
+    :meth:`MSA.compress` before it is returned.
+
+    Parameters
+    ----------
+    sequences : mapping of str to str, or iterable of tuple of (str, str)
+        ``(header, residues)`` pairs, which is what :func:`protein.io.fasta.read_records`
+        yields, or a mapping of the same. Residues are ungapped.
+    query : str
+        The header of the sequence to anchor on. It becomes row 0.
+    tool : protein.external.ExternalTool, optional
+        Where the binary is. Defaults to :class:`~protein.external.Muscle`.
+
+    Returns
+    -------
+    MSA
+        Query-anchored, in the order the sequences arrived except that the query leads.
+
+    Raises
+    ------
+    ValueError
+        If fewer than two sequences were given. MUSCLE aligns a set, not a sequence.
+    LookupError
+        If no sequence carries the ``query`` header. The message names the headers there are.
+    protein.seq.InvalidResidueError
+        If a sequence holds anything outside :data:`protein.seq.ALPHABET`.
+    protein.external.ToolNotFoundError
+        If ``muscle`` is not installed.
+
+    Warns
+    -----
+    protein.seq.ResidueCoercionWarning
+        If a sequence holds ``U``, ``O`` or ``J``, which this package folds to ``X``.
+
+    Examples
+    --------
+    >>> msa = align({"P01308": "MKTAYIAK", "Q6YK33": "MKTYIAK"}, query="P01308")  # doctest: +SKIP
+    >>> msa.query_header                                                          # doctest: +SKIP
+    'P01308'
+    """
+    records = _records(sequences)
+    if len(records) < _MIN_ALIGNED:
+        raise ValueError(
+            f"align takes at least {_MIN_ALIGNED} sequences and was given {len(records)}; "
+            f"one sequence is not an alignment."
+        )
+    headers = [header for header, _ in records]
+    if query not in headers:
+        raise LookupError(
+            f"no sequence is headed {query!r}, so there is nothing to anchor on. The "
+            f"headers given are {headers}."
+        )
+    typed = [seq.to_protein_sequence(residues, name=header) for header, residues in records]
+    located = tool if tool is not None else Muscle()
+    alignment = Muscle5App.align(typed, bin_path=located.path)
+    rows = zip(headers, alignment.get_gapped_sequences(), strict=True)
+    return MSA(rows).compress(headers.index(query))
+
+
+def search(
+    sequence: str,
+    database: SearchTarget | str,
+    *,
+    query_name: str = DEFAULT_QUERY_NAME,
+    tool: MmseqsLikeTool | None = None,
+    sensitivity: float | None = None,
+    evalue: float | None = None,
+    max_seqs: int | None = None,
+    threads: int | None = None,
+    extra: Sequence[str] = (),
+) -> MSA:
+    """Search ``database`` with one sequence and return the alignment it found.
+
+    Four MMseqs2 invocations, each of them a single one: ``createdb`` for the query,
+    ``search``, ``result2msa``, ``unpackdb``. The chaining is here rather than in
+    :mod:`protein.external`, which owns the grammar and not the recipe.
+
+    Everything the run makes lives and dies inside a
+    :meth:`~protein.external.MmseqsLikeTool.scratch_dir`, so it leaves nothing behind and
+    **there is no output path**: an alignment is a value, like a hit table.
+    :meth:`MSA.write` is how one is kept.
+
+    The headers a hit arrives under are carried whole and gain ``key=<organism id>`` wherever
+    they name one — see :func:`with_organism_key` for why that matters.
+
+    Parameters
+    ----------
+    sequence : str
+        The residues to search with.
+    database : protein.search.mmseqs.SearchTarget or str
+        What to search against: a **Database**, or the name of a registered one. Required;
+        nothing is shipped or adopted behind it.
+    query_name : str, default "query"
+        The FASTA header the query is written under, and the header of row 0.
+    tool : protein.external.MmseqsLikeTool, optional
+        The tool to drive. Defaults to :class:`~protein.external.Mmseqs`.
+    sensitivity, evalue, max_seqs, threads : optional
+        As :func:`protein.search.mmseqs.search_flags`. They reach the ``search`` verb.
+    extra : sequence of str, optional
+        Further arguments for ``search``, appended unread.
+
+    Returns
+    -------
+    MSA
+        Query-anchored, row 0 the query. Depth 1 — the query alone — when the search found
+        nothing; a thin alignment is not refused.
+
+    Raises
+    ------
+    LookupError
+        If ``database`` names nothing registered.
+    protein.external.ToolNotFoundError
+        If ``mmseqs`` is not installed.
+    RuntimeError
+        If any of the four invocations exits non-zero.
+    InvalidAlignmentError
+        If what came back is not a query-anchored alignment.
+
+    Examples
+    --------
+    >>> search("MKTAYIAKQRQISFVKSHFSRQ", "uniref30")           # doctest: +SKIP
+    MSA(depth 1281, 22 match states)
+    """
+    from protein.io import fasta
+
+    driver = tool if tool is not None else Mmseqs()
+    target = database_path(database)
+    flags = search_flags(
+        sensitivity=sensitivity,
+        evalue=evalue,
+        max_seqs=max_seqs,
+        threads=threads,
+        extra=extra,
+    )
+    with driver.scratch_dir("msa") as work:
+        query = work / "query.fasta"
+        fasta.write_records(query, [(query_name, sequence)])
+        query_db = driver.createdb([query], work / "querydb")
+        result_db = driver.search(query_db, target, work / "result", extra=flags)
+        msa_db = driver.result2msa(
+            query_db, target, result_db, work / "msadb", format_mode=_MSA_FORMAT_MODE
+        )
+        unpacked = work / "unpacked"
+        unpacked.mkdir()
+        driver.unpackdb(msa_db, unpacked, suffix=_A3M_SUFFIX, name_mode=_UNPACK_BY_KEY)
+        return _read_unpacked(unpacked, query_name, sequence)
+
+
+def organism_id(header: str) -> int | None:
+    """Return the NCBI organism id ``header`` names, or ``None`` when it names none.
+
+    Three spellings, because the databases worth searching disagree: UniProtKB writes
+    ``OX=``, UniRef writes ``TaxID=``, and a header already carrying ``key=`` answers with
+    that.
+
+    Parameters
+    ----------
+    header : str
+        One FASTA header, as the search wrote it.
+
+    Returns
+    -------
+    int or None
+        The organism id.
+
+    Examples
+    --------
+    >>> organism_id("sp|P01308|INS_HUMAN Insulin OS=Homo sapiens OX=9606 GN=INS")
+    9606
+    >>> organism_id("UniRef100_A0A0 Cluster: x n=2 Tax=Mus musculus TaxID=10090")
+    10090
+    >>> organism_id("101") is None
+    True
+    """
+    found = _ORGANISM_ID.search(header)
+    return int(found.group(1)) if found else None
+
+
+def with_organism_key(header: str) -> str:
+    """Return ``header`` with ``key=<organism id>`` on the end, where it names one.
+
+    **A row without one is unpaired.** ESMFold2 pairs the chains of a complex by a
+    ``key=<int>`` match over the FASTA header, and a chain whose rows carry no key folds
+    block-diagonal with nothing raised — a wrong answer that looks like an answer. The
+    original header stays in front byte-for-byte, so nothing it said is lost.
+
+    Parameters
+    ----------
+    header : str
+        One FASTA header, as the search wrote it.
+
+    Returns
+    -------
+    str
+        ``header`` unchanged when it names no organism, or already carries a key.
+
+    Examples
+    --------
+    >>> with_organism_key("sp|P01315|INS_PIG Insulin OS=Sus scrofa OX=9823")
+    'sp|P01315|INS_PIG Insulin OS=Sus scrofa OX=9823 key=9823'
+    >>> with_organism_key("101 key=9606")
+    '101 key=9606'
+    >>> with_organism_key("101")
+    '101'
+    """
+    if "key=" in header:
+        return header
+    found = organism_id(header)
+    return header if found is None else f"{header} key={found}"
+
+
+def _read_unpacked(directory: Path, query_name: str, sequence: str) -> MSA:
+    """Return the one alignment ``unpackdb`` wrote, or the query alone when it wrote none."""
+    from protein.io import a3m
+
+    written = sorted(directory.glob(f"*{_A3M_SUFFIX}"))
+    if not written:
+        return MSA([(query_name, sequence)])
+    comment, records = a3m.read_records(written[0])
+    return MSA(((with_organism_key(header), row) for header, row in records), comment=comment)
+
+
+def _records(sequences: Mapping[str, str] | Iterable[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Return the ``(header, residues)`` pairs, from a mapping or from pairs.
+
+    The casts are the argument's shape and not a doubt about it: a ``Mapping`` is also an
+    ``Iterable``, so no static reading can subtract one branch from the other.
+    """
+    if isinstance(sequences, Mapping):
+        return list(cast("Mapping[str, str]", sequences).items())
+    return list(cast("Iterable[tuple[str, str]]", sequences))
+
+
+def _demote(row: str, anchor: str) -> str:
+    """Return ``row`` with the columns where ``anchor`` has a gap demoted to insertions."""
+    kept = [
+        character.lower() if anchored == _GAP else character
+        for character, anchored in zip(row, anchor, strict=True)
+        if anchored != _GAP or character != _GAP
+    ]
+    return "".join(kept)
 
 
 def _check(rows: tuple[tuple[str, str], ...]) -> int:

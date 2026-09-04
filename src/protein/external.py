@@ -1,10 +1,14 @@
 """The one place this package shells out to a native binary.
 
 An **External tool** is a binary the package drives rather than reimplements: ``mmseqs``
-searches sequences, ``foldseek`` searches structures. :class:`ExternalTool` says where one
-is, what version it is, and how to run it — including only when what it would build is
-stale. :class:`InstalledTool` shells out for real; :class:`RecordingTool` records the calls
-and runs nothing, which is what a test binds a search to.
+searches sequences, ``foldseek`` searches structures, ``muscle`` aligns a set of them.
+:class:`ExternalTool` says where one is, what version it is, and how to run it — including
+only when what it would build is stale. :class:`InstalledTool` shells out for real;
+:class:`RecordingTool` records the calls and runs nothing, which is what a test binds a
+search to.
+
+MUSCLE is the one this module never runs: biotite's ``Muscle5App`` takes a ``bin_path``, so
+:class:`Muscle` answers where the binary is and biotite does the rest.
 
 **Foldseek vendors MMseqs2**, so :class:`MmseqsLikeTool` owns the command grammar the two
 share and the concrete tools name only what differs.
@@ -51,17 +55,19 @@ class _Installation:
 
 
 #: Where a binary differs from the default of ``pixi add <lowercased name>`` asked
-#: ``--version``. Neither tool here accepts ``--version``; both answer ``version``. Nothing
-#: outside this module spells a conda package name.
+#: ``--version``. No tool here accepts ``--version``: the two searchers answer ``version``
+#: and MUSCLE answers ``-version``. Nothing outside this module spells a conda package name.
 _INSTALLATIONS: dict[str, _Installation] = {
     "mmseqs": _Installation("mmseqs2", "https://github.com/soedinglab/MMseqs2", ("version",)),
     "foldseek": _Installation(
         "foldseek", "https://github.com/steineggerlab/foldseek", ("version",)
     ),
+    "muscle": _Installation("muscle", "https://github.com/rcedgar/muscle", ("-version",)),
 }
 
-#: The **External tool**s :func:`doctor` checks.
-REQUIRED_TOOLS: tuple[str, ...] = ("mmseqs", "foldseek")
+#: The **External tool**s :func:`doctor` checks. Every one of them is required — there is no
+#: optional tier, so a tool named here is installed by ``pixi install`` like any other.
+REQUIRED_TOOLS: tuple[str, ...] = ("mmseqs", "foldseek", "muscle")
 
 #: What :func:`doctor` reports for a tool that runs but will not identify itself.
 NO_VERSION_REPORTED = "installed; reports no version"
@@ -906,6 +912,159 @@ class MmseqsLikeTool(InstalledTool):
                 overwrite=overwrite,
             )
 
+    def search(
+        self,
+        query_db: Path,
+        target_db: Path,
+        result_db: Path,
+        *,
+        extra: Sequence[str] = (),
+        overwrite: bool = False,
+    ) -> Path:
+        """Search ``query_db`` against ``target_db`` and write the alignments to ``result_db``.
+
+        :meth:`easy_search` taken apart: databases in, an alignment database out, and no
+        table. That is what the verbs which build an alignment out of a search read next,
+        and keeping it one invocation is what makes the whole chain recordable.
+
+        Parameters
+        ----------
+        query_db : pathlib.Path
+            The query database, as :meth:`createdb` builds one.
+        target_db : pathlib.Path
+            The ffindex prefix to search against.
+        result_db : pathlib.Path
+            The alignment database to write.
+        extra : sequence of str, optional
+            Further arguments, passed through unread — the search settings belong to the
+            caller.
+        overwrite : bool, default False
+            Search regardless of freshness.
+
+        Returns
+        -------
+        pathlib.Path
+            ``result_db``.
+
+        Examples
+        --------
+        >>> from pathlib import Path
+        >>> Mmseqs().search(Path("q"), Path("sp"), Path("res"))     # doctest: +SKIP
+        PosixPath('res')
+        """
+        with self.scratch_dir("search") as work:
+            return self.run_to(
+                ["search", str(query_db), str(target_db), str(result_db), str(work), *extra],
+                output=result_db,
+                inputs=[query_db, target_db],
+                overwrite=overwrite,
+            )
+
+    def result2msa(
+        self,
+        query_db: Path,
+        target_db: Path,
+        result_db: Path,
+        msa_db: Path,
+        *,
+        format_mode: int | None = None,
+        extra: Sequence[str] = (),
+        overwrite: bool = False,
+    ) -> Path:
+        """Turn the alignments in ``result_db`` into one alignment per query.
+
+        Parameters
+        ----------
+        query_db, target_db, result_db : pathlib.Path
+            The two databases the search ran over, and what it wrote.
+        msa_db : pathlib.Path
+            The alignment database to write, one entry per query.
+        format_mode : int, optional
+            ``--msa-format-mode``. **The modes are not interchangeable**: they differ in what
+            a row's header keeps as well as in how the row is written. Omitted, the tool's own
+            default stands.
+        extra : sequence of str, optional
+            Further arguments, passed through unread — the redundancy filters belong to the
+            caller.
+        overwrite : bool, default False
+            Build regardless of freshness.
+
+        Returns
+        -------
+        pathlib.Path
+            ``msa_db``.
+
+        Examples
+        --------
+        >>> from pathlib import Path
+        >>> Mmseqs().result2msa(                                    # doctest: +SKIP
+        ...     Path("q"), Path("sp"), Path("res"), Path("msa"), format_mode=2
+        ... )
+        PosixPath('msa')
+        """
+        mode = [] if format_mode is None else ["--msa-format-mode", str(format_mode)]
+        return self.run_to(
+            [
+                "result2msa",
+                str(query_db),
+                str(target_db),
+                str(result_db),
+                str(msa_db),
+                *mode,
+                *extra,
+            ],
+            output=msa_db,
+            inputs=[query_db, target_db, result_db],
+            overwrite=overwrite,
+        )
+
+    def unpackdb(
+        self,
+        database: Path,
+        destination: Path,
+        *,
+        suffix: str | None = None,
+        name_mode: int | None = None,
+        extra: Sequence[str] = (),
+    ) -> Path:
+        """Write every entry of ``database`` into ``destination`` as a file of its own.
+
+        How an ffindex database leaves the tool's world. Plain :meth:`run` and not
+        :meth:`run_to`: what this builds is a directory, and the freshness rule judges a file.
+
+        Parameters
+        ----------
+        database : pathlib.Path
+            The ffindex prefix to unpack.
+        destination : pathlib.Path
+            An existing directory to write into. Nothing here creates one.
+        suffix : str, optional
+            ``--unpack-suffix``, put on the end of every file name.
+        name_mode : int, optional
+            ``--unpack-name-mode``. ``0`` names each file by its database key, ``1`` by the
+            accession in the database's ``.lookup``.
+        extra : sequence of str, optional
+            Further arguments, passed through unread.
+
+        Returns
+        -------
+        pathlib.Path
+            ``destination``.
+
+        Examples
+        --------
+        >>> from pathlib import Path
+        >>> Mmseqs().unpackdb(Path("msa"), Path("out"), suffix=".a3m")   # doctest: +SKIP
+        PosixPath('out')
+        """
+        args = ["unpackdb", str(database), str(destination)]
+        if suffix is not None:
+            args += ["--unpack-suffix", suffix]
+        if name_mode is not None:
+            args += ["--unpack-name-mode", str(name_mode)]
+        self.run([*args, *extra])
+        return destination
+
     def convertalis(
         self,
         query_db: Path,
@@ -1034,6 +1193,26 @@ class Foldseek(MmseqsLikeTool):
         super().__init__("foldseek")
 
 
+class Muscle(InstalledTool):
+    """MUSCLE — the aligner, located here and driven by biotite.
+
+    The one **External tool** this module does not run. ``Muscle5App.align()`` takes a
+    ``bin_path`` and owns the temporary files, the arguments and the parsing, so what this
+    class is for is :attr:`~ExternalTool.path` — and the version line :func:`doctor` reports
+    beside the other two.
+
+    Examples
+    --------
+    >>> Muscle().name, Muscle().package
+    ('muscle', 'muscle')
+    >>> Muscle().version_args
+    ('-version',)
+    """
+
+    def __init__(self) -> None:
+        super().__init__("muscle")
+
+
 def doctor() -> dict[str, str]:
     """Verify every **External tool** the package needs and report what each one is.
 
@@ -1050,7 +1229,7 @@ def doctor() -> dict[str, str]:
 
     Examples
     --------
-    >>> doctor()                                          # doctest: +SKIP
-    {'mmseqs': '18.8cc5c', 'foldseek': '10.941cd33'}
+    >>> sorted(doctor())                                  # doctest: +SKIP
+    ['foldseek', 'mmseqs', 'muscle']
     """
     return {name: InstalledTool(name).version or NO_VERSION_REPORTED for name in REQUIRED_TOOLS}

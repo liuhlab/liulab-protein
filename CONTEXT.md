@@ -50,13 +50,18 @@ It is what `ESMC.embed` returns, and the only thing in the embedding lane a call
 
 ### External tool
 
-A native binary this package drives rather than reimplements: `mmseqs` and `foldseek`.
-`protein.external` is the one module that touches `subprocess`, and it is where a tool's
-location, version, freshness rule and install instructions live.
+A native binary this package drives rather than reimplements: `mmseqs`, `foldseek` and
+`muscle`. `protein.external` is the one module that touches `subprocess`, and it is where a
+tool's location, version, freshness rule and install instructions live. **All three are
+required**; there is no optional tier.
 
 Foldseek vendors MMseqs2, so the two share a command grammar and a database format. That
 shared half is `MmseqsLikeTool`; what genuinely differs — Foldseek's `fident` against
 MMseqs2's `pident`, and Foldseek's extra columns — is named on the subclasses.
+
+MUSCLE is the one this package never runs. biotite's `Muscle5App` takes a `bin_path`, so
+`Muscle` answers where the binary is and biotite owns the temp files, the arguments and the
+parsing.
 
 ### MSA
 
