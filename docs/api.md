@@ -65,14 +65,16 @@ rather than one of them.
 
 ## Folding
 
-A `FoldingRequest` is what goes in: one entry per chain, and every check the model itself
-does not make. Where the answer lands and what it is called is the other half.
+`ESMFold2` holds the weights, a `FoldingRequest` is what goes in, and a `Structure` written
+into a directory you named is what comes back.
 
 ::: protein.fold
     options:
       members: false
 
 ::: protein.fold.request
+
+::: protein.fold.esmfold
 
 ::: protein.fold.predictions
 

@@ -10,11 +10,14 @@ import ast
 import inspect
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from protein import Protein, Structure
 from protein.fold import ChainRequest, FoldingRequest
 from protein.fold.predictions import (
+    Confidence,
+    pairwise_path,
     prediction_name,
     prediction_path,
     stored_prediction,
@@ -170,6 +173,59 @@ def test_re_folding_with_a_different_seed_hits_the_cache(tmp_path: Path) -> None
     # The two escapes.
     assert stored_prediction(path, request, overwrite=True) is None
     assert stored_prediction(prediction_path(tmp_path, "again"), request) is None
+
+
+def test_a_cache_hit_carries_the_accessions_the_request_names(tmp_path: Path) -> None:
+    # The accessions are the input, not something read back out of the file, so a prediction
+    # handed back unfolded still answers with them rather than reaching for SIFTS.
+    path = stage(tmp_path, "P0CG48")
+    held = stored_prediction(path, request_for(UBIQUITIN, "P0CG48"))
+    assert held is not None
+    assert held.accessions == {"A": ("P0CG48",)}
+    assert held["A"].uniprot == ("P0CG48",)
+
+
+def test_a_cache_hit_carries_no_confidence_because_the_scalars_do_not_survive(
+    tmp_path: Path,
+) -> None:
+    path = stage(tmp_path, "P0CG48")
+    held = stored_prediction(path, request_for(UBIQUITIN, "P0CG48"))
+    assert held is not None
+    assert held.confidence is None
+
+
+def test_the_pairwise_matrix_is_a_sibling_of_the_coordinates(tmp_path: Path) -> None:
+    assert pairwise_path(tmp_path, "P0CG48").parent == prediction_path(tmp_path, "P0CG48").parent
+    assert pairwise_path(tmp_path, "P0CG48").name == "P0CG48.pairwise.npy"
+
+
+def test_confidence_is_frozen_so_a_measurement_cannot_be_edited_in_place() -> None:
+    confidence = Confidence(plddt=0.93, ptm=0.88)
+    with pytest.raises(AttributeError):
+        confidence.plddt = 0.1  # type: ignore[misc]
+
+
+def test_confidence_reads_the_pairwise_matrix_when_it_is_asked_and_not_before(
+    tmp_path: Path,
+) -> None:
+    matrix = np.arange(9, dtype=np.float32).reshape(3, 3)
+    written = pairwise_path(tmp_path, "P0CG48")
+    np.save(written, matrix)
+    confidence = Confidence(plddt=0.93, pairwise_file=written)
+    written_again = confidence.pairwise()
+    np.testing.assert_array_equal(written_again, matrix)
+
+
+def test_confidence_says_so_when_no_pairwise_matrix_was_written() -> None:
+    with pytest.raises(FileNotFoundError, match=r"reported no pairwise matrix"):
+        Confidence(plddt=0.93).pairwise()
+
+
+def test_a_structure_carries_a_confidence_and_one_read_off_disk_does_not(tmp_path: Path) -> None:
+    path = stage(tmp_path, "P0CG48")
+    confidence = Confidence(plddt=0.93, ptm=0.88)
+    assert Structure("folded", path=path, confidence=confidence).confidence is confidence
+    assert Structure.from_file(path).confidence is None
 
 
 def test_the_module_body_imports_neither_torch_nor_esm() -> None:

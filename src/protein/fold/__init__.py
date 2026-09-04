@@ -11,8 +11,12 @@ No module's body imports torch, so ``import protein`` stays cheap.
 
 from __future__ import annotations
 
+from protein.fold.esmfold import CHECKPOINTS, ESMFold2
 from protein.fold.predictions import (
+    PAIRWISE_SUFFIX,
     PREDICTION_FORMAT,
+    Confidence,
+    pairwise_path,
     prediction_name,
     prediction_path,
     stored_prediction,
@@ -20,11 +24,16 @@ from protein.fold.predictions import (
 from protein.fold.request import POLYMERS, ChainRequest, FoldingRequest, PolymerKind
 
 __all__ = [
+    "CHECKPOINTS",
+    "PAIRWISE_SUFFIX",
     "POLYMERS",
     "PREDICTION_FORMAT",
     "ChainRequest",
+    "Confidence",
+    "ESMFold2",
     "FoldingRequest",
     "PolymerKind",
+    "pairwise_path",
     "prediction_name",
     "prediction_path",
     "stored_prediction",

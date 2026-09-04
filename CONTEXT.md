@@ -101,21 +101,25 @@ See `protein.msa` and `protein.io.a3m`.
 ### Prediction
 
 A **Structure** a model produced rather than a crystallographer, written into a directory the
-caller names. **Never under the Data dir**, which holds reference and input data and no
-user's outputs, so the directory is a required argument that defaults nowhere.
+caller names. **Never under the Data dir**, so the directory is a required argument that
+defaults nowhere.
 
 **Its name is a fact about the molecule**: user-given, else the one accession its
 **FoldingRequest** names, else a short hash of the sequences. The checkpoint and every
-sampler setting stay out — neither says what was folded.
+sampler setting stay out.
 
 **A name already held is weighed against the residues on disk.** The same sequence is a cache
-hit and the GPU is never started; a different one raises, because a mutant can carry a
+hit and the card is never started; a different one raises, because a mutant can carry a
 reference accession and would otherwise overwrite the reference or silently reuse it.
 `overwrite=` is how a caller says they meant it. The residues, not a provenance record, are
 what make that survive the process. The accepted edge: settings are not in the path, so a
 re-fold with a different seed hits the cache.
 
-See `protein.fold.predictions`.
+**What it reports sits in three places.** Per-residue confidence is the mmCIF's B-factor
+column, where every viewer looks; the scalars are a `Confidence` on the returned object; the
+pairwise matrix is a sibling file, read on request.
+
+See `protein.fold`.
 
 ### Protein
 
@@ -182,7 +186,8 @@ is the only join; a structure also holds nucleic acids and ligands with no prote
 
 A structure may carry the accessions it was **produced from**, one per chain, and
 `Chain.uniprot` answers from those rather than asking SIFTS. That is provenance, not a join —
-an input the file was written from, never a cross-reference read back out of it.
+an input the file was written from, never a cross-reference read back out of it. A
+**Prediction** also carries its confidence, and neither survives the file.
 
 ### Xref
 
