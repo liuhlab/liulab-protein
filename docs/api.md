@@ -25,8 +25,8 @@ and the error you catch when a sequence carries something that is not a residue.
 ## Alignments
 
 An `MSA` is one alignment, anchored on the query in its first row and held as text. One
-module per job: the class, the search that fills one, the MUSCLE run that lines one up, and
-the commands over both.
+module per job: the class, the search that fills one, and the MUSCLE run that lines one up.
+The commands over them are with every other lane's, below.
 
 ::: protein.msa
     options:
@@ -37,8 +37,6 @@ the commands over both.
 ::: protein.msa.mmseqs
 
 ::: protein.msa.muscle
-
-::: protein.msa.cli
 
 ## Structures
 
@@ -161,6 +159,8 @@ calls.
 ::: protein.embed.cli
 
 ::: protein.fold.cli
+
+::: protein.msa.cli
 
 ::: protein.search.cli
 
