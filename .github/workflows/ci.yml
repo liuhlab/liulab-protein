@@ -50,7 +50,7 @@ jobs:
       # broken rule exits, so a bad checkout never reads as a rule this repo failed. The
       # default shallow depth is enough — it needs the file list, not the history.
       - uses: actions/checkout@v7
-      - uses: prefix-dev/setup-pixi@v0.10.2
+      - uses: prefix-dev/setup-pixi@v0.11.0
         with:
           environments: default
           # Fail if `pixi.lock` no longer matches `pyproject.toml`, rather than silently
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: prefix-dev/setup-pixi@v0.10.2
+      - uses: prefix-dev/setup-pixi@v0.11.0
         with:
           environments: test
           locked: true
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: prefix-dev/setup-pixi@v0.10.2
+      - uses: prefix-dev/setup-pixi@v0.11.0
         with:
           environments: docs
           locked: true
