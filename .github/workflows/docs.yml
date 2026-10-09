@@ -44,7 +44,7 @@ jobs:
           # A `workflow_run` run is not checked out at the commit that triggered it: the
           # default is the branch tip, which by now may be a commit the gate has not seen.
           ref: ${{ github.event.workflow_run.head_sha || github.ref }}
-      - uses: prefix-dev/setup-pixi@v0.10.2
+      - uses: prefix-dev/setup-pixi@v0.11.0
         with:
           environments: docs
           locked: true
