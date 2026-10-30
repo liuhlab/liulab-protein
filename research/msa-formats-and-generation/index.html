@@ -1,0 +1,2352 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Handling protein sequence related tasks.">
+      
+      
+      
+        <link rel="canonical" href="https://liuhlab.github.io/liulab-protein/research/msa-formats-and-generation/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>What would it take to support multiple sequence alignments in this package? - liulab-protein</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#what-would-it-take-to-support-multiple-sequence-alignments-in-this-package" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="liulab-protein" class="md-header__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            liulab-protein
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              What would it take to support multiple sequence alignments in this package?
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="liulab-protein" class="md-nav__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    liulab-protein
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The three things you work with
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Setting up
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Setting up
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set up your data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Guides
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Guides
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Search a database
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/alignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build an alignment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Embed a sequence
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/structures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Work with structures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/folding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Predict a structure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Commands
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Python API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#answer-shortest-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Answer, shortest form
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#method-and-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Method and provenance
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. The formats
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. The formats">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-information-model-stated-once" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The information model, stated once
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a3m" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A3M
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2m" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A2M
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aligned-fasta" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Aligned FASTA
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stockholm" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stockholm
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clustal-pir-msf-phylip-and-the-long-tail" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Clustal, PIR, MSF, PHYLIP and the long tail
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comparison-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Comparison table
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-conversions-and-where-information-is-lost" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The conversions, and where information is lost
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-what-biotite-already-covers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. What biotite already covers
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. What biotite already covers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-version-gate-which-is-the-whole-answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The version gate, which is the whole answer
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-is-in-biotite-at-all" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What is in biotite at all
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alignment-what-it-holds-and-the-one-thing-it-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>Alignment</code>: what it holds, and the one thing it does not
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-converters-again-exactly-where-msa-support-would-land" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The converters, again, exactly where MSA support would land
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-a3m-reader-judged-on-its-merits" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The A3M reader, judged on its merits
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#does-biotite-align" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Does biotite align?
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coverage-verdict" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Coverage verdict
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-generating-an-msa" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Generating an MSA
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Generating an MSA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mmseqs2-no-easy-msa-three-verbs-instead" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        MMseqs2: no <code>easy-msa</code>, three verbs instead
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#colabfold" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ColabFold
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-classical-alternatives" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The classical alternatives
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-use-cases-are-different-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The two use cases are different tools
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-folding-tools-want" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the folding tools want
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-recommendation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Recommendation
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Recommendation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-already-free" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What is already free
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-a-ioa3mpy-record-layer-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Option A — <code>io/a3m.py</code>, record layer only
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-b-hold-biotites-alignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Option B — hold biotite's <code>Alignment</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-c-generation-and-where-the-verb-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Option C — generation, and where the verb goes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-third-binary-actually-costs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the third binary actually costs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-shape-of-the-smallest-honest-answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The shape of the smallest honest answer
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Open items
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="what-would-it-take-to-support-multiple-sequence-alignments-in-this-package">What would it take to support multiple sequence alignments in this package?<a class="headerlink" href="#what-would-it-take-to-support-multiple-sequence-alignments-in-this-package" title="Permanent link">&para;</a></h1>
+<p>Two questions, deliberately kept apart: which MSA <strong>file formats</strong> this package would have to read
+and write, and how it would <strong>generate</strong> an MSA at all. They have different answers and different
+costs, and only one of them is cheap.</p>
+<h2 id="answer-shortest-form">Answer, shortest form<a class="headerlink" href="#answer-shortest-form" title="Permanent link">&para;</a></h2>
+<p><strong>A3M is the only format that matters here, and biotite cannot supply it.</strong> Every biotite feature
+that would make MSA support pleasant landed <em>after</em> the version this repo's lock can install:
+<code>get_a3m_alignments</code> in <strong>1.6.0</strong>, <code>Alignment.from_strings</code> in <strong>1.6.0</strong>, Clustal I/O in <strong>1.7.0</strong>.
+The repo runs <strong>1.4.0</strong>, where <code>Alignment</code> has no string constructor at all and <code>trace_from_strings</code>
+is a pure-Python double loop over every cell. Buying any of it means taking the <code>numpy &lt;2.4</code>
+downgrade <a href="../biotite-coverage-of-v1/#why-the-lock-holds-biotite-at-140">the sibling note</a> already
+priced.</p>
+<p><strong>And biotite's alignment readers are converters, so ADR-0002 bans them anyway.</strong>
+<code>fasta.get_alignment</code>, <code>fasta.get_a3m_alignments</code> and <code>clustal.get_alignment</code> all funnel through
+<code>ProteinSequence(s.upper().replace("U", "C").replace("O", "K"))</code> — the same silent rewrite the ADR
+was written about. <strong>The guard test does not name them</strong>: <code>_BANNED_CONVERTERS</code> is
+<code>{get_sequence, get_sequences, to_sequence, convert_letter_3to1}</code>, so adopting <code>get_a3m_alignments</code>
+today would pass <code>pixi run check</code> while corrupting selenoproteins. The hole is exactly where MSA
+support would land.</p>
+<p><strong>There is no <code>mmseqs easy-msa</code>.</strong> Generation is three verbs — a search with <code>-a</code>, then
+<code>result2msa --msa-format-mode 5</code>, then <code>unpackdb</code> — of which this package already owns one. Nothing
+to thinly wrap, but nothing expensive either: no new binary, because <code>mmseqs</code> is already required.</p>
+<p><strong>The whole format problem is one bit per column: which columns are match states.</strong> A3M stores that
+bit in the letter case and drops insert-column padding entirely; aligned FASTA does not store it at
+all. Every conversion question below is a restatement of that.</p>
+<p>So the smallest honest support is <strong><code>io/a3m.py</code> at the record layer plus two verbs on
+<code>MmseqsLikeTool</code></strong> — no new class, no new binary, no biotite bump. Aligning a set of proteins you
+already have is a <em>different tool</em> (MAFFT, FAMSA) and a third required binary, and is worth
+declining until someone asks.</p>
+<h2 id="method-and-provenance">Method and provenance<a class="headerlink" href="#method-and-provenance" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Read directly (Part 2)</td>
+<td>the <code>biotite-dev/biotite</code> tree at tag <strong>v1.7.1</strong>, downloaded and grepped whole, plus <code>sequence/align/alignment.py</code> and <code>sequence/io/fasta/convert.py</code> at tags v1.4.0, v1.5.0, v1.6.0 and v1.7.0</td>
+</tr>
+<tr>
+<td>Read directly (Part 4)</td>
+<td>this repo: <code>src/protein/{external,seq}.py</code>, <code>src/protein/io/{fasta,structure}.py</code>, <code>src/protein/search/{mmseqs,mixin}.py</code>, <code>tests/test_io_fasta.py</code>, <code>tests/test_external.py</code>, <code>pyproject.toml</code>, <code>.vale.ini</code></td>
+</tr>
+<tr>
+<td>Packaging facts</td>
+<td><code>api.anaconda.org/package/&lt;channel&gt;/&lt;name&gt;</code> and <code>api.anaconda.org/dist/...</code>, queried 2026-09-03</td>
+</tr>
+<tr>
+<td>Delegated (Part 1)</td>
+<td>the HH-suite wiki and <code>scripts/reformat.pl</code>, <code>scripts/a3m.py</code>, <code>src/hh*.cpp</code>; the HMMER 3.4 User's Guide; Easel's <code>esl_msafile_*.c</code> and <code>esl_alphabet.c</code>; the UCSC SAM A2M description; Sonnhammer's Stockholm spec; ClustalW 2.1 and Clustal Omega source; EMBOSS 6.6.0; the MODELLER manual; Felsenstein's PHYLIP docs; the NEXUS 1997 spec; the UCSC MAF spec</td>
+</tr>
+<tr>
+<td>Delegated (Part 3)</td>
+<td>MMseqs2 <code>src/commons/Parameters.cpp</code>, <code>src/util/{result2msa,unpackdb}.cpp</code>, <code>src/alignment/MultipleAlignment.cpp</code>, <code>src/MMseqsBase.cpp</code> at tag <code>18-8cc5c</code> and master; the MMseqs2 user guide; ColabFold <code>colabfold/mmseqs/search.py</code>, <code>setup_databases.sh</code>, <code>MsaServer/</code>; AlphaFold 2 <code>data/parsers.py</code> and <code>data/tools/</code>; AlphaFold 3 <code>docs/input.md</code>; Boltz and Chai-1 docs</td>
+</tr>
+</tbody>
+</table>
+<p>Every claim is marked <strong>VERIFIED</strong> — the primary source was read and can be quoted — or <strong>INFERRED</strong>.
+Parts 1 and 3 were verified by delegated agents that quoted the source text back; Parts 2 and 4 were
+read here. <strong>Nothing was executed</strong>: this is a macOS laptop and the repo is <code>platforms =
+["linux-64"]</code>, so no binary ran and no environment was solved. Where the delegates <em>measured</em>
+something (round-tripping real files through <code>reformat.pl</code>) it is marked <strong>MEASURED</strong>.</p>
+<p>Knowledge cutoff is May 2026 and today is 2026-09-03, so post-cutoff items are flagged where they
+appear.</p>
+<h2 id="1-the-formats">1. The formats<a class="headerlink" href="#1-the-formats" title="Permanent link">&para;</a></h2>
+<h3 id="the-information-model-stated-once">The information model, stated once<a class="headerlink" href="#the-information-model-stated-once" title="Permanent link">&para;</a></h3>
+<p>Everything below follows from this. <strong>VERIFIED</strong> — three independent implementations converged on
+the same structure: Easel's <code>esl_msafile_a2m.c</code>, AlphaFold's <code>parsers.py</code>, and biotite's
+<code>get_a3m_alignments</code>.</p>
+<p>An A3M or A2M alignment carries <strong>two</strong> things:</p>
+<ol>
+<li>a <strong>match-state matrix</strong>, <code>N</code> rows by <code>M</code> columns of {residue, deletion}, where <code>M</code> is the same
+   for every row; and</li>
+<li>per row, an <strong>insertion list</strong> — for each of the <code>M+1</code> junctions between match states, a possibly
+   empty run of inserted residues, understood to be <strong>unaligned</strong> to any other row's run.</li>
+</ol>
+<p>An <strong>aligned FASTA</strong> carries only one thing: an <code>N × L</code> character matrix with no distinguished
+subset of columns. That asymmetry is the entire conversion problem.</p>
+<p>AlphaFold calls (2) the "deletion matrix" and stores one integer per match position
+(<code>parsers.py:183-193</code>). biotite models the whole object as <code>N-1</code> <strong>pairwise</strong> query-to-target
+alignments rather than one N-row MSA, which is the same thing said a third way — <strong>VERIFIED</strong>,
+<code>get_a3m_alignments</code> docstring: <em>"The i-th alignment is an alignment of the first sequence in the
+file (the query) to the i+1-th sequence in the file."</em></p>
+<h3 id="a3m">A3M<a class="headerlink" href="#a3m" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong>, HH-suite User Guide (the wiki <code>Home.md</code> <em>is</em> the guide; there is no separate "File
+formats" page): <em>"The A3M format is a condensed version of A2M format. It is obtained by omitting
+all <code>.</code> symbols from A2M format. Hence residues emitted by Match states of the HMM are in upper
+case, residues emitted by Insert states are in lower case and deletions are written <code>-</code>."</em></p>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>A</code>-<code>Z</code></td>
+<td>residue in a <strong>match</strong> column</td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td><strong>deletion</strong> in a match column — the row spans it and has no residue</td>
+</tr>
+<tr>
+<td><code>a</code>-<code>z</code></td>
+<td>residue <strong>inserted</strong> relative to the match-state consensus</td>
+</tr>
+<tr>
+<td><code>.</code></td>
+<td><strong>never present</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rows have unequal length.</strong> Only the match-state count is constant — <code>reformat.pl:698</code> skips its
+equal-length assertion for <code>a3m</code> and <code>ufas</code> alone, and <code>a3m.py</code>'s <code>check_match_states</code> raises
+<em>"Sequence with diverging number of match states"</em>. <strong>VERIFIED.</strong></p>
+<p><strong>The first row is the query and carries no lowercase.</strong> <strong>VERIFIED</strong> — the guide: <em>"The query
+sequence is the first sequence that does not start with a special name"</em>, and <code>-M first</code>: <em>"exactly
+those columns of the MSAs which contain a residue in the query sequence will be assigned to Match /
+Delete states."</em> A query cannot insert relative to itself. biotite states it as a hard precondition;
+so does AlphaFold 3. <strong>This invariant is what makes A3M self-describing</strong>, and §1's round-trip
+results show what breaks without it.</p>
+<p>Produced by <code>hhblits -oa3m</code>, <code>hhconsensus</code>, <code>reformat.pl</code>, and MMseqs2 <code>result2msa
+--msa-format-mode 5|6</code>. Consumed by every <code>hh*</code> tool, AlphaFold 2 and 3, ColabFold, Boltz, and
+Chai-1 after conversion. <strong>VERIFIED.</strong></p>
+<p><strong>Two different <code>#</code> lines, and the brief conflated them.</strong> <strong>VERIFIED:</strong></p>
+<ul>
+<li>HH-suite's <code>#</code> line is a <strong>name and description</strong> line, used by <code>hhmake</code> to name the HMM
+  (<code>hhalignment.cpp:366</code>). <code>reformat.pl:805</code> preserves it for <code>a3m</code> output only.</li>
+<li>The <code>#123,456&lt;TAB&gt;1,1</code> form is <strong>ColabFold's</strong>, not HH-suite's — <code>colabfold/input.py:81-82</code>
+  writes <code>"#" + ",".join(chain lengths) + "\t" + ",".join(copy numbers)</code>. Downstream parsers skip
+  any line starting <code>#</code>.</li>
+</ul>
+<p>Annotation rides in specially-named FASTA records at the top — <code>&gt;ss_dssp</code>, <code>&gt;ss_pred</code>, <code>&gt;ss_conf</code>,
+<code>&gt;aa_dssp</code>, <code>&gt;aa_pred</code>, <code>&gt;&lt;query&gt;_consensus</code> — with alphabets validated by <code>a3m.py</code>
+(<code>VALID_SS_STATES = set("ECH")</code>). There is no markup channel. <strong>VERIFIED.</strong></p>
+<p>One trap worth naming: <strong><code>hhconsensus</code> uses case for a second, unrelated purpose.</strong>
+<code>hhalignment.cpp:2260-2276</code> emits the consensus residue uppercase when its weight exceeds 0.6,
+lowercase above 0.4, else <code>x</code>. That case is a <em>conservation</em> signal, not a match/insert signal.
+<strong>VERIFIED.</strong></p>
+<h3 id="a2m">A2M<a class="headerlink" href="#a2m" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong>, verbatim from the UCSC SAM description (the canonical URL now 301-redirects; a mirror
+was read):</p>
+<blockquote>
+<p>Uppercase characters and "-" represent alignment columns, and there must be exactly the same
+number of alignment columns in each sequence. Lowercase characters (and spaces or ".") represent
+insertion positions between alignment columns or at the ends of the sequence. White space
+(including line breaks) and periods are ignored. The spaces or periods in the multiple alignments
+are only for human readability, and may be omitted.</p>
+</blockquote>
+<p><strong>The dots are optional by UCSC's own spec.</strong> "Dotless A2M" is legal A2M — and HH-suite's A3M is
+exactly that, a renamed dotless A2M. The guide concedes it: <em>"A3M, though very practical and
+space-efficient, is not a standard format, and the name A3M is our personal invention."</em> HMMER uses
+the same term independently (User's Guide p.221): <em>"the aligned sequences in a 'dotless' A2M file do
+not necessarily all have the same number of characters."</em> <strong>VERIFIED.</strong></p>
+<p><strong>The <code>O</code> trap, and why it matters to <code>seq.py</code>.</strong> UCSC reads <code>O</code> as a <strong>free-insertion module</strong>, not
+as pyrrolysine. HMMER's guide, p.222: <em>"A2M format alignments must not contain pyrrolysine residues,
+lest they be read as FIMs. For this reason, Easel converts 'O' residues to 'X' when it writes an
+amino acid alignment in A2M format."</em> A2M also cannot carry <code>*</code> or <code>~</code>; Easel writes them as gaps.
+<strong>VERIFIED.</strong> <code>protein.seq</code> already folds <code>U</code>, <code>O</code> and <code>J</code> to <code>X</code> — for A2M that fold is <em>required</em>,
+not merely convenient, which is a point ADR-0002 could gain if A2M I/O ever lands.</p>
+<p><strong>One divergence between the two toolchains. VERIFIED:</strong> the HH-suite C++ tools accept dotless A2M
+(all of <code>hhblits.cpp:216</code>, <code>hhsearch.cpp:79</code>, <code>hhmake.cpp:89</code>, <code>hhfilter.cpp:58</code>, <code>hhalign.cpp:68</code>,
+<code>hhconsensus.cpp:82</code> carry the identical help string <em>"'.' = gaps aligned to inserts (may be
+omitted)"</em>), but <code>reformat.pl</code> does <strong>not</strong> — its dot-insertion block at line 481 is guarded
+<code>if ($informat eq "a3m" …)</code>. A dotless A2M declared as <code>a2m</code> to <code>reformat.pl</code> is mis-parsed. This is
+the <em>"some conversion programs misinterpret dotless a2m files"</em> the UCSC page warned about, still
+true twenty-odd years later.</p>
+<h3 id="aligned-fasta">Aligned FASTA<a class="headerlink" href="#aligned-fasta" title="Permanent link">&para;</a></h3>
+<p>Plain <code>-</code> padding, all rows equal length. <strong>Case is not meaningful</strong> — three independent primary
+confirmations, all <strong>VERIFIED</strong>:</p>
+<ol>
+<li><code>reformat.pl -h</code>: <em>"fas: aligned fasta; lower and upper case equivalent, '.' and '-'
+   equivalent"</em>.</li>
+<li><code>reformat.pl:463</code> uppercases the whole alignment on reading anything that is not a3m or a2m.</li>
+<li>Easel's amino alphabet calls <code>esl_alphabet_SetCaseInsensitive</code> (<code>esl_alphabet.c:277</code>).</li>
+</ol>
+<p>Produced by MUSCLE v5 (its <strong>only</strong> alignment output), MAFFT (its default), Clustal Omega
+<code>--outfmt=fa</code>, <code>esl-reformat afa</code>, and MMseqs2 <code>--msa-format-mode 2</code>, which is MMseqs2's default.
+Metadata is the FASTA description line and nothing else. <strong>VERIFIED.</strong></p>
+<h3 id="stockholm">Stockholm<a class="headerlink" href="#stockholm" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong>, HMMER User's Guide p.217: the first line must be <code># STOCKHOLM 1.x</code>; blocks are
+separated by blank lines with the same sequences in the same order in every block; <code>//</code> terminates.
+Easel matches <code>//</code> as a <em>prefix</em>, not an exact line (<code>esl_msafile_stockholm.c:294</code>). MMseqs2's
+<code>convertmsa</code> is stricter than the spec and demands the exact string <code># STOCKHOLM 1.0</code>
+(<code>convertmsa.cpp:40</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Magic</th>
+<th>Grammar</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>#=GF &lt;tag&gt; &lt;text&gt;</code></td>
+<td>free text</td>
+<td>per-file</td>
+</tr>
+<tr>
+<td><code>#=GS &lt;seqname&gt; &lt;tag&gt; &lt;text&gt;</code></td>
+<td>free text</td>
+<td>per-sequence</td>
+</tr>
+<tr>
+<td><code>#=GC &lt;tag&gt; &lt;chars&gt;</code></td>
+<td>exactly one character per column</td>
+<td>per-column</td>
+</tr>
+<tr>
+<td><code>#=GR &lt;seqname&gt; &lt;tag&gt; &lt;chars&gt;</code></td>
+<td>exactly one character per column</td>
+<td>per-residue</td>
+</tr>
+</tbody>
+</table>
+<p><strong>There is no single authoritative feature vocabulary — there are three lists and they disagree.</strong>
+<strong>VERIFIED:</strong></p>
+<ul>
+<li>What <strong>Easel's parser special-cases</strong> (<code>esl_msafile_stockholm.c</code>): <code>#=GF</code> <code>ID AC DE AU GA NC TC</code>;
+  <code>#=GS</code> <code>WT AC DE</code>; <code>#=GC</code> <code>SS_cons SA_cons PP_cons RF MM</code>; <code>#=GR</code> <code>SS SA PP</code>. Eighteen tags;
+  everything else round-trips as untyped string annotation, because <em>"unrecognized tags will simply
+  be ignored"</em>.</li>
+<li>What the <strong>HMMER guide documents</strong>: the same minus <code>PP_cons</code>, which is an omission — its own
+  tutorial uses it.</li>
+<li>What <strong>Pfam and Sonnhammer</strong> define: six <code>#=GS</code> features, nine <code>#=GR</code> features, the rule <em>"<code>#=GC</code>:
+  the same features as for <code>#=GR</code> with <code>_cons</code> appended"</em>, and roughly 25 further <code>#=GF</code> tags.</li>
+</ul>
+<p><code>#=GC seq_cons</code> is a <strong>Pfam artefact, not an Easel tag</strong> — grepping Easel and HMMER for <code>seq_cons</code>
+returns hits only in data files, never in <code>.c</code> or <code>.h</code>. It is a Belvu-style consensus-<em>symbol</em>
+string, not residues. <strong>VERIFIED.</strong></p>
+<p><strong>The gap characters: the guide's prose and Easel's code disagree, and the code wins.</strong>
+<strong>VERIFIED</strong>, <code>esl_alphabet.c:273-278</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">esl_alphabet_CreateCustom</span><span class="p">(</span><span class="s">"ACDEFGHIKLMNPQRSTVWY-BJZOUX*~"</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="mi">29</span><span class="p">);</span>
+<span class="n">esl_alphabet_SetEquiv</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="sc">'_'</span><span class="p">,</span><span class="w"> </span><span class="sc">'-'</span><span class="p">);</span><span class="w">       </span><span class="cm">/* allow _ as a gap too */</span>
+<span class="n">esl_alphabet_SetEquiv</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="sc">'.'</span><span class="p">,</span><span class="w"> </span><span class="sc">'-'</span><span class="p">);</span><span class="w">       </span><span class="cm">/* allow . as a gap too */</span>
+<span class="n">esl_alphabet_SetCaseInsensitive</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+</code></pre></div>
+<p>So <strong><code>-</code>, <code>.</code> and <code>_</code> are gaps</strong> (all index 20) and <strong><code>~</code> is <code>missing data</code></strong> at index <code>Kp-1</code>, which
+is <em>not</em> a gap. <code>esl_abc_XIsGap</code> and <code>esl_abc_XIsMissing</code> are separate macros with no combined
+predicate. <code>~</code> means <em>"this row is a fragment and does not extend here"</em>, written deliberately by
+<code>tracealign.c:757-772</code>; <code>-</code> means <em>"this row spans this column and has no residue."</em> Collapsing the
+two destroys fragment annotation that HMMER, Infernal and Dfam emit on purpose. The guide says four
+gap characters on p.217 and three on p.50; Sonnhammer says two. <strong>Model <code>{-, ., _}</code> and <code>{~}</code> as two
+predicates.</strong></p>
+<p><strong>HMMER's Stockholm output is A2M-with-dots in its case and gap semantics</strong>, and it says so —
+<code>tracealign.c:694-700</code>, verbatim:</p>
+<div class="highlight"><pre><span></span><code>/* The reason to make a text-mode MSA rather than let Easel handle printing a digital
+ * MSA is to impose HMMER's standard representation on gap characters and insertions:
+ * at inserts, gaps are '.' and residues are lower-case, whereas at matches, gaps are '-'
+ * and residues are upper case. */
+</code></pre></div>
+<p>It stores the same partition <strong>twice</strong>: once in the case, and once explicitly in <code>#=GC RF</code> (<code>x</code> at
+consensus columns, <code>.</code> at inserts). <strong>That redundancy is the lossless bridge</strong> — see the conversion
+section. Guide p.222: <em>"only Stockholm and SELEX formats support reference annotation."</em></p>
+<p><code>esl-reformat</code>'s complete format set is exactly ten, and the output format is <strong>positional, not a
+flag</strong>: <code>stockholm pfam a2m psiblast selex afa clustal clustallike phylip phylips</code>. <code>stockholm</code> and
+<code>pfam</code> are the same parser and writer differing <strong>only in line width</strong> — 200 versus one line per
+sequence (<code>esl_msafile_stockholm.c:338-361</code>). <strong>VERIFIED.</strong> The guide's claim at p.221 that <em>"Easel
+currently does not read A2M format"</em> is <strong>stale</strong>: <code>esl_msafile_a2m_Read()</code> exists and is dispatched.</p>
+<p>Produced by <code>hmmalign</code>, and by <code>hmmsearch</code>/<code>phmmer</code>/<code>jackhmmer</code>/<code>nhmmer</code> under <code>-A</code>. Consumed by
+<code>hmmbuild</code>, Infernal's <code>cmbuild</code> (<strong>Stockholm only</strong> — it needs the consensus structure annotation),
+AlphaFold 2, and MMseqs2 <code>convertmsa</code>. Pfam and Rfam distribute in it. <strong>VERIFIED.</strong></p>
+<h3 id="clustal-pir-msf-phylip-and-the-long-tail">Clustal, PIR, MSF, PHYLIP and the long tail<a class="headerlink" href="#clustal-pir-msf-phylip-and-the-long-tail" title="Permanent link">&para;</a></h3>
+<p>These matter for interoperability and nothing else. The delegate's findings, compressed:</p>
+<p><strong>Clustal <code>.aln</code></strong> — <strong>VERIFIED, and it corrects the brief</strong>: ClustalW <strong>2.x writes <code>CLUSTAL 2.1
+multiple sequence alignment</code></strong>, with no <code>W</code> and no parentheses (<code>AlignmentOutput.cpp:1669</code>). The
+<code>CLUSTAL W (1.81)</code> form is 1.x, and survives mainly as hardcoded literals in third-party writers —
+EMBOSS, BioPerl, Biopython. Clustal Omega writes <code>CLUSTAL O(1.2.4) multiple sequence alignment</code>,
+with no space before the paren (<code>src/squid/clustal.c</code>). Readers are loose: Easel's <code>clustallike</code>
+only requires the first line to contain the word <code>alignment</code>, and its own examples include MUSCLE's
+and MAFFT's headers.</p>
+<p>The conservation line is <code>*</code> identical, <code>:</code> all residues within one of nine strong Gonnet-PAM250
+groups, <code>.</code> all within one of eleven weak groups, space otherwise — including <strong>any column
+containing a gap</strong>. Both implementations carry the identical group lists, and <strong>both disable the
+<code>:</code>/<code>.</code> tests for nucleotide data</strong>, so a DNA <code>.aln</code> conservation line holds only <code>*</code> and spaces.
+Gap character is <code>-</code> only. <strong>VERIFIED.</strong></p>
+<p><strong>PIR/NBRF and MODELLER</strong> — <code>&gt;P1;code</code>, a free-text second line, sequence in blocks of ten,
+terminated by <code>*</code>, gaps <code>-</code>. MODELLER's variant replaces line 2 with ten colon-separated fields;
+field 1 has <strong>five</strong> legal values (<code>sequence</code>, <code>structure</code>, <code>structureX</code>, <code>structureN</code>,
+<code>structureM</code>), a dot means "unspecified" for both residue number and chain id, and <code>/</code> is a chain
+break. Rich per-sequence metadata, no per-column channel at all. <strong>VERIFIED</strong> from the MODELLER
+manual.</p>
+<p><strong>MSF/GCG</strong> — <code>!!AA_MULTIPLE_ALIGNMENT 1.0</code>, then a <code>MSF: … Check: … ..</code> line, then <code>//</code>. <strong>Gaps are
+<code>.</code> internally and <code>~</code> terminally</strong> — confirmed exactly as asked, from squid's <code>msf.c</code> and from
+EMBOSS's own docs (<em>"msf format … uses '.' as the gap character inside the sequences and '~' as the
+gap character at the terminal ends"</em>). But it is <strong>not universal</strong>: ClustalW writes <code>.</code> everywhere
+including the flanks, and EMBOSS writes <code>CompCheck:</code> where squid writes <code>Check:</code>. A reader must
+treat both as gaps unconditionally. <strong>VERIFIED.</strong></p>
+<p><strong>PHYLIP</strong> — <strong>VERIFIED</strong> from Felsenstein's own docs: <em>"The name should be ten characters in
+length, and either terminated by a Tab character or filled out to the full ten characters by blanks
+if shorter."</em> So <strong>names may contain spaces</strong>, and splitting a strict PHYLIP line on whitespace is
+wrong. Interleaved versus sequential is <em>"selected by the I option"</em> — <strong>a runtime menu choice, not
+a file property</strong>, so the two are not distinguishable by inspection. <code>.</code> is explicitly rejected as a
+gap; space is explicitly not a gap. "Relaxed PHYLIP" appears <strong>nowhere</strong> in Felsenstein's
+documentation — RAxML caps names at 256 and PhyML at 100, both requiring whitespace separation,
+which is the exact opposite of the strict rule.</p>
+<p><strong>Not relevant to a protein package</strong>, each for a stated reason: <strong>SELEX</strong> (Easel's own header calls
+it <em>"largely obsolete"</em>; it is the one format where whitespace is a gap); <strong>NEXUS</strong> (a phylogenetics
+container whose gap, missing and match symbols are all <em>declared per file</em> — <code>GAP</code> has no default at
+all — and which Easel does not support); <strong>MAF</strong> (its own spec opens <em>"stores multiple alignments at
+the DNA level between entire genomes"</em>; every row is <code>assembly.chromosome</code> plus offset and strand,
+and a <code>Protein</code> has no genome coordinate — manufacturing one is exactly the hidden acquisition
+<strong>direct support only</strong> forbids). <strong>PSI-BLAST <code>.psi</code></strong> is marginal: it is a protein format, its case
+convention is load-bearing (<em>"In each column, all letters must be in upper case, or all letters must
+be in lower case"</em> — the case tells PSI-BLAST whether a column feeds the PSSM), but nothing in this
+package takes a <code>.psi</code>, so owning a writer would violate direct support only.</p>
+<h3 id="comparison-table">Comparison table<a class="headerlink" href="#comparison-table" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A3M</th>
+<th>A2M</th>
+<th>Aligned FASTA</th>
+<th>Stockholm</th>
+<th>Clustal <code>.aln</code></th>
+<th>PIR/MODELLER</th>
+<th>MSF/GCG</th>
+<th>PHYLIP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Match-column gap</td>
+<td><code>-</code></td>
+<td><code>-</code></td>
+<td><code>-</code></td>
+<td><code>-</code>, also <code>.</code> <code>_</code></td>
+<td><code>-</code></td>
+<td><code>-</code></td>
+<td><code>.</code></td>
+<td><code>-</code>, also <code>?</code></td>
+</tr>
+<tr>
+<td>Insert-column pad</td>
+<td><strong>absent</strong></td>
+<td><code>.</code>, optional</td>
+<td>n/a</td>
+<td><code>.</code> by convention</td>
+<td>n/a</td>
+<td>n/a</td>
+<td><code>~</code> terminal</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Missing data</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><strong><code>~</code></strong>, distinct</td>
+<td>—</td>
+<td>—</td>
+<td><code>~</code> reused</td>
+<td><code>?</code></td>
+</tr>
+<tr>
+<td>Case meaningful</td>
+<td><strong>yes</strong></td>
+<td><strong>yes</strong></td>
+<td><strong>no</strong></td>
+<td><strong>yes</strong>, by convention</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Rows equal length</td>
+<td><strong>no</strong></td>
+<td>dotted yes, dotless no</td>
+<td>yes</td>
+<td>yes per block</td>
+<td>yes per block</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Match-state mask</td>
+<td>implicit, in the case</td>
+<td>implicit, in the case</td>
+<td><strong>none</strong></td>
+<td><strong><code>#=GC RF</code></strong>, explicit</td>
+<td>none</td>
+<td>none</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Per-file metadata</td>
+<td>one <code>#</code> line</td>
+<td>—</td>
+<td>—</td>
+<td><strong><code>#=GF</code></strong></td>
+<td>—</td>
+<td><code>C;</code> <code>R;</code></td>
+<td><code>MSF:</code> <code>Check:</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Per-sequence metadata</td>
+<td>FASTA header</td>
+<td>FASTA header</td>
+<td>FASTA header</td>
+<td><strong><code>#=GS</code></strong></td>
+<td>—</td>
+<td><strong>ten fields</strong></td>
+<td><code>Name:</code> <code>Weight:</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Per-column track</td>
+<td>pseudo-records <code>ss_*</code></td>
+<td>—</td>
+<td>—</td>
+<td><strong><code>#=GC</code></strong></td>
+<td>conservation <code>*:.</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Per-residue track</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><strong><code>#=GR</code></strong></td>
+<td>ClustalW <code>!SS_</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Relevant here</td>
+<td><strong>yes</strong></td>
+<td><strong>yes</strong></td>
+<td><strong>yes</strong></td>
+<td><strong>yes</strong></td>
+<td>interop only</td>
+<td>MODELLER only</td>
+<td>legacy only</td>
+<td>phylogenetics only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-conversions-and-where-information-is-lost">The conversions, and where information is lost<a class="headerlink" href="#the-conversions-and-where-information-is-lost" title="Permanent link">&para;</a></h3>
+<p><strong>A3M to aligned FASTA is not lossless. The loss is exactly one bit per column: whether it was a
+match column.</strong></p>
+<p>The converter must do this, and there is no shortcut. <strong>VERIFIED</strong> from two implementations that
+agree character for character — Easel's <code>esl_msafile_a2m.c:512-530</code> and <code>reformat.pl:484-524</code>:</p>
+<ol>
+<li>Split every row into <code>M</code> match characters (<code>[A-Z]</code> or <code>-</code>) interleaved with <code>M+1</code> insertion runs.</li>
+<li>For each junction <code>j</code>, take <code>nins[j] = max</code> over rows of that run's length.</li>
+<li>The padded length is <code>L = M + Σ nins[j]</code>.</li>
+<li>Rewrite each row: its insertion residues <strong>left-justified</strong>, then <code>.</code> padding to <code>nins[j]</code>, then
+   the match character.</li>
+<li>For aligned FASTA, rewrite every <code>.</code> as <code>-</code>.</li>
+</ol>
+<p>After step 5 a <code>-</code> in an insert column is byte-identical to a <code>-</code> in a match column, and since
+aligned FASTA readers ignore case, nothing distinguishes them. <strong>Step 4 also invents an alignment
+among the inserted residues</strong> — A3M never claimed those runs were mutually aligned, and
+left-justifying them asserts that they are.</p>
+<p><strong>MEASURED</strong> — <code>reformat.pl a3m fas</code> does not uppercase; it only maps <code>.</code> to <code>-</code>, so its output
+<em>incidentally</em> still carries the case marking and reproduced the guide's published FASTA block byte
+for byte. But that is a courtesy of the writer, not a property of the format: <code>reformat.pl:463</code>
+uppercases the whole alignment the moment it reads anything back as <code>fas</code>.</p>
+<p><strong>Aligned FASTA to A3M is lossless only relative to a match-state rule you supply</strong>, and both
+toolchains default to the same one: <strong><code>-M first</code></strong>. <code>reformat.pl:535</code> sets it automatically for a3m
+and a2m output; Easel states it in five lines (<code>esl_msafile_a2m.c:436-441</code>) and documents the
+fallback: <em>"If it does not [have a valid RF line], then as a fallback, the first sequence in the
+alignment is considered to be the consensus."</em> Take row 1 as the query, make every column where it
+gaps an insert column, lowercase those residues, and <strong>drop the gap characters in insert columns
+entirely</strong> — which is where A3M's compactness comes from. <strong>VERIFIED.</strong></p>
+<p><strong>MEASURED, and this is the sharp edge:</strong> the round trip works when, and only when, the query row
+has no insertions. On an A3M whose first row carries lowercase, <code>-M first</code> <strong>promotes the query's
+own inserts to match columns</strong>:</p>
+<div class="highlight"><pre><span></span><code>ORIGINAL A3M (10 match states)  -&gt;  a2m                -&gt;  fas
+&gt;query  ACDEFqqqGHIKL               ACDEFQQQ..GHIKL        ACDEFqqq--GHIKL
+&gt;s2     ACDEFGHIKL                  ACDEF---..GHIKL        ACDEF-----GHIKL
+&gt;s3     ACDEFwwwwwGHIKL             ACDEFWWWwwGHIKL        ACDEFwwwww GHIKL
+</code></pre></div>
+<p>The match-state count went 10 to 13, and both round trips differ from the original. That is not a
+bug — it is the documented default applied to input that violates the invariant. <strong>A3M is
+self-describing only under "row 1 is all match states."</strong> That holds for anything hhblits or
+<code>result2msa</code> produced; anything else needs an out-of-band mask.</p>
+<p><strong>A2M and A3M convert both ways, information-losslessly but not byte-losslessly.</strong> A2M to A3M is
+<code>tr/.//d</code> (<code>reformat.pl:678</code>), exactly the guide's definition. A3M to A2M recomputes the padding and
+<strong>MEASURED</strong> byte-identical on the guide's example. Two things do not survive a round trip that
+starts at A2M, both <strong>MEASURED</strong>:</p>
+<ul>
+<li><strong>All-dot insert columns vanish.</strong> Nothing in the A3M records that a column with no insertions in
+  any row ever existed, because <code>nins[j]</code> is a max over actual insertions.</li>
+<li><strong>Intra-insert justification is lost.</strong> <code>ab..</code>, <code>.ab.</code> and <code>..ab</code> are three A2M strings mapping to
+  the same A3M string <code>ab</code>; both implementations restore them left-justified.</li>
+</ul>
+<p>Neither loss is semantic — UCSC says the dots <em>"carry no information"</em>, and HMMER's guide is
+explicit that <em>"this representation only works if all insertions relative to consensus are
+considered to be unaligned characters."</em> Lossless in information, lossy in layout.</p>
+<p><strong>Stockholm to A3M loses the entire markup channel</strong> unless the converter is written to keep it.
+AlphaFold's <code>convert_stockholm_to_a3m</code> (<code>parsers.py:215-271</code>) is the canonical real-world converter
+and drops, in order: every <code>#=GF</code> line; every <code>#=GC</code> line <strong>including <code>SS_cons</code> and <code>RF</code></strong>; every
+<code>#=GR</code> line; every <code>#=GS</code> feature except <code>DE</code>; sequence weights; and the gathering, noise and
+trusted cutoffs. It then re-derives match states <strong>from the first row's gaps rather than from
+<code>RF</code></strong> — so if <code>RF</code> and row 1 disagree, which they can after several jackhmmer iterations, the
+conversion silently changes the match-state assignment. MMseqs2's <code>convertmsa</code> keeps only <code>#=GF ID</code>
+or <code>#=GF AC</code>. <strong>VERIFIED.</strong></p>
+<p><strong>The lossless bridge exists and it is <code>#=GC RF</code>.</strong> Easel's A2M reader <em>reconstructs</em> it while
+un-padding (<code>esl_msafile_a2m.c:525</code> writes <code>.</code> at insert columns and <code>x</code> at consensus columns), and
+<code>reformat.pl a3m sto</code> writes it from the other side as <code>$refline =~ s/[a-z]/-/g</code>. <strong>MEASURED:</strong>
+<code>a3m -&gt; sto -&gt; a3m</code> came back byte-identical for the sequences — though descriptions were lost and
+names longer than 32 characters were hard-truncated by <code>%-32.32s</code>.</p>
+<p><strong>So A3M to Stockholm is the archival direction</strong>, because Stockholm is a strict superset that can
+hold the match-state mask explicitly plus arbitrary annotation at four scopes. Stockholm to A3M is
+the lossy one.</p>
+<h2 id="2-what-biotite-already-covers">2. What biotite already covers<a class="headerlink" href="#2-what-biotite-already-covers" title="Permanent link">&para;</a></h2>
+<h3 id="the-version-gate-which-is-the-whole-answer">The version gate, which is the whole answer<a class="headerlink" href="#the-version-gate-which-is-the-whole-answer" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong> by listing <code>src/biotite/sequence/io/</code> and grepping <code>sequence/align/alignment.py</code> and
+<code>sequence/io/fasta/convert.py</code> at each tag:</p>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>First biotite version</th>
+<th>Available at the repo's 1.4.0?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Alignment</code> class, <code>trace_from_strings</code></td>
+<td>≤ 1.4.0</td>
+<td><strong>yes</strong>, but see below</td>
+</tr>
+<tr>
+<td><code>fasta.get_alignment</code> / <code>set_alignment</code></td>
+<td>≤ 1.4.0</td>
+<td>yes — and banned by ADR-0002</td>
+</tr>
+<tr>
+<td><code>Alignment.from_strings(strings, sequence_factory, gap_character)</code></td>
+<td><strong>1.6.0</strong></td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td>Vectorised <code>trace_from_strings</code></td>
+<td><strong>1.6.0</strong></td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>fasta.get_a3m_alignments</code> / <code>set_a3m_alignments</code></td>
+<td><strong>1.6.0</strong></td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>biotite.sequence.io.clustal</code></td>
+<td><strong>1.7.0</strong></td>
+<td><strong>no</strong></td>
+</tr>
+</tbody>
+</table>
+<p>At 1.4.0, <code>Alignment.from_strings</code> does not exist, and <code>trace_from_strings(seq_str_list)</code> is a
+<strong>pure-Python double loop with the gap character hardcoded to <code>-</code></strong> — one Python-level iteration per
+<code>(column, sequence)</code> cell, so an MSA of <code>n</code> rows and <code>m</code> columns costs <code>m × n</code> interpreted
+iterations. <strong>VERIFIED</strong> by reading the 1.4.0 source; the cost is <strong>INFERRED</strong> arithmetic from it.
+1.6.0 replaced it with <code>np.frombuffer</code> and a per-row mask.</p>
+<p>The upgrade is not free. <strong>VERIFIED</strong> against <code>api.anaconda.org/dist/conda-forge/biotite/...</code>:
+the py313 linux-64 builds of <strong>1.6.0 and 1.7.1 both declare <code>numpy &gt;=1.26,&lt;2.4</code></strong>, where <strong>1.4.0
+declares <code>numpy &gt;=1.23,&lt;3</code></strong>. That is the same conda-forge cap
+<a href="../biotite-coverage-of-v1/#why-the-lock-holds-biotite-at-140">the sibling note</a> verified: newest
+biotite or newest numpy, not both. That note found nothing needing either side of the trade. <strong>This
+note finds the first thing that does</strong> — every biotite feature relevant to MSAs sits behind it.</p>
+<h3 id="what-is-in-biotite-at-all">What is in biotite at all<a class="headerlink" href="#what-is-in-biotite-at-all" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong> by grepping the whole v1.7.1 tarball: <code>a2m</code>, <code>stockholm</code>, <code>hhblits</code> and <code>hmmer</code> occur
+<strong>zero times</strong> in <code>src/</code>. <code>sequence/io/</code> holds <code>clustal, fasta, fastq, genbank, gff</code> and
+<code>general.py</code>, whose format dispatch covers only FASTA, FASTQ and GenBank and has <strong>no alignment
+loader at all</strong>.</p>
+<p>So biotite reads and writes exactly three MSA formats — aligned FASTA, A3M and Clustal — and the
+last two only above 1.4.0.</p>
+<h3 id="alignment-what-it-holds-and-the-one-thing-it-does-not"><code>Alignment</code>: what it holds, and the one thing it does not<a class="headerlink" href="#alignment-what-it-holds-and-the-one-thing-it-does-not" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong>, <code>sequence/align/alignment.py</code>. It holds three fields: <code>sequences</code>, a list of <strong>ungapped</strong>
+biotite <code>Sequence</code> objects; <code>trace</code>, an <code>(m, n)</code> integer array where <code>-1</code> is a gap; and <code>score</code>.</p>
+<p><strong>It carries no names.</strong> <code>Alignment</code> has no <code>name</code> or <code>label</code> attribute anywhere, which is why every
+converter takes them separately — <code>clustal.set_alignment(file, alignment, seq_names, line_length)</code>
+and <code>fasta.set_alignment(file, alignment, seq_names)</code>. Anything in this package that holds an
+<code>Alignment</code> must hold the headers beside it.</p>
+<p>Three further consequences, all <strong>VERIFIED</strong> from the source:</p>
+<ul>
+<li><code>trace_from_strings</code> requires <strong>equal-length</strong> strings and takes <strong>one</strong> gap character. An A3M
+  cannot be fed to it directly, and an A2M needs <code>.</code> and <code>-</code> normalised to one symbol first.</li>
+<li><code>get_gapped_sequences()</code> renders every gap as <code>-</code>, and the sequences were uppercased on
+  construction. <strong>Case and the dot/dash distinction do not survive a round trip through
+  <code>Alignment</code>.</strong></li>
+<li>The trace is <code>np.full(..., dtype=int)</code>, so int64 on linux-64: <code>m × n × 8</code> bytes. A ColabFold-sized
+  MSA of 100,000 rows by 1,000 columns is 800 MB of trace for 100 MB of text. <strong>INFERRED</strong>
+  arithmetic.</li>
+</ul>
+<p>Set against that, one thing is genuinely well designed: <strong><code>from_strings</code> takes a
+<code>sequence_factory</code></strong>, so <code>protein.seq.to_protein_sequence</code> slots in as that factory and the string
+never touches biotite's converters. That is the ADR-0002-compatible door — and it is the 1.6.0
+feature.</p>
+<h3 id="the-converters-again-exactly-where-msa-support-would-land">The converters, again, exactly where MSA support would land<a class="headerlink" href="#the-converters-again-exactly-where-msa-support-would-land" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong>, and this is the finding with teeth.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># biotite/sequence/io/fasta/convert.py — and, copied verbatim, clustal/convert.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_convert_to_protein</span><span class="p">(</span><span class="n">seq_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProteinSequence</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Replace selenocysteine with cysteine and pyrrolysine with lysine."""</span>
+    <span class="k">return</span> <span class="n">ProteinSequence</span><span class="p">(</span><span class="n">seq_str</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"U"</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"O"</span><span class="p">,</span> <span class="s2">"K"</span><span class="p">))</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Reader</th>
+<th>Route</th>
+<th>ADR-0002</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fasta.get_alignment</code></td>
+<td><code>Alignment.from_strings(..., partial(_convert_to_sequence, ...))</code></td>
+<td><strong>banned</strong></td>
+</tr>
+<tr>
+<td><code>fasta.get_a3m_alignments</code></td>
+<td><code>_convert_to_sequence</code> for the query, <code>_convert_to_protein</code> for each target</td>
+<td><strong>banned</strong></td>
+</tr>
+<tr>
+<td><code>clustal.get_alignment</code></td>
+<td>a second, independent copy of <code>_convert_to_sequence</code></td>
+<td><strong>banned</strong></td>
+</tr>
+<tr>
+<td><code>FastaFile</code> / <code>ClustalFile</code></td>
+<td>raw strings, no alphabet</td>
+<td><strong>clean</strong></td>
+</tr>
+<tr>
+<td><code>application.MSAApp</code></td>
+<td><code>FastaFile</code> plus <code>trace_from_strings</code> on the caller's own <code>Sequence</code> objects</td>
+<td><strong>clean</strong> — but see below</td>
+</tr>
+</tbody>
+</table>
+<p>Two details make this worse than it looks:</p>
+<ul>
+<li>With no <code>seq_type</code> the auto-detect tries <code>NucleotideSequence</code> <strong>first</strong>, the same misdetection the
+  sibling note measured — <code>"MKTU"</code> comes back as DNA.</li>
+<li><strong><code>clustal/convert.py</code> is a second copy of the same function</strong>, not an import of it. An upstream
+  fix to one would not fix the other. <strong>VERIFIED.</strong></li>
+</ul>
+<p><strong>The repo's guard does not cover any of them.</strong> <code>tests/test_io_fasta.py</code> walks <code>src/protein/**/*.py</code>
+for <code>_BANNED_CONVERTERS = {"get_sequence", "get_sequences", "to_sequence", "convert_letter_3to1"}</code>.
+<code>get_alignment</code>, <code>get_a3m_alignments</code> and <code>set_alignment</code> are not in that set, so a module calling
+<code>fasta.get_a3m_alignments</code> would pass <code>pixi run check</code> while silently rewriting every <code>U</code> and <code>O</code> in
+every row of every MSA. <strong>VERIFIED</strong> by reading the test. If MSA support lands, that set grows —
+independently of whether biotite is ever upgraded.</p>
+<h3 id="the-a3m-reader-judged-on-its-merits">The A3M reader, judged on its merits<a class="headerlink" href="#the-a3m-reader-judged-on-its-merits" title="Permanent link">&para;</a></h3>
+<p>If the version gate were not there, is <code>get_a3m_alignments</code> the right thing to adopt? <strong>VERIFIED</strong>
+by reading it:</p>
+<ul>
+<li><strong>It returns <code>N-1</code> pairwise <code>Alignment</code> objects, not one MSA.</strong> That is the correct information
+  model, and it matches AlphaFold's and Boltz's independently. It is also <code>N-1</code> Python objects and
+  <code>N-1</code> traces for one file.</li>
+<li><strong><code>_is_gap</code> is <code>== ord("-")</code> and nothing else.</strong> A dotted A2M handed to it is mis-parsed: <code>.</code> is
+  neither lowercase nor <code>-</code>, so it is read as a residue in a match column.</li>
+<li><strong><code>FastaFile.read</code> raises <code>InvalidFileError: File starts with '#' instead of '&gt;'</code></strong> on any A3M
+  carrying a leading <code>#</code> line — HH-suite's name line or ColabFold's cardinality line. <code>read_iter</code>
+  does not raise; it <strong>silently discards</strong> everything before the first <code>&gt;</code>. Both <strong>VERIFIED</strong> from
+  <code>fasta/file.py</code>.</li>
+<li>Its own test fixture, <code>tests/sequence/data/1a00_A_uniref90.a3m</code>, is an OpenProteinSet UniRef90
+  A3M: 3,391 records, a 141-residue all-uppercase query, 2,350 lines carrying lowercase, and <strong>zero
+  dots in any sequence line</strong> — confirming that real A3M has no dots.</li>
+</ul>
+<p><code>ClustalFile</code>, by contrast, is exactly the shape <code>io/fasta.py</code> already adopts: a
+<code>MutableMapping[str, str]</code> from name to gapped string with no alphabet anywhere. It <strong>drops the
+conservation line</strong> on read (skipping any line matching <code>[ *:.]+</code>), always writes the header
+<code>CLUSTAL W multiple sequence alignment</code>, requires the first line to start with <code>CLUSTAL</code> — so
+MUSCLE's <code>MUSCLE (3.8) …</code> header would be rejected (<strong>INFERRED</strong>) — and has no <code>read_iter</code>.</p>
+<h3 id="does-biotite-align">Does biotite align?<a class="headerlink" href="#does-biotite-align" title="Permanent link">&para;</a></h3>
+<p><code>align_multiple</code> exists and is a genuine progressive aligner: Feng-Doolittle distances, UPGMA guide
+tree, "once a gap, always a gap". <strong>It is not usable for a homologue MSA.</strong> <strong>VERIFIED</strong> from
+<code>multiple.pyx</code>: <code>_get_distance_matrix</code> runs <code>align_optimal</code> — full Needleman-Wunsch — on <strong>every
+pair</strong>, <code>n(n+1)/2</code> alignments, and retains every resulting <code>Alignment</code> in an <code>n × n</code> object array.</p>
+<p>biotite says so itself, in its own tutorial (<code>doc/tutorial/sequence/align_multiple.rst</code>):</p>
+<blockquote>
+<p><code>align_multiple()</code> is only recommended for strongly related sequences or exotic sequence types.
+When high accuracy or computation time matters, other MSA programs deliver better results.</p>
+</blockquote>
+<p><strong>Verdict: fine for a handful of sequences, wrong for anything a search returns.</strong> <code>align_optimal</code>
+is the right tool for a pairwise question and is not in scope here. <code>SequenceProfile.from_alignment</code>
+and <code>.to_consensus</code> exist and are the reason to hold an <code>Alignment</code> at all.</p>
+<h3 id="coverage-verdict">Coverage verdict<a class="headerlink" href="#coverage-verdict" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Piece</th>
+<th>What already exists</th>
+<th>Verdict</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The <code>Alignment</code> type</td>
+<td><code>biotite.sequence.align.Alignment</code></td>
+<td><strong>Hold it</strong></td>
+<td>Three fields, ungapped sequences plus a trace. It is the right thing to hold, and holding it is what the map says to do.</td>
+</tr>
+<tr>
+<td>Sequence names</td>
+<td>nothing on <code>Alignment</code></td>
+<td><strong>Build ours</strong></td>
+<td><code>Alignment</code> has no name field; both converters take <code>seq_names</code> separately. Whatever holds an <code>Alignment</code> holds the headers too.</td>
+</tr>
+<tr>
+<td>String to <code>Alignment</code></td>
+<td><code>Alignment.from_strings(..., sequence_factory)</code></td>
+<td><strong>Adopt — at 1.6.0</strong></td>
+<td>The factory parameter is the ADR-0002 seam: pass <code>to_protein_sequence</code> and no converter runs. Absent at 1.4.0.</td>
+</tr>
+<tr>
+<td>Aligned FASTA, record layer</td>
+<td><code>FastaFile.read_iter</code> / <code>write_iter</code></td>
+<td><strong>Adopt</strong></td>
+<td>Already adopted by <code>io/fasta.py</code>. An aligned FASTA <em>is</em> a FASTA at the record layer; <code>fasta.read_records</code> reads one today, gaps and all.</td>
+</tr>
+<tr>
+<td>Aligned FASTA to sequences</td>
+<td><code>fasta.get_alignment</code></td>
+<td><strong>Build ours</strong></td>
+<td><code>U</code> to <code>C</code>, <code>O</code> to <code>K</code>, silently; nucleotide misdetection; and <code>.</code> is not in its gap set.</td>
+</tr>
+<tr>
+<td>A3M</td>
+<td><code>fasta.get_a3m_alignments</code> (1.6.0+)</td>
+<td><strong>Build ours</strong></td>
+<td>Banned converters, <code>-</code> as the only gap, and <code>FastaFile.read</code> raises on the <code>#</code> line. The <em>model</em> — <code>N-1</code> pairwise alignments — is worth copying.</td>
+</tr>
+<tr>
+<td>Clustal <code>.aln</code></td>
+<td><code>clustal.ClustalFile</code> (1.7.0+)</td>
+<td><strong>Adopt the file layer if ever needed</strong></td>
+<td>Pure <code>MutableMapping[str, str]</code>, the <code>FastaFile</code> shape. Its <code>get_alignment</code> is banned. Nothing here needs <code>.aln</code>.</td>
+</tr>
+<tr>
+<td>Stockholm</td>
+<td><strong>nothing</strong></td>
+<td><strong>Build ours, or decline</strong></td>
+<td>Zero occurrences in biotite. <code>esl-reformat</code> from the <code>hmmer</code> package converts it; owning a parser buys nothing unless jackhmmer lands.</td>
+</tr>
+<tr>
+<td>A2M, PIR, MSF, PHYLIP, NEXUS</td>
+<td><strong>nothing</strong></td>
+<td><strong>Decline</strong></td>
+<td>No consumer in this package, and each is a different gap convention to get wrong.</td>
+</tr>
+<tr>
+<td>Multiple alignment itself</td>
+<td><code>align_multiple</code></td>
+<td><strong>Do not use</strong></td>
+<td><code>n(n+1)/2</code> full Needleman-Wunsch runs, and upstream's own tutorial says use another program.</td>
+</tr>
+<tr>
+<td>Driving an aligner</td>
+<td><code>application.MSAApp</code>, <code>ClustalOmegaApp</code>, <code>MafftApp</code>, <code>Muscle5App</code></td>
+<td><strong>Build ours if ever needed</strong></td>
+<td>It does <strong>not</strong> rewrite residues — the one clean converter path in biotite. But <code>LocalApp</code> imports <code>subprocess</code>, which <code>external.py</code> exists to be the only place for, and <code>MSAApp</code> renames every sequence to <code>str(i)</code>.</td>
+</tr>
+<tr>
+<td>Profiles and consensus</td>
+<td><code>SequenceProfile.from_alignment</code>, <code>.to_consensus</code></td>
+<td><strong>Adopt</strong></td>
+<td>The payoff for holding an <code>Alignment</code>, and it needs nothing new.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-generating-an-msa">3. Generating an MSA<a class="headerlink" href="#3-generating-an-msa" title="Permanent link">&para;</a></h2>
+<h3 id="mmseqs2-no-easy-msa-three-verbs-instead">MMseqs2: no <code>easy-msa</code>, three verbs instead<a class="headerlink" href="#mmseqs2-no-easy-msa-three-verbs-instead" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED, three independent ways at the repo's exact pin <code>18-8cc5c</code></strong>: grepping every <code>"easy-*"</code>
+literal out of <code>src/MMseqsBase.cpp</code> returns exactly six commands — <code>easy-cluster</code>, <code>easy-linclust</code>,
+<code>easy-linsearch</code>, <code>easy-rbh</code>, <code>easy-search</code>, <code>easy-taxonomy</code>; <code>src/workflow/</code> has no <code>EasyMsa.cpp</code>;
+<code>data/workflow/</code> has no <code>easymsa.sh</code>; and the user guide mentions <code>easy-msa</code> zero times. Master adds
+<code>easy-proteomecluster</code> and <code>easy-proteomesearch</code>, still no <code>easy-msa</code>.</p>
+<p><strong>So there is nothing to thinly wrap.</strong> MSA generation is always the explicit pipeline:</p>
+<div class="highlight"><pre><span></span><code>mmseqs<span class="w"> </span>createdb<span class="w"> </span>query.fasta<span class="w">  </span>queryDB
+mmseqs<span class="w"> </span>createdb<span class="w"> </span>target.fasta<span class="w"> </span>targetDB
+
+<span class="c1"># -a stores the backtrace; without it result2msa realigns every hit itself</span>
+mmseqs<span class="w"> </span>search<span class="w"> </span>queryDB<span class="w"> </span>targetDB<span class="w"> </span>resultDB<span class="w"> </span>tmp<span class="w"> </span>-a
+
+mmseqs<span class="w"> </span>result2msa<span class="w"> </span>queryDB<span class="w"> </span>targetDB<span class="w"> </span>resultDB<span class="w"> </span>msaDB<span class="w"> </span>--msa-format-mode<span class="w"> </span><span class="m">5</span>
+
+mmseqs<span class="w"> </span>unpackdb<span class="w"> </span>msaDB<span class="w"> </span>out_dir<span class="w"> </span>--unpack-name-mode<span class="w"> </span><span class="m">1</span><span class="w"> </span>--unpack-suffix<span class="w"> </span>.a3m
+</code></pre></div>
+<p><code>--msa-format-mode</code> takes seven values, from <code>Parameters.h</code> and the help string in
+<code>Parameters.cpp:121</code>. <strong>VERIFIED</strong>, identical at the pin:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Constant</th>
+<th>Writes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>FORMAT_MSA_CA3M</code></td>
+<td>binary cA3M database, needs <code>convertca3m</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>FORMAT_MSA_CA3M_CONSENSUS</code></td>
+<td>binary cA3M with consensus</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td><code>FORMAT_MSA_FASTADB</code></td>
+<td><strong>aligned FASTA — the default</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>FORMAT_MSA_FASTADB_SUMMARY</code></td>
+<td>aligned FASTA plus a <code>#</code>-prefixed header summary</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>FORMAT_MSA_STOCKHOLM_FLAT</code></td>
+<td>Stockholm flat file, <code># STOCKHOLM 1.0</code> … <code>//</code></td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td><code>FORMAT_MSA_A3M</code></td>
+<td><strong>A3M</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>FORMAT_MSA_A3M_ALN_INFO</code></td>
+<td>A3M plus per-line alignment info</td>
+</tr>
+</tbody>
+</table>
+<p>Mode 3 <strong>adds</strong> a <code>#</code> line rather than removing one — <code>result2msa.cpp</code> writes
+<code>"#" + summaryPrefix + "-" + queryKey + "|" + summarizedHeaders</code>. <strong>VERIFIED.</strong></p>
+<p><strong><code>result2msa</code> output is a real alignment, not concatenated hits.</strong> <code>result2msa.cpp:260</code> calls
+<code>MultipleAlignment::computeMSA</code>, which threads every target onto the query via its pairwise backtrace
+and propagates the union of query gaps. The user guide agrees, p.78: <em>"MMseqs2 mmseqs result2msa can
+produce an MSA using a centre star alignment without insertions in the query."</em> <strong>VERIFIED.</strong></p>
+<p><strong>But it is a centre-star, query-anchored MSA.</strong> Columns are defined by the query; two targets are
+aligned to each other only through their common anchoring on it. That is category (b) below, not
+category (a). And <em>"without insertions in the query"</em> is precisely the A3M invariant from Part 1 —
+so <code>result2msa</code> output is well-formed A3M by construction.</p>
+<p>Two traps, both <strong>VERIFIED</strong> from source:</p>
+<ul>
+<li><strong>Without <code>-a</code> on the search, <code>result2msa</code> silently recomputes</strong> every pairwise alignment itself
+  (<code>result2msa.cpp:248-256</code>, comment <code>// Recompute if not all the backtraces are present</code>). It
+  works either way; one way pays twice.</li>
+<li><strong><code>result2msa</code> disables filtering by default, overriding the global default.</strong> <code>result2msa.cpp:20-21</code>
+  is literally <code>// do not filter by default</code> / <code>par.filterMsa = 0;</code>. The global <code>filterMsa = 1</code>
+  applies to <code>result2profile</code>. Filtering is <code>--filter-msa 1</code> plus <code>--max-seq-id</code> (0.9),
+  <code>--qid</code> (0.0), <code>--qsc</code> (-20.0), <code>--cov</code> (0.0), <code>--diff</code> (1000) and <code>--filter-min-enable</code> (0).
+  <code>filterresult</code> is the standalone equivalent.</li>
+</ul>
+<p><strong>The output is an ffindex database and needs <code>unpackdb</code>.</strong> <strong>VERIFIED</strong>: <code>--unpack-name-mode</code>
+defaults to 1, naming each file by its accession through <code>&lt;db&gt;.lookup</code> and falling back to the
+numeric key with a logged warning if there is no lookup file; <code>--unpack-suffix</code> defaults to <code>""</code> and
+writes gzip if it ends <code>.gz</code>; the writer strips the trailing <code>\0</code>. Neighbouring verbs worth knowing
+by name: <code>result2dnamsa</code>, <code>convertmsa</code> (Stockholm to MSA database), <code>msa2profile</code>, <code>msa2result</code>,
+<code>convertca3m</code>, <code>pairaln</code>, and a hidden <code>filtera3m</code>.</p>
+<p>MMseqs2's newest release is <code>18-8cc5c</code>, 2025-07-27 — the version this repo pins. Master is active
+past the cutoff (HEAD 2026-08-23) with no new release. <strong>VERIFIED.</strong></p>
+<h3 id="colabfold">ColabFold<a class="headerlink" href="#colabfold" title="Permanent link">&para;</a></h3>
+<p><code>colabfold_search</code> is a pure <code>subprocess</code> driver over <code>mmseqs</code> with a resumability trick; the old
+shell entry point is a stub that prints <em>"Do not use this script."</em> <strong>VERIFIED</strong>,
+<code>colabfold/mmseqs/search.py</code>. The UniRef leg runs, in order: <code>createdb</code>, <code>search --num-iterations 3
+-a -e 0.1 --max-seqs 10000</code>, <code>mvdb</code>, <code>lndb</code>, <code>expandaln</code>, <code>align</code>, <code>filterresult</code>, <code>result2msa
+--msa-format-mode 6</code>; then the same shape against the environmental database; then <code>mergedbs</code> and
+<code>unpackdb</code>. The complex path adds <code>pairaln</code> twice and <code>result2msa --msa-format-mode 5</code>.</p>
+<p>Databases are <code>--db1 uniref30_2302_db</code>, <code>--db2</code> templates (empty by default; the artifact is
+pdb100, with "pdb70" surviving as legacy naming), <code>--db3 colabfold_envdb_202108_db</code>, <code>--db4
+spire_ctg10_2401_db</code>. <strong>CORRECTION to the brief: <code>setup_databases.sh</code> states no per-file sizes</strong> —
+the only figure published is the README's aggregate. <strong>VERIFIED.</strong></p>
+<p>Running fully locally works and is documented, and the stated cost is the point:</p>
+<blockquote>
+<p>First create a directory for the databases on a disk with sufficient storage (940GB (!))</p>
+</blockquote>
+<p>and, on memory:</p>
+<blockquote>
+<p>the batch searches will require a machine with about 128GB RAM or, if the databases are to be kept
+permamently in RAM, with over 1TB RAM.</p>
+</blockquote>
+<p>ColabFold's README pins <code>mmseqs2=18.8cc5c</code> — <em>"Please use this version if you want to obtain the
+same MSAs as the server"</em> — which is <strong>this repo's exact pin</strong>. <strong>VERIFIED.</strong></p>
+<p><strong>The public API server is explicitly not for bulk</strong>, printed to stderr on every default run:</p>
+<blockquote>
+<p>WARNING: You are welcome to use the default MSA server, however keep in mind that it's a limited
+shared resource only capable of processing a few thousand MSAs per day. Please submit jobs only
+from a single IP address.</p>
+</blockquote>
+<p>No numeric rate limit is published; the token-bucket numbers in <code>MsaServer/config.json</code> are a
+commented-out self-hosting example, not policy. Its client-side backoff is thin — on
+<code>requests.exceptions.Timeout</code> it retries immediately with no sleep. <strong>VERIFIED.</strong> Given this
+package's <strong>bulk, not per-ID</strong> rule, the API server is the wrong shape regardless of etiquette.</p>
+<p>Output is <strong>one <code>.a3m</code> per query</strong>, renamed from <code>0.a3m</code>, <code>1.a3m</code>, … to the job name. <code>pair.a3m</code>
+exists only as an intermediate that is deleted before exit on the local path. ColabFold <strong>v1.6.2,
+2026-07-14, is post-cutoff</strong> — it fixes <code>--pair-mode paired</code>/<code>unpaired</code> crashing on complexes and
+adds <code>--af3-json</code> export. <strong>VERIFIED.</strong></p>
+<h3 id="the-classical-alternatives">The classical alternatives<a class="headerlink" href="#the-classical-alternatives" title="Permanent link">&para;</a></h3>
+<p><strong>VERIFIED</strong> against <code>api.anaconda.org</code> and the upstream repositories, 2026-09-03.</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Native output</th>
+<th>conda</th>
+<th>Latest</th>
+<th>Alive?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HHblits</strong> (<code>hhsuite</code>)</td>
+<td><strong>A3M</strong> (<code>-oa3m</code>)</td>
+<td>bioconda 3.3.0</td>
+<td>3.3.0, 2020-08-25</td>
+<td>barely; last commit 2025-08-12</td>
+</tr>
+<tr>
+<td><strong>jackhmmer</strong> (<code>hmmer</code>)</td>
+<td><strong>Stockholm</strong> (<code>-A</code>)</td>
+<td>bioconda 3.4</td>
+<td>3.4, 2023-08-15</td>
+<td>yes, slowly</td>
+</tr>
+<tr>
+<td><strong>MAFFT</strong></td>
+<td>aligned FASTA; <code>--clustalout</code>, <code>--phylipout</code></td>
+<td><strong>conda-forge 7.526</strong>, bioconda 7.525</td>
+<td>7.526, 2024-04</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><strong>MUSCLE</strong></td>
+<td>aligned FASTA <strong>only</strong> in v5</td>
+<td>bioconda 5.3 and 3.8.1551</td>
+<td>5.3, 2024-11-11</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><strong>Clustal Omega</strong></td>
+<td><code>--outfmt</code> fa/clu/msf/phy/selex/st/vie</td>
+<td>bioconda 1.2.4</td>
+<td>1.2.4, <strong>2016-12-20</strong></td>
+<td><strong>dead, ~10 years</strong></td>
+</tr>
+<tr>
+<td><strong>FAMSA</strong></td>
+<td>aligned FASTA only</td>
+<td>bioconda 2.4.1</td>
+<td>2.5.2, 2026-03-23</td>
+<td>yes, active</td>
+</tr>
+<tr>
+<td><strong>Kalign 3</strong></td>
+<td><code>-f fasta\|msf\|clu</code></td>
+<td><strong>conda-forge 3.6.0</strong>; bioconda has <code>kalign3</code> 3.4.0</td>
+<td>v3.6.0, 2026-05-16</td>
+<td>yes, active</td>
+</tr>
+<tr>
+<td><strong>T-Coffee</strong></td>
+<td>Clustal by default; nine formats</td>
+<td>bioconda 13.46.2.7c9e712d</td>
+<td>2025-10-02</td>
+<td>yes, low</td>
+</tr>
+<tr>
+<td><strong>probcons</strong></td>
+<td>aligned FASTA; <code>-clustalw</code></td>
+<td>bioconda 1.12</td>
+<td>1.12, tarball dated <strong>2007</strong></td>
+<td><strong>dead</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Corrections worth carrying: <strong>Clustal Omega 1.2.4 is 2016-12-20, not 2018</strong> — its ChangeLog calls it
+<em>"made code gcc-6 compliant (no new command-line flags)"</em> over 1.2.3. <strong>MUSCLE v5 dropped every
+non-FASTA writer</strong> (<code>-clwout</code>, <code>-msfout</code>, <code>-physout</code> are gone). There is <strong>no bioconda <code>kalign</code></strong> and
+no <strong><code>muscle5</code></strong> package. <code>conda-forge</code> and <code>bioconda</code> overlap on exactly MAFFT and Kalign, and
+conda-forge is newer for both; everything else is bioconda-only. Every row has a linux-64 build, so
+<code>platforms = ["linux-64"]</code> never constrains the choice. Post-cutoff: <strong>Kalign 3.6.0 and conda-forge
+<code>kalign</code> 3.6.0, both 2026-05-16</strong>; <strong>FAMSA 2.5.2, 2026-03-23</strong>.</p>
+<p><strong>The two general-purpose converters ride along with tools you might want anyway.</strong> <code>esl-reformat</code>
+ships inside the <strong>bioconda <code>hmmer</code> package</strong> — HMMER's own <code>make install</code> deliberately does <em>not</em>
+install the Easel miniapps, but the recipe's test block runs <code>esl-reformat -h</code>. It covers stockholm,
+a2m, afa, psiblast, clustal and phylip — <strong>but not a3m</strong>, which is why AlphaFold 2 had to write its
+own <code>convert_stockholm_to_a3m</code>. The a3m-aware converter is <code>reformat.pl</code>, which ships with
+<code>hhsuite</code>. <strong>VERIFIED.</strong></p>
+<h3 id="the-two-use-cases-are-different-tools">The two use cases are different tools<a class="headerlink" href="#the-two-use-cases-are-different-tools" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>(a) Align proteins I already have</th>
+<th>(b) Find homologues and align them to a query</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Input</td>
+<td>a FASTA of <code>N</code> sequences you chose</td>
+<td>one sequence plus a large database</td>
+</tr>
+<tr>
+<td>Output</td>
+<td>a symmetric <code>N</code>-row alignment</td>
+<td>a query-anchored profile MSA</td>
+</tr>
+<tr>
+<td>Tools</td>
+<td>MAFFT (safe default), FAMSA (large families, best maintained), Kalign 3 (small and fast), MUSCLE 5, Clustal Omega (frozen at 2016), T-Coffee</td>
+<td>MMseqs2, HHblits, jackhmmer; ColabFold is a packaged opinion about doing this with MMseqs2</td>
+</tr>
+<tr>
+<td>Shape here</td>
+<td>takes a <strong>collection</strong> and no database — <strong>no class owns it</strong></td>
+<td>takes a <code>Protein</code> and a <code>Database</code> — <strong>exactly <code>search()</code>'s shape</strong></td>
+</tr>
+<tr>
+<td>This repo has</td>
+<td>nothing</td>
+<td><strong>the search half already</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>(b) is "search then align", and this package already owns the search.</strong> <code>Protein.search(db)</code> runs
+<code>mmseqs easy-search</code>; the MSA is the same search with <code>-a</code>, followed by two more verbs on the same
+binary. That is why the two halves of the question have such different costs.</p>
+<h3 id="what-the-folding-tools-want">What the folding tools want<a class="headerlink" href="#what-the-folding-tools-want" title="Permanent link">&para;</a></h3>
+<p><strong>AlphaFold 3 takes A3M strings inline in its JSON.</strong> <strong>VERIFIED</strong>, <code>docs/input.md</code>: per protein
+chain, <code>unpairedMsa</code> and <code>pairedMsa</code> are A3M <strong>strings</strong>, with <code>unpairedMsaPath</code> / <code>pairedMsaPath</code>
+as file-path alternatives added in JSON version 2. Three hard requirements on the A3M: it is A3M
+(lowercase insertions, <code>-</code> gaps); <em>"The first sequence is exactly equal to the query sequence"</em>; and
+with lowercase removed every row is exactly the query's length. <strong>Both fields must be set or both
+unset</strong> — you cannot provide one and leave the other null. Templates are separate, a list of mmCIF
+strings with explicit index mappings, not embedded in the MSA. AF3's own pipeline is jackhmmer and
+nhmmer only — <strong>it dropped HHblits entirely</strong>, which is why its database footprint is ~630 GB
+unpacked against AlphaFold 2's 2.62 TB.</p>
+<p><strong>AlphaFold 2 reads both</strong>: <code>jackhmmer -A</code> Stockholm against UniRef90, MGnify and small BFD, and
+<code>hhblits -oa3m</code> A3M against BFD plus UniRef30. <code>parsers.py</code> exposes <code>parse_stockholm</code>, <code>parse_a3m</code>
+and <code>convert_stockholm_to_a3m</code>. <strong>VERIFIED.</strong></p>
+<p><strong>Boltz</strong> takes <code>msa: &lt;path&gt;.a3m</code> in its YAML, or a two-column CSV (<code>sequence</code>, <code>key</code>) for
+multi-chain, where <em>"Sequences with the same key are mutually aligned."</em> <strong>Chai-1</strong> takes
+<code>.aligned.pqt</code>, <em>"similar to an a3m file, but has additional columns"</em>, and ships a3m conversion.
+<strong>ESMFold takes no MSA at all</strong> — it is a single-sequence predictor. <strong>VERIFIED.</strong></p>
+<p><strong>So A3M is the lingua franca.</strong> Only HMMER's branch speaks Stockholm, and the converter that ships
+with HMMER cannot reach A3M.</p>
+<h2 id="4-recommendation">4. Recommendation<a class="headerlink" href="#4-recommendation" title="Permanent link">&para;</a></h2>
+<p>Not a design — the options, and what each costs.</p>
+<h3 id="what-is-already-free">What is already free<a class="headerlink" href="#what-is-already-free" title="Permanent link">&para;</a></h3>
+<p><strong><code>fasta.read_records</code> reads an aligned FASTA or an A3M today, byte for byte.</strong> It is <code>FastaFile.read_iter</code>
+with gzip, no alphabet anywhere. Only <code>read_proteins</code> refuses, because <code>-</code> is outside
+<code>protein.seq.ALPHABET</code>. <strong>VERIFIED</strong> by reading <code>io/fasta.py</code>. The one caveat is that <code>read_iter</code>
+silently swallows a leading <code>#</code> line rather than raising as <code>FastaFile.read</code> would.</p>
+<p>So "read an MSA file" is already possible at the record layer. What is missing is anything that
+understands the columns.</p>
+<h3 id="option-a-ioa3mpy-record-layer-only">Option A — <code>io/a3m.py</code>, record layer only<a class="headerlink" href="#option-a-ioa3mpy-record-layer-only" title="Permanent link">&para;</a></h3>
+<p>One module, mirroring <code>io/fasta.py</code>'s two-layer shape: read and write <code>(header, row)</code> pairs, plus two
+pure functions between A3M and the rectangular form — <code>expand</code> (the <code>nins[j]</code> max-and-pad algorithm
+from Part 1) and <code>compress</code> (lowercase where row 1 gaps, then drop insert-column gaps).</p>
+<ul>
+<li><strong>Costs:</strong> one file, no dependency change, no new binary, no biotite version bump. Testable with a
+  ten-line fixture and no network, which <code>tests/_guards.py</code> requires anyway.</li>
+<li><strong>Buys:</strong> the only format AF3, Boltz, ColabFold and HHblits all speak. Aligned FASTA falls out of
+  <code>expand</code>; nothing else is needed to hand an MSA to a folding tool.</li>
+<li><strong>Does not buy:</strong> column arithmetic. Rows stay strings.</li>
+</ul>
+<p>Adding a format is adding a file, which <code>io/__init__.py</code> says outright. This is the shape the repo
+already has.</p>
+<h3 id="option-b-hold-biotites-alignment">Option B — hold biotite's <code>Alignment</code><a class="headerlink" href="#option-b-hold-biotites-alignment" title="Permanent link">&para;</a></h3>
+<p>A frozen dataclass holding an <code>Alignment</code> plus the names — because <code>Alignment</code> has none — and
+probably a match-column mask, because the trace does not record which columns were match states.
+<code>Embedding</code> is the precedent for "a frozen dataclass is what one call returns".</p>
+<ul>
+<li><strong>Costs:</strong> three fields that must stay in sync; an int64 trace of <code>m × n × 8</code> bytes; and
+  <strong><code>Alignment.from_strings</code> is a 1.6.0 feature</strong>, so this option carries the numpy downgrade. At
+  1.4.0 it means constructing the trace by hand, which is either a Python double loop or our own
+  numpy.</li>
+<li><strong>Buys:</strong> <code>SequenceProfile.from_alignment</code>, <code>to_consensus</code>, <code>get_sequence_identity</code>,
+  <code>remove_gaps</code> — real column arithmetic, for free, from a library already depended on.</li>
+<li><strong>The seam is clean when it exists:</strong> <code>Alignment.from_strings(rows, to_protein_sequence)</code> passes
+  every row through this package's one door and never touches biotite's converters.</li>
+</ul>
+<p>The honest reading is that <strong>Option B is worth taking only when something needs a profile or a
+consensus</strong>. Until then it is a class with no caller, and <code>search/mmseqs.py</code>'s precedent — a search
+answers with a <code>DataFrame</code>, not with <code>Hit</code> objects — argues for strings.</p>
+<h3 id="option-c-generation-and-where-the-verb-goes">Option C — generation, and where the verb goes<a class="headerlink" href="#option-c-generation-and-where-the-verb-goes" title="Permanent link">&para;</a></h3>
+<p><code>result2msa</code> and <code>unpackdb</code> are two more verbs on <code>MmseqsLikeTool</code>, beside <code>easy_search</code> and
+<code>convertalis</code>. Both fit <code>run_to</code>'s freshness rule; both take the same ffindex paths the class
+already handles; <strong>no new binary</strong>, because <code>mmseqs</code> is already in <code>REQUIRED_TOOLS</code>. <code>result2msa</code>
+needs <code>search -a</code> rather than <code>easy-search</code>, which is the one genuinely new piece — <code>easy_search</code>
+does not expose the intermediate databases.</p>
+<p><strong>Direct support only decides the surface, and it decides it twice:</strong></p>
+<ul>
+<li>MMseqs2 takes a <strong>sequence and a database</strong> directly, so <code>Protein.msa(db)</code> is the exact parallel of
+  <code>Protein.search(db)</code> — same argument, same tool, one more verb on <code>SearchMixin</code> or a sibling
+  mixin. The module function beneath it is bulk-shaped, taking many proteins in one <code>result2msa</code>
+  call, which is what <code>search()</code> already does badly and this could do well.</li>
+<li>Aligning a set you already have takes a <strong>collection and no database</strong>. No class in this package
+  is a collection of proteins, so under the same rule it is a <strong>module-level function, not a
+  method</strong> — and it needs a third binary.</li>
+</ul>
+<h3 id="what-the-third-binary-actually-costs">What the third binary actually costs<a class="headerlink" href="#what-the-third-binary-actually-costs" title="Permanent link">&para;</a></h3>
+<p><code>REQUIRED_TOOLS == ("mmseqs", "foldseek")</code> is pinned by a test, and <code>doctor()</code> raises if any is
+missing. <strong>VERIFIED</strong> from <code>tests/test_external.py</code>. Adding MAFFT or FAMSA therefore makes
+<code>protein doctor</code> fail for everyone until they install a tool most of them will not use, or forces
+<code>REQUIRED_TOOLS</code> to grow an optional tier it does not have. That is a real cost against the
+restraint rule, paid by every user, for a use case nobody in this repo has asked for yet.</p>
+<h3 id="the-shape-of-the-smallest-honest-answer">The shape of the smallest honest answer<a class="headerlink" href="#the-shape-of-the-smallest-honest-answer" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong><code>io/a3m.py</code></strong>, record layer plus <code>expand</code>/<code>compress</code>. Free, and it is the format everything
+   downstream wants.</li>
+<li><strong><code>result2msa</code> and <code>unpackdb</code> on <code>MmseqsLikeTool</code></strong>, plus whatever exposes <code>search -a</code>. No new
+   dependency.</li>
+<li><strong><code>Protein.msa(db)</code></strong> over a bulk module function, mirroring <code>search</code>.</li>
+<li><strong>Grow <code>_BANNED_CONVERTERS</code></strong> to name <code>get_alignment</code>, <code>get_a3m_alignments</code> and <code>set_alignment</code>.
+   That is a one-line diff and it is worth doing <strong>whether or not any of the rest lands</strong>, because
+   the hole exists today.</li>
+<li><strong>Decline</strong> Stockholm, A2M, Clustal, MSF, PIR and PHYLIP until a consumer exists; decline
+   <code>align_multiple</code>; decline the third binary.</li>
+</ol>
+<p>Step 4 is the only one this note argues for unconditionally.</p>
+<h2 id="open-items">Open items<a class="headerlink" href="#open-items" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Whether <code>Alignment</code> is held at all</strong> is a question about <code>SequenceProfile</code>, not about MSAs. If
+  nothing needs a profile or a consensus, rows of text are the honest representation and the numpy
+  trade never comes up.</li>
+<li><strong>The biotite upgrade now has a reason.</strong> The sibling note found nothing needing 1.6.0 or 1.7.1.
+  A3M reading, <code>Alignment.from_strings</code> and Clustal I/O all sit behind it, and every build since
+  1.5.0 carries conda-forge's <code>numpy &lt;2.4</code> cap. Whether that is worth <code>numpy</code> 2.5.2 to 2.3.5 is a
+  scoping question, not a technical one — and Option A needs none of it.</li>
+<li><strong><code>_BANNED_CONVERTERS</code> has a hole today</strong>, independent of everything else here.</li>
+<li><strong>A3M's invariant is not checked anywhere.</strong> "Row 1 is all match states" is what makes A3M
+  self-describing, and violating it silently changes the match-state count on any round trip. If
+  <code>io/a3m.py</code> lands, that invariant is a test, not a comment.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+    
+  </body>
+</html>
