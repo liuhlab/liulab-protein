@@ -2,7 +2,7 @@
 
 A **Protein** is identified by a UniProt accession and **carries no coordinates**: SIFTS
 joins it to a **Structure** many-to-many in both directions, so neither owns the other. There
-is no ``embed()`` either, and ``CONTEXT.md`` carries both rules.
+is no ``embed()`` either, and ``GLOSSARY.md`` carries both rules.
 
 :attr:`Protein.sequence` is a :class:`~biotite.sequence.ProteinSequence` and **not a**
 ``str``, so ``p.sequence == "MKT"`` is ``False`` and ``str(p.sequence)`` is what a tokenizer

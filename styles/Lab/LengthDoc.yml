@@ -1,4 +1,4 @@
-# Word cap for agent-facing documents: AGENTS.md, CONTEXT.md, docs/agents/*,
+# Word cap for agent-facing documents: AGENTS.md, GLOSSARY.md, docs/agents/*,
 # skills/*/SKILL.md. The companion rule for ADRs is Lab.LengthAdr, at 400.
 #
 # This is a dial, not a law. Raising it is a one-line diff here, made deliberately, with

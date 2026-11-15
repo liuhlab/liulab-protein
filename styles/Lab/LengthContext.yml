@@ -1,4 +1,4 @@
-# Word cap for CONTEXT.md, the glossary. Looser than Lab.LengthDoc's 1000 because a glossary
+# Word cap for GLOSSARY.md, the glossary. Looser than Lab.LengthDoc's 1000 because a glossary
 # is measured per entry and not per file: `conformance` caps an entry at 200 words, which is
 # the unit that matches how the file grows. This cap is the backstop on the whole file.
 #

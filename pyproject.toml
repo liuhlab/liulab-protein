@@ -268,7 +268,7 @@ suite_budget = 45
 # globs; a trailing `/` matches a directory. Values name the Vale Length rule, or `false`.
 [tool.liulab.agent-docs]
 "AGENTS.md" = "LengthDoc"
-"CONTEXT.md" = "LengthContext"
+"GLOSSARY.md" = "LengthContext"
 "docs/agents/" = "LengthDoc"
 "skills/" = "LengthDoc"
 "docs/adr/" = "LengthAdr"

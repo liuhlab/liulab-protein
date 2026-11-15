@@ -131,7 +131,7 @@ surprising. Neither is a notebook.
   alternative was.
 
 Where a fact genuinely has to survive, it has a home that is checked: a **test** pins
-behaviour, an **ADR** carries a decision and its trade-off, `CONTEXT.md` carries vocabulary,
+behaviour, an **ADR** carries a decision and its trade-off, `GLOSSARY.md` carries vocabulary,
 and an **issue** carries what is still open. A comment is the one place that holds none of
 them accountable, which is why it is the wrong place.
 
@@ -142,7 +142,7 @@ example earns its keep. Say the surprising thing in one sentence and stop.
 
 | When | Read |
 | --- | --- |
-| Before changing code | `CONTEXT.md`, then any ADR covering the area |
+| Before changing code | `GLOSSARY.md`, then any ADR covering the area |
 | Recording vocabulary or a decision | `docs/agents/domain.md` |
 | Filing or working an issue | `docs/agents/issue-tracker.md` |
 | Labelling someone else's issue | `docs/agents/triage-labels.md` |
