@@ -34,7 +34,7 @@ misfires, is as much a contribution as adding one.
 - **hatchling + hatch-vcs**. The version comes from the newest git tag. Never hand-edit one.
 - **`platforms = ["linux-64"]`**, so nothing resolves on macOS. The gate runs in CI on
   `ubuntu-latest`, or on a linux-64 host with pixi.
-- Environments: `default` (the gate), `test`, `docs`, and `esm` — the only one with torch.
+- Environments: `default` (the gate), `docs`, and `esm` — the only one with torch.
 
 ## Architecture
 
@@ -79,11 +79,18 @@ supplies the data root, the completion records and the prepared-set pipeline. Re
 | run one step | `pixi run lint` / `fmt-check` / `typecheck` / `vale` / `markdownlint` / `conformance` / `test` |
 | run one test | `pixi run test tests/test_core.py::test_the_sequence_is_a_biotite_protein_sequence` |
 | fix formatting | `pixi run fmt` |
-| build the site | `pixi install -e docs && pixi run docs-build` — its own CI job, not part of `check` |
+| build the site | `pixi install -e docs && pixi run docs-build` — a CI step of its own, not part of `check` |
 | run the ESM lane | `pixi run -e esm pytest -m model` — by hand, needs the weights |
 
 `check.sh` runs every step and reports **all** failures, not just the first, so read to the
-bottom before fixing anything.
+bottom before fixing anything. CI runs on pull requests only, and tests the merge commit.
+
+Test time has two limits, set in `[tool.pytest.ini_options]` and nowhere else:
+
+- **`timeout`** caps one test, setup and teardown included.
+- **`suite_budget`** caps the whole run; every run prints its time against it.
+- **The slow lane:** a test marked `slow` is held to neither, and runs only in
+  `pixi run test-slow`.
 
 Five traps in the gate:
 
