@@ -1,0 +1,1380 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Handling protein sequence related tasks.">
+      
+      
+      
+        <link rel="canonical" href="https://liuhlab.github.io/liulab-protein/research/swissprot-accession-lookup/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Pulling one Swiss-Prot entry by accession from a local MMseqs2 database - liulab-protein</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pulling-one-swiss-prot-entry-by-accession-from-a-local-mmseqs2-database" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="liulab-protein" class="md-header__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            liulab-protein
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Pulling one Swiss-Prot entry by accession from a local MMseqs2 database
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="liulab-protein" class="md-nav__button md-logo" aria-label="liulab-protein" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    liulab-protein
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/liuhlab/liulab-protein" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    liuhlab/liulab-protein
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The three things you work with
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Setting up
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Setting up
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set up your data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Guides
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Guides
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Search a database
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/alignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build an alignment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Embed a sequence
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/structures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Work with structures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/folding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Predict a structure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Commands
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Python API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Answer
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-this-was-checked" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How this was checked
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-mmseqs-databases-uniprotkbswiss-prot-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. What <code>mmseqs databases UniProtKB/Swiss-Prot</code> writes
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. What mmseqs databases UniProtKB&#x2f;Swiss-Prot writes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-offset-arithmetic" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The offset arithmetic
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-the-keys-are-opaque-numeric-ids-lookup-is-the-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. The keys are opaque numeric ids; <code>.lookup</code> is the map
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-verb-is-mmseqs-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. The verb is <code>mmseqs view</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. The verb is mmseqs view">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-exact-command-lines" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The exact command lines
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-full-uniprot-header-comes-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. The full UniProt header comes back
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-cost" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Cost
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Cost">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#about-0094-gb" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        About "0.094 GB"
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-bulk-export-what-a-self-built-index-would-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Bulk export — what a self-built index would use
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-two-findings-that-contradict-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        7. Two findings that contradict #1
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Two findings that contradict #1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-sequences-are-numerically-encoded-and-the-encoding-is-lossy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The sequences are numerically encoded, and the encoding is lossy
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-rest-of-1s-database-section-holds-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The rest of #1's database section holds up
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Recommendation
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="pulling-one-swiss-prot-entry-by-accession-from-a-local-mmseqs2-database">Pulling one Swiss-Prot entry by accession from a local MMseqs2 database<a class="headerlink" href="#pulling-one-swiss-prot-entry-by-accession-from-a-local-mmseqs2-database" title="Permanent link">&para;</a></h1>
+<p>Research note for <a href="https://github.com/liuhlab/liulab-protein/issues/3">#3</a>. Written
+2026-09-02.</p>
+<h2 id="answer">Answer<a class="headerlink" href="#answer" title="Permanent link">&para;</a></h2>
+<p><strong>Yes.</strong> <code>swissprot["P12345"]</code> is a local, offline lookup, and MMseqs2 ships a verb built
+for exactly it:</p>
+<div class="highlight"><pre><span></span><code>mmseqs<span class="w"> </span>view<span class="w"> </span>swissprot<span class="w"> </span>--id-list<span class="w"> </span>P12345<span class="w"> </span>--id-mode<span class="w"> </span><span class="m">1</span><span class="w">                      </span><span class="c1"># sequence</span>
+mmseqs<span class="w"> </span>view<span class="w"> </span>swissprot<span class="w"> </span>--id-list<span class="w"> </span>P12345<span class="w"> </span>--id-mode<span class="w"> </span><span class="m">1</span><span class="w"> </span>--idx-entry-type<span class="w"> </span><span class="m">2</span><span class="w">   </span><span class="c1"># ...fails, see below</span>
+</code></pre></div>
+<p>The header — entry name, description, organism, gene — is in the parallel <code>_h</code> database and
+comes back too, either by resolving the numeric key first or by <code>createsubdb</code> +
+<code>convert2fasta</code>. No network call, no index build, no <code>mmseqs createindex</code>.</p>
+<p>Two things found along the way are load-bearing and were <strong>not</strong> anticipated by
+<a href="https://github.com/liuhlab/liulab-protein/issues/1">#1</a>:</p>
+<ol>
+<li><code>mmseqs databases</code> builds the database with <code>createdb --gpu 1</code>, which stores sequences
+   <strong>numerically encoded, and lossily</strong>: <code>U</code>, <code>O</code> and <code>X</code> all become <code>X</code>; <code>B</code> becomes <code>D</code>;
+   <code>Z</code> becomes <code>E</code>; <code>J</code> becomes <code>L</code>. A <code>Protein</code> built from this database can never carry
+   selenocysteine or pyrrolysine. This bears directly on <code>seq.py</code>'s <code>AMBIGUOUS</code> set.</li>
+<li><code>0.094 GB</code> is the size of the compressed source FASTA, not of the database on disk.</li>
+</ol>
+<h2 id="how-this-was-checked">How this was checked<a class="headerlink" href="#how-this-was-checked" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wiki</td>
+<td><a href="https://github.com/soedinglab/MMseqs2/wiki">https://github.com/soedinglab/MMseqs2/wiki</a>, commit <code>beea65f</code>, cloned from <code>MMseqs2.wiki.git</code></td>
+</tr>
+<tr>
+<td>Source</td>
+<td><a href="https://github.com/soedinglab/MMseqs2">https://github.com/soedinglab/MMseqs2</a>, tag <code>18-8cc5c</code> (commit <code>8cc5ce3</code>), the tag matching the installed binary</td>
+</tr>
+<tr>
+<td>Binary</td>
+<td><code>mmseqs</code> 18.8cc5c, the conda dependency in this repo's default pixi environment, on <code>GPU71FM</code></td>
+</tr>
+</tbody>
+</table>
+<p>Everything under <strong>VERIFIED</strong> was run against that binary on <code>GPU71FM</code> on a four-entry
+synthetic FASTA with real UniProt-style headers (<code>&gt;sp|P12345|AATM_RABIT ... OS=... OX=...
+GN=GOT2 PE=1 SV=2</code>). <strong>No database was downloaded.</strong> Probe scripts and outputs are at
+<code>/scratch/zhoulab/hanliu/protein/.research-swissprot-probe</code> on <code>GPU71FM</code>.</p>
+<p>Anything marked <strong>INFERRED</strong> is arithmetic or reading, not a measurement, and is flagged
+where it appears.</p>
+<h2 id="1-what-mmseqs-databases-uniprotkbswiss-prot-writes">1. What <code>mmseqs databases UniProtKB/Swiss-Prot</code> writes<a class="headerlink" href="#1-what-mmseqs-databases-uniprotkbswiss-prot-writes" title="Permanent link">&para;</a></h2>
+<p>The recipe downloads <code>uniprot_sprot.fasta.gz</code> from ExPASy and hands it to <code>createdb</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/data/workflow/databases.sh#L118-L125"><code>databases.sh:118-125</code></a>),
+then — because Swiss-Prot is declared <code>hasTaxonomy = true</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/workflow/Databases.cpp#L48-L53"><code>Databases.cpp:48-53</code></a>) —
+builds the taxonomy sidecars and finally moves the release note into <code>&lt;name&gt;.version</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/data/workflow/databases.sh#L483-L499"><code>databases.sh:483-499</code></a>).</p>
+<p>VERIFIED (file set from <code>createdb --gpu 1</code>, byte sizes from the four-entry probe):</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;name&gt;</code></td>
+<td>the sequence data: entries concatenated, addressed only through <code>.index</code></td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;.index</code></td>
+<td><code>key \t offset \t length</code>, one line per entry, tab separated</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;.dbtype</code></td>
+<td>4 bytes, little-endian. <code>00 00 08 00</code> here: amino acid (<code>0</code>) with the GPU-extended bit (<code>8 &lt;&lt; 16</code>)</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;.lookup</code></td>
+<td><code>key \t accession \t fileNumber</code>, one line per entry</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;.source</code></td>
+<td><code>fileNumber \t filename</code>, e.g. <code>0\tmini.fasta</code> — names the input files</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;_h</code></td>
+<td>the FASTA headers, <code>&gt;</code> stripped, each terminated <code>\n\0</code></td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;_h.index</code></td>
+<td>the same three columns, <strong>same key space</strong> as <code>&lt;name&gt;.index</code></td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;_h.dbtype</code></td>
+<td><code>0c 00 00 00</code> = 12 = <code>DBTYPE_GENERIC_DB</code></td>
+</tr>
+</tbody>
+</table>
+<p>INFERRED, from the shell script only (not run, because that means downloading):
+<code>mmseqs databases</code> additionally writes <code>&lt;name&gt;.version</code>, <code>&lt;name&gt;_mapping</code> (accession → NCBI
+taxon id, parsed out of the <code>OX=</code> field of each header) and <code>&lt;name&gt;_taxonomy</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/data/workflow/databases.sh#L483-L499"><code>databases.sh:483-499</code></a>,
+suffix table at
+<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/commons/DBReader.cpp#L1179-L1183"><code>DBReader.cpp:1179-1183</code></a>).</p>
+<p>The wiki documents the same layout at
+<a href="https://github.com/soedinglab/MMseqs2/wiki#sequence-database-format">Sequence database format</a>
+and
+<a href="https://github.com/soedinglab/MMseqs2/wiki#mmseqs2-database-format">MMseqs2 database format</a>.</p>
+<h3 id="the-offset-arithmetic">The offset arithmetic<a class="headerlink" href="#the-offset-arithmetic" title="Permanent link">&para;</a></h3>
+<p><code>.index</code> length <strong>includes the trailing newline and null byte</strong>; the payload is
+<code>length - 2</code> bytes at <code>offset</code>. The wiki states this
+(<a href="https://github.com/soedinglab/MMseqs2/wiki#sequence-database-format">Sequence database format</a>:
+"The real sequence length is two characters shorter (<code>$3 - 2</code>)"), and the writer confirms it
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/createdb.cpp#L279-L285"><code>createdb.cpp:279-285</code></a>).</p>
+<p>VERIFIED on the probe. Header database, plain <code>dd</code>, no MMseqs2 involved:</p>
+<div class="highlight"><pre><span></span><code>$ awk -F'\t' '$2=="P12345"{print $1}' gpudb.lookup        # -&gt; 3
+$ awk -F'\t' '$1==3{print $2, $3}' gpudb_h.index          # -&gt; 290 115
+$ dd if=gpudb_h bs=1 skip=290 count=113
+sp|P12345|AATM_RABIT Aspartate aminotransferase, mitochondrial OS=Oryctolagus cuniculus OX=9986 GN=GOT2 PE=1 SV=2
+</code></pre></div>
+<p>The same three-line recipe against the <strong>sequence</strong> database returns bytes, not letters. See
+section 7.</p>
+<h2 id="2-the-keys-are-opaque-numeric-ids-lookup-is-the-map">2. The keys are opaque numeric ids; <code>.lookup</code> is the map<a class="headerlink" href="#2-the-keys-are-opaque-numeric-ids-lookup-is-the-map" title="Permanent link">&para;</a></h2>
+<p>VERIFIED. <code>createdb</code> assigns each entry a numeric id and <strong>shuffles</strong> the database, so the
+key has no relation to input order and none at all to the accession. The four-entry probe,
+same input in both cases:</p>
+<div class="highlight"><pre><span></span><code>plaindb.lookup            gpudb.lookup
+0  P12345  0              0  Q6GZX4  0
+1  Q6GZX4  0              1  P0A031  0
+2  P0A031  0              2  Q197F8  0
+3  Q197F8  0              3  P12345  0
+</code></pre></div>
+<p>Column 2 <strong>is</strong> the UniProt accession. <code>createdb</code> fills it with
+<code>Util::parseFastaHeader</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/createdb.cpp#L258-L259"><code>createdb.cpp:258-259</code></a>),
+which recognises the <code>sp|</code> prefix and returns the text between the two pipes
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/commons/Util.cpp#L117-L190"><code>Util.cpp:117-190</code></a>, <code>sp|</code> at <a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/commons/Util.cpp#L136">line 136</a>) —
+so <code>&gt;sp|P12345|AATM_RABIT ...</code> yields exactly <code>P12345</code>, <strong>not</strong> <code>AATM_RABIT</code> and not the
+whole <code>sp|P12345|AATM_RABIT</code>. <code>tr|</code> (TrEMBL) is in the same table; Swiss-Prot is all <code>sp|</code>.
+The wiki names the same file
+(<a href="https://github.com/soedinglab/MMseqs2/wiki#create-a-seqtaxdb-by-manual-annotation-of-a-sequence-database">Create a seqTaxDB by manual annotation</a>:
+"a tab-separated <code>sequenceDB.lookup</code> file that contains numeric-db-id, Accession … and
+File") and lists the recognised header prefixes under
+<a href="https://github.com/soedinglab/MMseqs2/wiki#identifier-parsing">Identifier parsing</a>.</p>
+<p>So "P12345" → key is one hop through <code>.lookup</code>. MMseqs2 does that hop for you behind
+<code>--id-mode 1</code>; the package can equally do it in Python.</p>
+<p>VERIFIED: <code>&lt;name&gt;_h</code> has <strong>no <code>.lookup</code> of its own</strong>. <code>--id-mode 1</code> against the header
+database fails with <code>Cannot open lookup file gpudb_h.lookup!</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/commons/DBReader.cpp#L138-L144"><code>DBReader.cpp:138-144</code></a>).
+The header database is addressed by numeric key only.</p>
+<h2 id="3-the-verb-is-mmseqs-view">3. The verb is <code>mmseqs view</code><a class="headerlink" href="#3-the-verb-is-mmseqs-view" title="Permanent link">&para;</a></h2>
+<p><code>getdbkeys</code> <strong>does not exist</strong> — VERIFIED both ways: no such symbol in the source, and
+<code>mmseqs getdbkeys --help</code> fails on the binary. The candidates that do exist:</p>
+<table>
+<thead>
+<tr>
+<th>Verb</th>
+<th>Fits?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>view</code></strong></td>
+<td><strong>yes</strong> — prints named entries to stdout, accepts accessions</td>
+</tr>
+<tr>
+<td><code>createsubdb</code></td>
+<td>yes, but writes a database, not text; use when you want a real sub-database</td>
+</tr>
+<tr>
+<td><code>convert2fasta</code></td>
+<td>whole-database export only; no id selection</td>
+</tr>
+<tr>
+<td><code>prefixid</code></td>
+<td>prefixes every entry with its key; whole-database, not a selector</td>
+</tr>
+<tr>
+<td>direct <code>.index</code> read</td>
+<td>works for headers; needs a decode step for sequences (section 7)</td>
+</tr>
+</tbody>
+</table>
+<p><code>view</code> is registered as "Print DB entries given in <code>--id-list</code> to stdout"
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/MMseqsBase.cpp#L846-L852"><code>MMseqsBase.cpp:846-852</code></a>)
+and takes <code>--id-list</code>, <code>--id-mode</code> and <code>--idx-entry-type</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/commons/Parameters.cpp#L1214-L1218"><code>Parameters.cpp:1214-1218</code></a>).
+<code>--id-mode 1</code> resolves each name through the reverse lookup
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/view.cpp#L25-L42"><code>view.cpp:25-42</code></a>).</p>
+<h3 id="the-exact-command-lines">The exact command lines<a class="headerlink" href="#the-exact-command-lines" title="Permanent link">&para;</a></h3>
+<p>VERIFIED, all four:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># sequence, by accession — one entry</span>
+mmseqs<span class="w"> </span>view<span class="w"> </span>swissprot<span class="w"> </span>--id-list<span class="w"> </span>P12345<span class="w"> </span>--id-mode<span class="w"> </span><span class="m">1</span>
+
+<span class="c1"># sequences, by accession — many at once, one call</span>
+mmseqs<span class="w"> </span>view<span class="w"> </span>swissprot<span class="w"> </span>--id-list<span class="w"> </span>P12345,Q6GZX4<span class="w"> </span>--id-mode<span class="w"> </span><span class="m">1</span>
+
+<span class="c1"># header, by NUMERIC KEY (--id-mode 1 does not work with --idx-entry-type 2)</span>
+mmseqs<span class="w"> </span>view<span class="w"> </span>swissprot<span class="w"> </span>--id-list<span class="w"> </span><span class="m">3</span><span class="w"> </span>--idx-entry-type<span class="w"> </span><span class="m">2</span>
+
+<span class="c1"># a real one-entry sub-database, by accession</span>
+mmseqs<span class="w"> </span>createsubdb<span class="w"> </span>&lt;<span class="o">(</span><span class="nb">printf</span><span class="w"> </span><span class="s1">'P12345\n'</span><span class="o">)</span><span class="w"> </span>swissprot<span class="w"> </span>P12345db<span class="w"> </span>--id-mode<span class="w"> </span><span class="m">1</span>
+mmseqs<span class="w"> </span>convert2fasta<span class="w"> </span>P12345db<span class="w"> </span>P12345.fasta
+</code></pre></div>
+<p>A missing accession is a <strong>warning on stderr and a skipped entry</strong>, not a non-zero exit:
+<code>Could not find NOSUCH1 in lookup</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/view.cpp#L34-L38"><code>view.cpp:34-38</code></a>).
+VERIFIED. A <code>SwissProt.__getitem__</code> that must raise <code>KeyError</code> cannot rely on the exit
+code — it has to notice the empty output.</p>
+<p>The <code>--idx-entry-type 2</code> restriction is a real limitation, VERIFIED and explained by the
+source: <code>view</code> calls <code>getLookupIdByAccession</code> on whichever reader <code>--idx-entry-type</code>
+selected, and with <code>2</code> that is the header reader, which has no <code>.lookup</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/view.cpp#L8-L30"><code>view.cpp:8-30</code></a>).
+Resolve the accession from <code>.lookup</code> first, then ask for the header by key.</p>
+<p><code>createsubdb --id-mode 1</code> uses the same mechanism
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/createsubdb.cpp#L26-L56"><code>createsubdb.cpp:26-56</code></a>)
+and is documented on the wiki under
+<a href="https://github.com/soedinglab/MMseqs2/wiki#manipulating-databases">Manipulating databases</a>.</p>
+<h2 id="4-the-full-uniprot-header-comes-back">4. The full UniProt header comes back<a class="headerlink" href="#4-the-full-uniprot-header-comes-back" title="Permanent link">&para;</a></h2>
+<p>VERIFIED. <code>createsubdb</code> symlinks the ancillary files of the parent — including <code>_h</code>, <code>_h.index</code>
+and <code>.lookup</code> — into the new database
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/createsubdb.cpp#L91"><code>createsubdb.cpp:91</code></a>,
+<code>DBFiles::SEQUENCE_ANCILLARY</code> at
+<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/commons/DBReader.h#L44-L48"><code>DBReader.h:44-48</code></a>).
+<code>convert2fasta</code> then walks the sub-database's one key and pulls that key's header out of the
+symlinked full header database
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/convert2fasta.cpp#L41-L55"><code>convert2fasta.cpp:41-55</code></a>).
+Actual output of the two-line recipe above:</p>
+<div class="highlight"><pre><span></span><code>&gt;sp|P12345|AATM_RABIT Aspartate aminotransferase, mitochondrial OS=Oryctolagus cuniculus OX=9986 GN=GOT2 PE=1 SV=2
+MALLHSGRVLPGIAAAFHPGLAAAASARASSWWTHVEMGPPDPILGVTEAFKRDTNSKKMNLGVGAYRDDNGKPYVLPSVRKAEAQIAAKNLDKEYLPIGGLAEFCKASAELALGENSEV
+</code></pre></div>
+<p>Every field <code>SwissProt</code> wants is there: accession <code>P12345</code>, entry name <code>AATM_RABIT</code>,
+description, <code>OS=</code> organism, <code>OX=</code> taxon, <code>GN=</code> gene, <code>PE=</code>, <code>SV=</code>. It is the source FASTA
+header verbatim, so parsing it is UniProt FASTA parsing and nothing MMseqs2-specific
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/createdb.cpp#L248-L256"><code>createdb.cpp:248-256</code></a>
+copies header bytes through unchanged; the probe round-trip confirms it).</p>
+<h2 id="5-cost">5. Cost<a class="headerlink" href="#5-cost" title="Permanent link">&para;</a></h2>
+<p>Retrieval loads <strong>the whole <code>.index</code> and, in <code>--id-mode 1</code>, the whole <code>.lookup</code> into RAM</strong>.
+Both <code>view</code> and <code>createsubdb</code> open the reader with <code>USE_INDEX|USE_DATA</code> plus
+<code>USE_LOOKUP_REV</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/view.cpp#L26-L29"><code>view.cpp:26-29</code></a>,
+<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/createsubdb.cpp#L26-L31"><code>createsubdb.cpp:26-31</code></a>).
+<code>DBReader::open</code> then allocates one <code>LookupEntry</code> per line and <strong>sorts them by accession</strong>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/commons/DBReader.cpp#L138-L156"><code>DBReader.cpp:138-156</code></a>),
+so the accession hop is a binary search over a sorted array
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/commons/DBReader.cpp#L702-L712"><code>DBReader.cpp:702-712</code></a>).
+The data file is memory-mapped, so it costs address space, not resident memory.</p>
+<p>Sizing, for Swiss-Prot <strong>N = 575,748</strong> entries (VERIFIED today from
+<code>https://rest.uniprot.org/uniprotkb/search?query=reviewed:true&amp;size=0</code>, header
+<code>x-total-results</code>; release 2026_03 of 02-Sep-2026):</p>
+<table>
+<thead>
+<tr>
+<th>Structure</th>
+<th>Per entry</th>
+<th>For N</th>
+<th>Basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Index[]</code></td>
+<td>24 B</td>
+<td><strong>~13.8 MB</strong></td>
+<td><code>sizeof</code> measured with <code>g++ -O2</code> on <code>GPU71FM</code></td>
+</tr>
+<tr>
+<td><code>LookupEntry[]</code></td>
+<td>48 B</td>
+<td><strong>~27.6 MB</strong></td>
+<td>same; accessions are 6 or 10 chars so <code>std::string</code> stays inside its small-string buffer and adds no heap</td>
+</tr>
+<tr>
+<td>Total resident</td>
+<td></td>
+<td><strong>~41 MB</strong></td>
+<td>INFERRED (sum of the two)</td>
+</tr>
+</tbody>
+</table>
+<p>INFERRED, on-disk: <code>.index</code> is roughly 22 bytes per line (~13 MB) and <code>.lookup</code> roughly 16
+(~9 MB), from the observed column widths scaled to N. Not measured.</p>
+<p>Wall time: <code>mmseqs view</code> on the four-entry probe was 7 ms. At Swiss-Prot scale the cost is
+dominated by reading and sorting ~9 MB of <code>.lookup</code>, which is sub-second but is paid <strong>on
+every process launch</strong>. INFERRED — not measured at scale.</p>
+<p>That per-call constant is the argument for the package holding its own index rather than
+shelling out per accession.</p>
+<h3 id="about-0094-gb">About "0.094 GB"<a class="headerlink" href="#about-0094-gb" title="Permanent link">&para;</a></h3>
+<p>VERIFIED: <code>Content-Length</code> on
+<code>https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz</code>
+is <strong>93,801,562 bytes = 0.0938 GB</strong>. So #1's figure is the compressed download, not the
+database. INFERRED: the built database is several times that — the residues alone are
+uncompressed in <code>&lt;name&gt;</code>, and <code>&lt;name&gt;_h</code> holds every header. Budget the disk accordingly.</p>
+<h2 id="6-bulk-export-what-a-self-built-index-would-use">6. Bulk export — what a self-built index would use<a class="headerlink" href="#6-bulk-export-what-a-self-built-index-would-use" title="Permanent link">&para;</a></h2>
+<p><code>convert2fasta</code> is the whole-database export and is the only route back to FASTA
+(<a href="https://github.com/soedinglab/MMseqs2/wiki#sequence-database-format">wiki</a>: "Sequence
+database can be converted back to FASTA only with <code>convert2fasta</code>"):</p>
+<div class="highlight"><pre><span></span><code>mmseqs<span class="w"> </span>convert2fasta<span class="w"> </span>swissprot<span class="w"> </span>swissprot.fasta<span class="w">          </span><span class="c1"># &gt;header + sequence, every entry</span>
+mmseqs<span class="w"> </span>convert2fasta<span class="w"> </span>swissprot<span class="w"> </span>swissprot_h.fasta<span class="w"> </span>--use-header-file
+</code></pre></div>
+<p>VERIFIED on the probe: the first writes standard FASTA with the complete original headers,
+in database (shuffled) order.</p>
+<p>But the package does not need it. <code>.lookup</code>, <code>.index</code> and <code>_h.index</code> are <strong>already</strong> the
+bulk index, they are already local, and they are plain tab-separated text:</p>
+<ul>
+<li><code>accession → key</code> is <code>.lookup</code> columns 2 and 1.</li>
+<li><code>key → (offset, length)</code> is <code>.index</code>, for the sequence, and <code>_h.index</code>, for the header.</li>
+<li>Read <code>length - 2</code> bytes at <code>offset</code>.</li>
+</ul>
+<p>For headers that is the whole story and it is pure Python — VERIFIED above with <code>dd</code>. For
+sequences, see the next section.</p>
+<p>Building an <code>accession → (seq_offset, seq_len, hdr_offset, hdr_len)</code> map at registration
+time is a single pass over two text files of a few million lines, and it makes
+<code>swissprot["P12345"]</code> two <code>seek</code>+<code>read</code> calls with no subprocess. That fits the project's
+preference for bulk local data exactly, and <code>tests/_guards.py</code> has nothing to block.</p>
+<h2 id="7-two-findings-that-contradict-1">7. Two findings that contradict #1<a class="headerlink" href="#7-two-findings-that-contradict-1" title="Permanent link">&para;</a></h2>
+<h3 id="the-sequences-are-numerically-encoded-and-the-encoding-is-lossy">The sequences are numerically encoded, and the encoding is lossy<a class="headerlink" href="#the-sequences-are-numerically-encoded-and-the-encoding-is-lossy" title="Permanent link">&para;</a></h3>
+<p><code>mmseqs databases</code> calls <code>createdb ... --gpu 1</code> <strong>unconditionally</strong> for every FASTA-sourced
+database, Swiss-Prot included
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/data/workflow/databases.sh#L305-L320"><code>databases.sh:305-320</code></a>).
+VERIFIED: <code>mmseqs databases --help</code> exposes only <code>--tsv</code>, <code>--force-reuse</code>,
+<code>--remove-tmp-files</code>, <code>--compressed</code>, <code>--threads</code> and <code>-v</code> — there is <strong>no way to turn it
+off</strong>.</p>
+<p>That sets <code>SEQUENCE_SPLIT_MODE_GPU</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/createdb.cpp#L349-L351"><code>createdb.cpp:349-351</code></a>, which also turns low-complexity masking on),
+which stores each residue as its substitution-matrix index, pads each entry to a 4-byte
+boundary with byte <code>20</code>, and stamps the GPU bit into <code>.dbtype</code>
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/createdb.cpp#L231-L243"><code>createdb.cpp:231-243</code></a>,
+<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/util/createdb.cpp#L782-L784"><code>createdb.cpp:782-784</code></a>).
+<code>DBReader</code> decodes on the way out through <code>getUnpadded</code>, against a <strong>21-letter</strong> table —
+<code>ACDEFGHIKLMNPQRSTVWYX</code>, with <code>code - 32</code> for soft-masked residues
+(<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/src/commons/DBReader.cpp#L536-L559"><code>DBReader.cpp:536-559</code></a>).
+Twenty-one letters cannot represent twenty-six.</p>
+<p>VERIFIED round trip, same FASTA into both database types:</p>
+<div class="highlight"><pre><span></span><code>input                : MAUOBZJXWYACDEFGHIKLMNPQRSTVW
+createdb --gpu 1     : MAXXDELXWYACDEFGHIKLMNPQRSTVW     &lt;- what `mmseqs databases` gives you
+createdb (plain)     : MAUOBZJXWYACDEFGHIKLMNPQRSTVW
+</code></pre></div>
+<p><code>U</code> → <code>X</code>, <code>O</code> → <code>X</code>, <code>B</code> → <code>D</code>, <code>Z</code> → <code>E</code>, <code>J</code> → <code>L</code>. Raw bytes at that offset are
+<code>0a 00 34 34 02 03 09 34 …</code> — no ASCII anywhere.</p>
+<p>Consequences for this package:</p>
+<ul>
+<li>A <code>Protein</code> built from a <code>mmseqs databases</code>-built Swiss-Prot database <strong>can never carry</strong>
+  <code>U</code>, <code>O</code>, <code>B</code>, <code>Z</code> or <code>J</code>. #1 says <code>seq.py</code> accepts those six "because UniProt and the ESM
+  tokenizers accept all six" — true of UniProt, but not of this database. <code>SwissProt</code>
+  returns sequences drawn from a 21-letter alphabet. Selenoproteins come back with <code>X</code>.</li>
+<li>A direct byte-offset read of <code>&lt;name&gt;</code> yields <strong>bytes 0-20, not letters</strong>, and soft-masked
+  residues arrive with <code>+32</code>. Any Python fast path must apply the same decode table. Headers
+  need no decoding.</li>
+<li>The lossless route is to run <code>createdb</code> yourself, without <code>--gpu</code>, on
+  <code>uniprot_sprot.fasta.gz</code> — which the package would have to download itself, since
+  <code>databases.sh</code> deletes the FASTA after <code>createdb</code>
+  (<a href="https://github.com/soedinglab/MMseqs2/blob/18-8cc5c/data/workflow/databases.sh#L311-L313"><code>databases.sh:311-313</code></a>).
+  This is worth an ADR: <code>download()</code> delegating to <code>mmseqs databases</code> is the simple choice
+  and it silently changes the data.</li>
+</ul>
+<p>Checked and <strong>not</strong> a problem: <code>easy-search</code> runs against a GPU-mode database on CPU with no
+GPU flag and returns correct hits. VERIFIED on the probe. The search lane is unaffected.</p>
+<h3 id="the-rest-of-1s-database-section-holds-up">The rest of #1's database section holds up<a class="headerlink" href="#the-rest-of-1s-database-section-holds-up" title="Permanent link">&para;</a></h3>
+<p>VERIFIED: the immutability claim is right, and the wiki says so in the same words —
+"The data file of the databases cannot be altered easily since any change would break the
+offset in the <code>.index</code> file"
+(<a href="https://github.com/soedinglab/MMseqs2/wiki#manipulating-databases">Manipulating databases</a>).
+The file set #1 lists (<code>&lt;name&gt;</code>, <code>.index</code>, <code>.dbtype</code>, <code>.lookup</code>, <code>&lt;name&gt;_h</code>) is right as far
+as it goes; it misses <code>.source</code>, <code>.version</code>, <code>_mapping</code> and <code>_taxonomy</code>.</p>
+<p>VERIFIED: <code>swissprot["P12345"]</code> really is behaviour a declaration-table row cannot carry, so
+the case for <code>SwissProt</code> being a subclass survives — the mechanism is just not the one #1
+left unspecified.</p>
+<h2 id="recommendation">Recommendation<a class="headerlink" href="#recommendation" title="Permanent link">&para;</a></h2>
+<p>Build the accession index once, at registration, from <code>.lookup</code> + <code>.index</code> + <code>_h.index</code>;
+serve <code>swissprot["P12345"]</code> with two <code>seek</code>+<code>read</code> calls and the 21-letter decode table.
+Keep <code>mmseqs view --id-mode 1</code> as the reference implementation to test against — it is the
+same answer, one subprocess and ~41 MB slower.</p>
+<p>Then decide, in an ADR, whether <code>download()</code> may keep using <code>mmseqs databases</code> given that it
+quietly rewrites five residue codes.</p>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+    
+  </body>
+</html>
