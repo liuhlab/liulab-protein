@@ -123,6 +123,13 @@ sets one.
 
 ### Changed
 
+- **Tests have a time limit, and CI runs once per pull request.** One test may take 2
+  seconds and the whole run 45; a run that goes over fails and says by how much. A test
+  that needs longer is marked `slow`, which the gate skips and `pixi run test-slow` runs; a
+  run that includes one is not timed. CI is now one job instead of three, runs only on pull
+  requests, and skips a draft until it is marked ready, so it spends fewer Actions minutes.
+  The site still publishes on every merge to `main`.
+
 - **The docs teach the plain spelling of a fold.** The worked example and the folding guide
   build a request out of dictionaries and hand it straight to `fold()`, so a reader meets no
   classes on the way to their first structure. What each page adds is the part that bites:

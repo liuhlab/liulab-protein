@@ -5,7 +5,7 @@
     python scripts/conformance.py [--root PATH]
 
 It states the RULE, not the file contents — a pull model, so a repo that legitimately diverges
-stays green while the shared conventions stay checked. Fifteen rules: thirteen fail, two only warn.
+stays green while the shared conventions stay checked. Sixteen rules: fourteen fail, two only warn.
 
 Three exit statuses, spelled the way `scripts/check.sh` spells its own: **0** every rule passed,
 **1** it ran and a rule failed, **2** it could not run at all — no `.git` to list tracked files
@@ -33,9 +33,9 @@ never per-file. No expiry, and every waiver is printed on every run — green on
 because an escape hatch that stops being visible becomes permanent. Rule 1 refuses to be waived.
 
 This lives in `scripts/` and not `tests/` because one lab repo has neither `src/` nor `tests/`,
-and pytest is in no default environment. Its negative tests are `tests/test_conformance.py`: one
-tree per rule that violates it, because a rule that checks nothing passes the happy path and a
-gate that fires on nothing looks identical to a gate that passes.
+and pytest is in no default environment. Each rule is tested against a tree that violates it,
+because a rule that checks nothing passes the happy path and a gate that fires on nothing looks
+identical to a gate that passes.
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ import subprocess
 import sys
 import textwrap
 import tomllib
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path, PurePosixPath
@@ -61,7 +61,7 @@ import yaml
 #: `CANNOT_RUN` is the one that says nothing about this repo's rules: `scripts/check.sh` already
 #: spells "could not run" as 2 — a usage error, a capture directory it could not make — and a
 #: checker that exited 1 for both would have every reader looking for a rule violation instead of
-#: for the missing checkout. `tests/test_conformance.py` asserts all three.
+#: for the missing checkout.
 PASSED, FAILED, CANNOT_RUN = 0, 1, 2
 
 
@@ -75,13 +75,13 @@ class CannotRunError(Exception):
 
 
 #: The template's placeholder module name, SPELLED IN TWO PIECES on purpose. `init-repo`
-#: substitutes that name throughout the tree and the dogfood job then greps a rendered repo for
+#: substitutes that name throughout the tree and the dogfood step then greps a rendered repo for
 #: it. A literal here would be rewritten — turning rule 1 into a check for the new module's own
 #: name, which is everywhere — and would leave a copy for that grep to find. Two pieces, and
 #: neither happens.
 PLACEHOLDER = "new" + "pkg"
 
-#: Rule 1 and warning 14 are both gated on this directory, and it is the only discriminator either
+#: Rule 1 and warning 15 are both gated on this directory, and it is the only discriminator either
 #: needs. While it is here, `init-repo` has not run: the placeholder is still the repo's own name,
 #: and the auto-discovered skill is itself the nag. Once it is gone the repo claims to be its own,
 #: and both rules start checking.
@@ -89,6 +89,20 @@ INIT_SKILL = "skills/init-repo"
 
 #: Rule 1's name, needed by name because it is the one rule that refuses to be waived.
 UNWAIVABLE = "placeholder-rename"
+
+#: The glossary, by the name the upstream skills read and write, and the name each file had
+#: before upstream renamed it. A repo still on the old name is failed rather than passed over:
+#: "no GLOSSARY.md" would be the quiet answer to a rename that never happened.
+GLOSSARY = "GLOSSARY.md"
+GLOSSARY_MAP = "GLOSSARY-MAP.md"
+GLOSSARY_RENAMES = (("CONTEXT.md", GLOSSARY), ("CONTEXT-MAP.md", GLOSSARY_MAP))
+
+#: A glossary entry as the `domain-modeling` skill writes it: a line that is a bold term and a
+#: colon and nothing else, the definition on the lines below. Whole-line on purpose. A paragraph
+#: may open on a bold phrase and a colon and run on, and that is prose.
+_TERM_LINE_RE = re.compile(r"^\*\*(?P<term>[^*]+)\*\*:\s*$")
+#: A Markdown heading, and its level.
+_HEADING_RE = re.compile(r"^(?P<level>#{1,6})\s")
 
 #: The site configuration every repo that publishes a site has, and where the site source sits
 #: when it does not say. Rules 2 and 13 are both scoped to the pages the site publishes, so they
@@ -131,6 +145,8 @@ FIRST_TAG = "v0.0.0"
 #: Vale's spelling of on and off. Both forms appear in the wild; the gate accepts either.
 VALE_ON = {"YES", "TRUE", "ON"}
 VALE_OFF = {"NO", "FALSE", "OFF"}
+#: A key holding one of these is a glob, and a glob key matches no file.
+GLOB_CHARS = frozenset("*?[")
 
 #: The command a workflow step is allowed to run, and the table its task must be declared in.
 #: Both are named here because rule 12's problem text and its fix both spell them.
@@ -181,6 +197,18 @@ SHELL_OPERATORS = frozenset({"&&", "||", "|", ";", "&"})
 EXPRESSION = "${{}}"
 _EXPRESSION_RE = re.compile(r"\$\{\{.*?\}\}", re.DOTALL)
 
+#: Rule 14's three other places to set a test time limit: pytest-timeout's environment variable
+#: and its flag, and its mark. Whole tokens, so `--timeout-method` and `--session-timeout` pass.
+TIMEOUT_ENV = "PYTEST_TIMEOUT"
+TIMEOUT_FLAG = "--timeout"
+TIMEOUT_MARK = "pytest.mark.timeout"
+_TIMEOUT_ENV_RE = re.compile(r"\bPYTEST_TIMEOUT\b")
+_TIMEOUT_FLAG_RE = re.compile(r"(?<![\w-])--timeout(?![\w-])")
+_TIMEOUT_MARK_RE = re.compile(r"\bmark\.timeout\b")
+_PYTEST_RE = re.compile(r"\bpytest\b")
+#: A file pytest reads tests or fixtures from, by its default names.
+_TEST_FILE_RE = re.compile(r"(?:^|/)(?:test_[^/]*|[^/]*_test|conftest)\.py$")
+
 _SECTION_RE = re.compile(r"^\[(?P<header>.+)\]\s*$")
 _SETTING_RE = re.compile(r"^(?P<key>[A-Za-z][^=]*?)\s*=\s*(?P<value>.*?)\s*$")
 _SKILL_FILE_RE = re.compile(r"^skills/[^/]+/SKILL\.md$")
@@ -192,6 +220,12 @@ _SKILL_DIR_RES = (
     re.compile(r"^skills/(?P<name>[^/]+)/"),
     re.compile(r"^\.(?:claude|agents)/skills/(?P<name>[^/]+)(?:/|$)"),
 )
+
+#: The prefix the lab's shared plugin owns, and where it ships every other name: Claude Code's
+#: clone of the `liulab` marketplace, relative to the home directory. Kimi Code reads its skills
+#: from that clone too. Read from the machine, so CI, with no plugin installed, cannot check it.
+LAB_PREFIX = "lab-"
+PLUGIN_SKILLS = ".claude/plugins/marketplaces/liulab/skills"
 
 
 @dataclass(frozen=True)
@@ -330,12 +364,15 @@ class Workflow:
     steps
         Every step of every job, in file order, each carrying the job it came from. Flat because
         the rules that read steps ask about all of them, and a step knows its own job.
+    strings
+        Every key and string value in the file, at any depth. Comments are not among them.
     """
 
     path: str
     name: str
     triggers: dict[str, Any]
     steps: tuple[Step, ...]
+    strings: tuple[str, ...] = ()
 
 
 def _string(value: Any) -> str | None:
@@ -589,7 +626,12 @@ class Repo:
         lives on the `docs` feature — so a rule reading one table would fail the docs job of a
         workflow that is entirely correct.
         """
-        return frozenset(_task_names(self.manifest.get("tool", {}).get("pixi")))
+        return frozenset(name for name, _ in self.task_definitions)
+
+    @cached_property
+    def task_definitions(self) -> tuple[tuple[str, Any], ...]:
+        """Every pixi task as (name, definition), from every table `tasks` walks."""
+        return tuple(_tasks(self.manifest.get("tool", {}).get("pixi")))
 
     @cached_property
     def workflows(self) -> tuple[Workflow, ...]:
@@ -622,6 +664,7 @@ class Repo:
                     name=_string(document.get("name")) or PurePosixPath(rel).stem,
                     triggers=_triggers(document),
                     steps=_steps(rel, document),
+                    strings=tuple(_keys_and_strings(document)),
                 )
             )
         return tuple(found)
@@ -721,8 +764,8 @@ def _plugins(document: dict[str, Any]) -> set[str]:
     return {str(name).rsplit("/", 1)[-1] for name in names}
 
 
-def _task_names(node: Any) -> Iterator[str]:
-    """Every key of every `tasks` table at any depth, wherever pixi accepts one.
+def _tasks(node: Any) -> Iterator[tuple[str, Any]]:
+    """Every entry of every `tasks` table at any depth, wherever pixi accepts one.
 
     One walk rather than four reads: a task may be declared on the workspace, on a feature, on a
     platform target, or on a target under a feature.
@@ -731,9 +774,35 @@ def _task_names(node: Any) -> Iterator[str]:
         return
     for key, value in node.items():  # pyright: ignore[reportUnknownVariableType]
         if key == "tasks" and isinstance(value, dict):
-            yield from (str(name) for name in value)  # pyright: ignore[reportUnknownVariableType]
+            for name, definition in value.items():  # pyright: ignore[reportUnknownVariableType]
+                yield str(name), definition  # pyright: ignore[reportUnknownArgumentType]
         else:
-            yield from _task_names(value)
+            yield from _tasks(value)
+
+
+def _outside_tasks(node: Any) -> Iterator[str]:
+    """Every key and string under `[tool.pixi]` that is not inside a `tasks` table."""
+    if isinstance(node, dict):
+        for key, value in node.items():  # pyright: ignore[reportUnknownVariableType]
+            if key == "tasks" and isinstance(value, dict):
+                continue
+            yield str(key)  # pyright: ignore[reportUnknownArgumentType]
+            yield from _outside_tasks(value)
+    else:
+        yield from _keys_and_strings(node)
+
+
+def _keys_and_strings(node: Any) -> Iterator[str]:
+    """Every mapping key and every string value in a parsed document, at any depth."""
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, list):
+        for item in node:  # pyright: ignore[reportUnknownVariableType]
+            yield from _keys_and_strings(item)
+    elif isinstance(node, dict):
+        for key, value in node.items():  # pyright: ignore[reportUnknownVariableType]
+            yield str(key)  # pyright: ignore[reportUnknownArgumentType]
+            yield from _keys_and_strings(value)
 
 
 @dataclass(frozen=True)
@@ -758,8 +827,9 @@ def _invoked_task(run: str) -> Invocation | None:
     """Read the pixi task one step's `run:` script invokes, or ``None`` when it runs a command.
 
     The accepted shape is `pixi run`, any pixi options, the task, and then — optionally — `--`
-    and arguments for it. Options are skipped on both sides of `run`, so `pixi run -e test test`
-    and `pixi run docs-build` arrive the same way and no spelling is privileged.
+    and arguments for it. Options are skipped on both sides of `run`, so
+    `pixi run -e docs docs-build` and `pixi run test` arrive the same way and no spelling is
+    privileged.
 
     Arguments are ACCEPTED and reported, not forbidden. A flag a workflow wants and a laptop does
     not — `--durations=10` on the CI run of the test suite — is ordinary, and forbidding it only
@@ -846,32 +916,34 @@ def _vale_sections(text: str) -> list[tuple[str, dict[str, str]]]:
 
 
 def _glossary_entries(text: str) -> list[tuple[str, int]]:
-    """Each `###` entry under `## Glossary` in `CONTEXT.md`, with its word count.
+    """Each entry in the glossary, with its word count.
 
-    The cap is per ENTRY and not per file, so a repo with a large vocabulary is not punished for
-    the size of its domain. An entry runs from its own heading to the next heading at the same or
-    a higher level.
+    An entry is a `###` heading under `## Glossary`, or a `**Term**:` line under any `##` section.
+    The first runs to the next heading at its own level or higher, the second to the next heading
+    of any level; either ends at the next entry. The cap is per ENTRY and not per file, so a repo
+    with a large vocabulary is not punished for the size of its domain.
     """
     entries: list[tuple[str, int]] = []
-    in_glossary = False
+    section: str | None = None
     title: str | None = None
+    ends_below = 0
     words = 0
     for line in text.splitlines():
-        if line.startswith("## "):
-            if title is not None:
-                entries.append((title, words))
-                title = None
-            in_glossary = line[3:].strip().lower() == "glossary"
-            continue
-        if not in_glossary:
-            continue
-        if line.startswith("### "):
-            if title is not None:
-                entries.append((title, words))
-            title = line[4:].strip()
+        heading = _HEADING_RE.match(line)
+        term = _TERM_LINE_RE.match(line) if section is not None else None
+        level = len(heading["level"]) if heading else 0
+        if title is not None and (term or (heading and level < ends_below)):
+            entries.append((title, words))
+            title = None
+        if level == 2:
+            section = line[3:].strip().lower()
+        elif level == 3 and section == "glossary":
+            title, ends_below = line[4:].strip(), 4
             words = len(title.split())
-            continue
-        if title is not None:
+        elif term:
+            title, ends_below = str(term["term"]).strip(), 7
+            words = len(title.split())
+        elif title is not None:
             words += len(line.split())
     if title is not None:
         entries.append((title, words))
@@ -949,7 +1021,7 @@ def _python_pins(pyproject: dict[str, Any]) -> dict[str, str]:
 
 
 # --------------------------------------------------------------------------------------
-# The rules. Thirteen fail, two warn. Each returns what it found; nothing here exits or prints.
+# The rules. Fourteen fail, two warn. Each returns what it found; nothing here exits or prints.
 # --------------------------------------------------------------------------------------
 
 
@@ -1002,7 +1074,7 @@ def rule_agent_docs_unpublished(repo: Repo) -> Result:
     """2. Agent-facing pages the site would publish stay out of the navbar and out of search."""
     result = Result()
     prefix = f"{repo.docs_dir}/"
-    # Scoped to the agent-docs keys UNDER THE SITE SOURCE. `AGENTS.md`, `CONTEXT.md` and
+    # Scoped to the agent-docs keys UNDER THE SITE SOURCE. `AGENTS.md`, `GLOSSARY.md` and
     # `skills/` are agent-facing too, but the site never publishes them: front matter there means
     # nothing, and on a SKILL.md it lands in the frontmatter a skill loader reads.
     keys = sorted(k for k in repo.agent_docs if k.startswith(prefix))
@@ -1010,6 +1082,9 @@ def rule_agent_docs_unpublished(repo: Repo) -> Result:
         result.notes.append(f"not checked: no [tool.liulab.agent-docs] key is under {prefix}")
         return result
     pages = sorted({p for key in keys for p in repo.under(key) if p.endswith(".md")})
+    if not pages:
+        result.notes.append(f"not checked: no markdown file is under {', '.join(keys)}")
+        return result
     for page in pages:
         text = repo.read(page)
         if text is not None and not _excluded_from_search(text):
@@ -1059,6 +1134,22 @@ def rule_vale_length_sections(repo: Repo) -> Result:
     # adding a third cap needs no edit here.
     caps = sorted({v for v in repo.agent_docs.values() if isinstance(v, str)})
     for key, declared in sorted(repo.agent_docs.items()):
+        first_glob = next((i for i, ch in enumerate(key) if ch in GLOB_CHARS), None)
+        if first_glob is not None:
+            # A glob in an earlier segment would widen the prefix past the directories it named.
+            in_last_segment = "/" not in key[first_glob:].rstrip("/")
+            plain = key[: key.rfind("/", 0, first_glob) + 1] if in_last_segment else ""
+            result.problems.append(
+                _problem(
+                    f"`{key}` is a glob, and agent-docs keys are plain path prefixes",
+                    "rule 2 matches keys as prefixes, so a glob matches no file and its pages "
+                    "are checked by nothing, while its .vale.ini section still looks paired",
+                    f"use `{plain}`, or one key per directory it was meant to cover"
+                    if plain
+                    else "use one plain key per directory it was meant to cover",
+                )
+            )
+            continue
         matched = [(header, settings) for header, settings in sections if key in header]
         if len(matched) != 1:
             result.problems.append(
@@ -1098,23 +1189,44 @@ def rule_vale_length_sections(repo: Repo) -> Result:
     return result
 
 
-def rule_glossary_entry_length(repo: Repo) -> Result:
-    """4. No glossary entry in `CONTEXT.md` runs past 200 words."""
+def rule_glossary_format(repo: Repo) -> Result:
+    """4. The glossary is `GLOSSARY.md`, and no entry in it runs past 200 words."""
     cap = 200
     result = Result()
-    text = repo.read("CONTEXT.md")
+    if repo.exists(GLOSSARY_MAP):
+        result.notes.append(
+            f"not checked: {GLOSSARY_MAP} is here, so the glossary is split by context into "
+            "files this rule does not read"
+        )
+        return result
+    for before, after in GLOSSARY_RENAMES:
+        if repo.exists(before) and not repo.exists(after):
+            result.problems.append(
+                _problem(
+                    f"{before} is still here, and {after} is not",
+                    f"the upstream skills read and write {after} and nothing else, so they find "
+                    "no glossary here and start a second one beside this",
+                    f"`git mv {before} {after}`, with the entries unchanged",
+                )
+            )
+    text = repo.read(GLOSSARY)
     if text is None:
-        result.notes.append("not checked: no CONTEXT.md")
+        if not result.problems:
+            result.notes.append(f"not checked: no {GLOSSARY}")
         return result
     entries = _glossary_entries(text)
     if not entries:
-        result.notes.append("not checked: CONTEXT.md has no entries under `## Glossary`")
+        if not result.problems:
+            result.notes.append(
+                f"not checked: {GLOSSARY} has no entries, neither a `###` heading under "
+                "`## Glossary` nor a `**Term**:` line under a `##` section"
+            )
         return result
     for title, words in entries:
         if words > cap:
             result.problems.append(
                 _problem(
-                    f"CONTEXT.md glossary entry `{title}` is {words} words, over {cap}",
+                    f"{GLOSSARY} glossary entry `{title}` is {words} words, over {cap}",
                     "the glossary says what a word MEANS in this repo. An entry that long is an "
                     "explanation, and it belongs in a document the glossary can point at",
                     "cut it to a definition and move the rest to docs/, or to an ADR if it is a "
@@ -1145,8 +1257,21 @@ def rule_skill_file_location(repo: Repo) -> Result:
     return result
 
 
-def rule_skill_name_prefix(repo: Repo) -> Result:
-    """6. No repo-local skill directory begins with `lab-`."""
+def _shipped_skills(home: Path) -> frozenset[str] | None:
+    """Every skill name the installed `lab` plugin ships, casefolded, or ``None`` if none is found.
+
+    Read from the marketplace clone, where each directory holding a `SKILL.md` is one skill. An
+    empty or absent directory is ``None`` and never an empty set: an empty set would let every
+    name through, which is the pass this rule must not give when it knows nothing.
+    """
+    found = frozenset(
+        skill.parent.name.casefold() for skill in (home / PLUGIN_SKILLS).glob("*/SKILL.md")
+    )
+    return found or None
+
+
+def rule_skill_name_clash(repo: Repo) -> Result:
+    """6. No repo-local skill takes a name the `lab` plugin ships."""
     result = Result()
     names: dict[str, str] = {}
     for rel in repo.tracked:
@@ -1155,19 +1280,33 @@ def rule_skill_name_prefix(repo: Repo) -> Result:
             if match:
                 names.setdefault(match["name"], rel)
                 break
+    try:
+        shipped = _shipped_skills(Path.home())
+    except RuntimeError:  # no HOME and no password entry: nowhere to look
+        shipped = None
     for name, rel in sorted(names.items()):
-        if name.startswith("lab-"):
+        if name.casefold().startswith(LAB_PREFIX) or name.casefold() in (shipped or ()):
             result.problems.append(
                 _problem(
                     f"{rel} is a repo-local skill named `{name}`",
-                    "the lab's shared plugin owns the `lab-` prefix, and a repo-local skill of "
-                    "the same name shadows it for everyone working in this repo — silently, "
-                    "since both are discovered the same way",
-                    "rename it to something without the `lab-` prefix, then run "
+                    f"the `lab` plugin ships this name or owns it, as it owns every `{LAB_PREFIX}` "
+                    "name. A repo-local skill of the same name replaces the plugin's for "
+                    "everyone working here — silently, and in Kimi Code even when only the case "
+                    "differs",
+                    "rename it to a name the plugin does not ship, then run "
                     "`python skills/install.py --target all`",
                 )
             )
-    result.notes.append(f"{len(names)} skill director(ies) named across the discovery paths")
+    if shipped is None:
+        result.notes.append(
+            f"not checked: no `lab` plugin skills under ~/{PLUGIN_SKILLS}, so the "
+            f"{len(names)} skill name(s) here were held to the `{LAB_PREFIX}` prefix alone"
+        )
+    else:
+        result.notes.append(
+            f"{len(names)} skill director(ies) named across the discovery paths, against the "
+            f"{len(shipped)} name(s) the `lab` plugin ships"
+        )
     return result
 
 
@@ -1674,8 +1813,72 @@ def rule_nav_target_exists(repo: Repo) -> Result:
     return result
 
 
+def _timeout_overrides(strings: Iterable[str]) -> list[str]:
+    """Which of `PYTEST_TIMEOUT` and `--timeout` these strings set, as a problem's verb phrase."""
+    joined = "\n".join(strings)
+    found: list[str] = []
+    if _TIMEOUT_ENV_RE.search(joined):
+        found.append(f"sets `{TIMEOUT_ENV}`")
+    if _TIMEOUT_FLAG_RE.search(joined):
+        found.append(f"passes `{TIMEOUT_FLAG}`")
+    return found
+
+
+def rule_test_time_limits(repo: Repo) -> Result:
+    """14. The test time limits are set in `[tool.pytest.ini_options]` and nowhere else.
+
+    Three other places can set pytest-timeout's limit, and each beats the ini value: an
+    environment variable or a flag in a workflow, the same in pixi's tasks or activation, and a
+    mark on a test.
+
+    `--timeout` is read in a task only when the task runs pytest, because the flag belongs to
+    other tools too and a download that waits for a server is not a test time limit. A workflow
+    step can only invoke a task (rule 12), so a `--timeout` there is read as one whichever task it
+    goes to. `PYTEST_TIMEOUT` is read everywhere: it reaches pytest through any task that runs it.
+    """
+    result = Result()
+    why = (
+        "`timeout` and `suite_budget` live in [tool.pytest.ini_options] so that raising one is "
+        "a one-line diff a reviewer sees. A copy here overrides it without touching that line, "
+        "and limits raised one unreviewed place at a time are how a suite gets slow unnoticed"
+    )
+    fix = (
+        "delete it. Mark a test that needs longer `slow`; change a limit that is wrong for the "
+        "whole suite in [tool.pytest.ini_options]"
+    )
+    for workflow in repo.workflows:
+        for found in _timeout_overrides(workflow.strings):
+            result.problems.append(_problem(f"{workflow.path} {found}", why, fix))
+    pytest_tasks = 0
+    for name, definition in repo.task_definitions:
+        strings = tuple(_keys_and_strings(definition))
+        runs_pytest = any(_PYTEST_RE.search(string) for string in strings)
+        pytest_tasks += runs_pytest
+        for found in _timeout_overrides(strings):
+            if runs_pytest or TIMEOUT_ENV in found:
+                result.problems.append(_problem(f"pixi task `{name}` {found}", why, fix))
+    pixi = repo.manifest.get("tool", {}).get("pixi")
+    if any(_TIMEOUT_ENV_RE.search(string) for string in _outside_tasks(pixi)):
+        result.problems.append(
+            _problem(f"[tool.pixi] sets `{TIMEOUT_ENV}` outside a task", why, fix)
+        )
+    tests = [rel for rel in repo.tracked if _TEST_FILE_RE.search(rel)]
+    for rel in tests:
+        for number, line in enumerate((repo.read(rel) or "").splitlines(), start=1):
+            if _TIMEOUT_MARK_RE.search(line):
+                result.problems.append(_problem(f"{rel}:{number} sets `{TIMEOUT_MARK}`", why, fix))
+    if not (repo.workflows or pytest_tasks or tests):
+        result.notes.append("not checked: no workflow, no task that runs pytest, and no test file")
+        return result
+    result.notes.append(
+        f"{len(repo.workflows)} workflow(s), {pytest_tasks} pytest task(s) and {len(tests)} test "
+        "file(s) read"
+    )
+    return result
+
+
 def warning_init_sentinel(repo: Repo) -> Result:
-    """14. `AGENTS.md` still carries the line telling you to run `/init`."""
+    """15. `AGENTS.md` still carries the line telling you to run `/init`."""
     result = Result()
     if repo.exists(INIT_SKILL):
         result.notes.append(f"not checked: {INIT_SKILL}/ is here, and that skill is the nag")
@@ -1738,9 +1941,12 @@ RULES: tuple[Rule, ...] = (
     ),
     Rule(
         4,
-        "glossary-entry-length",
-        "no glossary entry in CONTEXT.md exceeds 200 words",
-        rule_glossary_entry_length,
+        "glossary-format",
+        f"the glossary is {GLOSSARY}, never a CONTEXT.md left unrenamed, and no entry in it "
+        "exceeds 200 words, whether a `###` heading under `## Glossary` or a `**Term**:` line "
+        f"under any `##` section. Where a {GLOSSARY_MAP} splits it by context, it is reported "
+        "unchecked",
+        rule_glossary_format,
     ),
     Rule(
         5,
@@ -1750,9 +1956,11 @@ RULES: tuple[Rule, ...] = (
     ),
     Rule(
         6,
-        "skill-name-prefix",
-        "no repo-local skill directory begins with `lab-`, which the shared plugin owns",
-        rule_skill_name_prefix,
+        "skill-name-clash",
+        f"no repo-local skill takes a name the `lab` plugin ships: no `{LAB_PREFIX}` name, and no "
+        f"name in the plugin's marketplace clone under ~/{PLUGIN_SKILLS}. Where no clone is "
+        "found the prefix alone is held, and the rule says it did not check the rest",
+        rule_skill_name_clash,
     ),
     Rule(
         7,
@@ -1811,6 +2019,15 @@ RULES: tuple[Rule, ...] = (
     ),
     Rule(
         14,
+        "test-time-limits",
+        f"the test time limits are `timeout` and `suite_budget` in [tool.pytest.ini_options], and "
+        f"nowhere else: no `{TIMEOUT_ENV}` in a workflow or anywhere under [tool.pixi], no "
+        f"`{TIMEOUT_FLAG}` in a workflow or in a pixi task that runs pytest, and no "
+        f"`{TIMEOUT_MARK}` in a test",
+        rule_test_time_limits,
+    ),
+    Rule(
+        15,
         "init-sentinel",
         "AGENTS.md is still the template's generic copy",
         warning_init_sentinel,
@@ -1818,9 +2035,9 @@ RULES: tuple[Rule, ...] = (
     ),
 )
 
-#: Warning 15 is not a rule with a tree to inspect: it is the waiver table itself, printed on
+#: Warning 16 is not a rule with a tree to inspect: it is the waiver table itself, printed on
 #: every run. It lives in `report` because only the reporter knows what each waiver suppressed.
-WAIVER_RULE = (15, "waivers")
+WAIVER_RULE = (16, "waivers")
 
 
 def load(root: Path) -> Repo:
@@ -1882,7 +2099,7 @@ def _verdict(repo: Repo, rule: Rule, result: Result) -> tuple[str, list[str]]:
 
 
 def _waiver_lines(repo: Repo, results: list[tuple[Rule, Result]]) -> list[str]:
-    """Warning 15: every waiver, with what it actually suppressed.
+    """Warning 16: every waiver, with what it actually suppressed.
 
     A waiver naming no rule is called out rather than ignored, and so is one naming rule 1, which
     refuses to be waived. A waiver that quietly does nothing is the same invisible escape hatch

@@ -90,8 +90,7 @@ pyyaml = "*"
 
 [tool.pixi.feature.test.dependencies]
 pytest = "*"
-# Declared here too, not inherited: the tests run conformance, which imports it.
-pyyaml = "*"
+pytest-timeout = "*"
 
 # Exact: at 0.0.x nothing promises the next patch is compatible.
 [tool.pixi.feature.docs.dependencies]
@@ -133,11 +132,10 @@ cuda-cudart-dev = "*"
 [tool.pixi.feature.esm.activation.env]
 CPATH = "$CONDA_PREFIX/targets/x86_64-linux/include"
 
-# `default` takes `test` so pyright can resolve pytest, and not `docs`, which exists so that
-# exactly one CI job installs it.
+# `default` takes `test` so pyright can resolve pytest, and not `docs`, so `pixi run check`
+# never installs the site builder.
 [tool.pixi.environments]
 default = { features = ["test"], solve-group = "default" }
-test = { features = ["test"], solve-group = "default" }
 docs = { features = ["docs"], solve-group = "default" }
 # Not a CI job: no runner has a GPU. Its own solve group, so torch and the CUDA runtime it
 # drags in stay off the environments that run the gate.
@@ -149,6 +147,8 @@ fmt = "ruff format ."
 fmt-check = "ruff format --check ."
 typecheck = "pyright"
 test = "pytest"
+# The model tests are `slow` too, and run only in the ESM lane, which has the weights.
+test-slow = "pytest -m 'slow and not model'"
 # `.`, never an absolute path: an absolute path matches no `.vale.ini` section and exits 0.
 # The globs keep the walk out of trees pytest writes to while `check.sh` runs both steps.
 vale = "vale --glob='!{.pixi,site,dist,build}/**' ."
@@ -159,7 +159,10 @@ conformance = "python scripts/conformance.py"
 relock = "pixi update"
 # The static step list lives here and nowhere else; `check.sh` takes it as arguments.
 check-static = "bash scripts/check.sh lint fmt-check typecheck vale markdownlint conformance"
-check = { depends-on = ["check-static", "test"] }
+# `test` runs whatever `check-static` returned; `depends-on` would skip it. After it, not beside
+# it, so pytest's time limits and vale's walk of `tests/` never share the machine. pixi's task
+# shell has `$?` but no arithmetic.
+check = "pixi run check-static; static=$?; pixi run test && exit $static"
 
 # ============================== ruff ==============================
 
@@ -203,7 +206,7 @@ convention = "numpy"
 
 [tool.pyright]
 # `scripts` and `skills` included: CI and conformance execute those files.
-include = ["src", "tests", "scripts", "skills"]
+include = ["src", "tests", "scripts", "skills", "conftest.py"]
 exclude = ["**/__pycache__", "**/.pixi"]
 venvPath = ".pixi/envs"
 venv = "default"
@@ -239,9 +242,9 @@ addopts = [
     "--continue-on-collection-errors",
     # The gate lane, and it has to live here rather than on the `test` task, because the task
     # is what CI calls. addopts is prepended, so the ESM lane is still `pytest -m model` — a
-    # command-line `-m` wins over this one.
+    # command-line `-m` wins over this one. One expression, because a second `-m` would too.
     "-m",
-    "not model",
+    "not model and not slow",
 ]
 xfail_strict = true
 markers = [
@@ -253,6 +256,11 @@ filterwarnings = [
     # fold. `tests/test_seq.py` asserts the warning, so tolerating it here still tests it.
     "default::protein.seq.ResidueCoercionWarning",
 ]
+# The two time limits, here and nowhere else: conformance fails a copy in a workflow, a task or
+# a test. `conftest.py` reads `suite_budget`; pytest-timeout reads `timeout`, which covers a
+# test's setup, call and teardown. A test marked `slow` is held to neither.
+timeout = 2
+suite_budget = 45
 
 # ============================== liulab ==============================
 # Read by `scripts/conformance.py`; its docstring has the rules.
@@ -261,7 +269,7 @@ filterwarnings = [
 # globs; a trailing `/` matches a directory. Values name the Vale Length rule, or `false`.
 [tool.liulab.agent-docs]
 "AGENTS.md" = "LengthDoc"
-"CONTEXT.md" = "LengthContext"
+"GLOSSARY.md" = "LengthContext"
 "docs/agents/" = "LengthDoc"
 "skills/" = "LengthDoc"
 "docs/adr/" = "LengthAdr"

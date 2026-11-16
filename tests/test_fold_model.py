@@ -39,7 +39,8 @@ from protein.fold.request import ChainRequest, FoldingRequest
 
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
-pytestmark = pytest.mark.model
+# `slow` too: loading the weights takes longer than the per-test limit allows.
+pytestmark = [pytest.mark.model, pytest.mark.slow]
 
 #: The lane's one query: ubiquitin, whose deposited coordinates the repo already carries. No
 #: reference structure is checked in for this — a binary that goes stale with the checkpoint
