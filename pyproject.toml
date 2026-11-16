@@ -147,7 +147,8 @@ fmt = "ruff format ."
 fmt-check = "ruff format --check ."
 typecheck = "pyright"
 test = "pytest"
-test-slow = "pytest -m slow"
+# The model tests are `slow` too, and run only in the ESM lane, which has the weights.
+test-slow = "pytest -m 'slow and not model'"
 # `.`, never an absolute path: an absolute path matches no `.vale.ini` section and exits 0.
 # The globs keep the walk out of trees pytest writes to while `check.sh` runs both steps.
 vale = "vale --glob='!{.pixi,site,dist,build}/**' ."

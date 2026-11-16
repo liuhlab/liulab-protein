@@ -29,7 +29,8 @@ from protein.embed import CHECKPOINTS, SAE, SAE_CHECKPOINTS, Embedding
 
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
-pytestmark = pytest.mark.model
+# `slow` too: loading the weights takes longer than the per-test limit allows.
+pytestmark = [pytest.mark.model, pytest.mark.slow]
 
 #: The lane's one query. Its length is what the row count is checked against.
 SEQUENCE = "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"
